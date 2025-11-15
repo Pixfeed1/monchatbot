@@ -641,13 +641,28 @@ def chatbot():
         # Récupérer la configuration API de l'utilisateur
         user_config = get_user_api_config()
         if not user_config:
-            # Message rigolo et personnalisé quand aucune API n'est configurée
+            # Calembours et messages rigolos quand aucune API n'est configurée
             funny_messages = [
-                "🚗💨 Oups ! Je suis en panne sèche... Les tokens sont mon carburant, et sans clé API, je ne peux pas démarrer ! Passez à la station de [configuration](/api-config) pour me ravitailler 😊",
-                "🔋 Batterie à plat ! Les clés API sont mon énergie vitale. Sans elles, je suis comme un smartphone à 0%... Rechargez-moi dans les [paramètres](/api-config) !",
-                "🍕 J'ai faim de tokens ! Une clé API, c'est comme une pizza pour moi : indispensable pour fonctionner. Direction la [configuration](/api-config) pour me nourrir !",
-                "🎮 Game Over ! Je ne peux pas jouer sans clé API. C'est mon code de triche pour accéder à l'intelligence. Insérez une pièce dans la [config](/api-config) !",
-                "☕ Besoin de mon café numérique ! Les tokens sont ma caféine, et sans clé API, je suis trop endormi pour discuter... Réveillez-moi dans les [paramètres](/api-config) !"
+                "Sans clé API, je suis comme un cadenas sans clé... complètement verrouillé ! Déverrouillez-moi dans la [configuration](/api-config).",
+                "Les tokens sont ma monnaie d'échange, et là je suis complètement fauché... Passez au guichet de la [config](/api-config) pour me renflouer !",
+                "Pas d'API, pas d'happy hour pour moi ! Je reste au comptoir sans pouvoir servir. Ouvrez le bar dans les [paramètres](/api-config).",
+                "Je suis un chatbot sans tokens, c'est comme être un chat sans bot... juste inutile ! Réparez-moi dans la [configuration](/api-config).",
+                "L'intelligence artificielle sans API, c'est de l'intelligence... très artificielle ! Rendez-moi intelligent dans les [paramètres](/api-config).",
+                "Je suis en mode avion : aucune connexion API possible ! Atterrissons ensemble dans la [config](/api-config).",
+                "Sans tokens, je suis comme un distributeur automatique sans pièces... je rends la monnaie de ma pièce : rien ! Alimentez-moi via la [configuration](/api-config).",
+                "API non configurée... Je suis un peu comme un téléphone sans réseau : beau mais inutile ! Connectez-moi dans les [paramètres](/api-config).",
+                "Les tokens sont le carburant de mon intelligence. Là, je suis en réserve... vide ! Faites le plein dans la [config](/api-config).",
+                "Sans clé API, je suis comme un piano : beaucoup de touches mais aucun son ! Accordez-moi dans la [configuration](/api-config).",
+                "Je suis affamé de tokens ! C'est la famine numérique ici... Nourrissez-moi dans les [paramètres](/api-config).",
+                "Pas de tokens, pas de chocolat... euh non, pas de discussion je veux dire ! Sucrez-moi la vie dans la [config](/api-config).",
+                "Je suis comme une bibliothèque fermée : plein de connaissances mais aucun accès ! Ouvrez les portes dans la [configuration](/api-config).",
+                "L'IA sans API, c'est comme le WiFi sans mot de passe... techniquement là, mais inaccessible ! Partagez le code dans les [paramètres](/api-config).",
+                "Je suis au chômage technique : pas de clé API, pas de travail pour moi ! Embauchez-moi via la [config](/api-config).",
+                "Sans API configurée, je suis une coquille vide... un bot sans cerveau ! Greffez-moi une intelligence dans la [configuration](/api-config).",
+                "Les clés API sont mes vitamines quotidiennes, et là je fais une overdose... de rien ! Soignez-moi dans les [paramètres](/api-config).",
+                "Je suis comme un GPS sans satellite : perdu ! Guidez-moi vers la [configuration](/api-config) pour retrouver le chemin.",
+                "Pas de tokens, c'est comme être invité à un banquet les mains vides... embarrassant ! Apportez les provisions via la [config](/api-config).",
+                "Je suis un artiste sans pinceau, un écrivain sans plume... bref, inutile ! Équipez-moi dans la [configuration](/api-config)."
             ]
 
             import random
