@@ -32,10 +32,14 @@ def create_app():
     """Crée et configure l'application Flask en mode API uniquement."""
     logger.info("»»»» Démarrage de la création de l'application Flask (API)")
     app = Flask(__name__)
-    
-    # Charger les variables d'environnement
-    load_dotenv()
-    logger.info("»»»» Variables d'environnement chargées")
+
+    # Charger les variables d'environnement depuis la racine du projet
+    from pathlib import Path
+    project_root = Path(__file__).parent.parent
+    env_file = project_root / '.env'
+    load_dotenv(dotenv_path=env_file)
+    logger.info(f"»»»» Variables d'environnement chargées depuis: {env_file}")
+    logger.info(f"»»»» DATABASE_URL présent: {bool(os.getenv('DATABASE_URL'))}")
     
     # Configuration CORS
     logger.info("»»»» Configuration de CORS")

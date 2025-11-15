@@ -17,15 +17,21 @@ class Config:
     # Configuration de la base de données - PostgreSQL par défaut
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL') or os.getenv('SQLALCHEMY_DATABASE_URI')
 
+    if SQLALCHEMY_DATABASE_URI:
+        # Masquer le mot de passe dans les logs
+        safe_uri = SQLALCHEMY_DATABASE_URI.split('@')[1] if '@' in SQLALCHEMY_DATABASE_URI else 'unknown'
+        print(f"[DEBUG] DATABASE_URL trouvé: postgresql://***@{safe_uri}")
+
     if not SQLALCHEMY_DATABASE_URI:
         # Configuration PostgreSQL par défaut
         POSTGRES_USER = os.getenv('POSTGRES_USER', 'jurojinn_mvaertan')
         POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'changez_ce_mot_de_passe')
-        POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
+        POSTGRES_HOST = os.getenv('POSTGRES_HOST', '127.0.0.1')  # Utilisez 127.0.0.1 au lieu de localhost pour éviter IPv6
         POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
         POSTGRES_DB = os.getenv('POSTGRES_DB', 'jurojinn_leo')
 
         SQLALCHEMY_DATABASE_URI = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
+        print(f"[DEBUG] DATABASE_URL non trouvé, construction de l'URI: postgresql://{POSTGRES_USER}:***@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
 
     # Support Heroku DATABASE_URL (commence par postgres:// au lieu de postgresql://)
     if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
