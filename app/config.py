@@ -1,9 +1,6 @@
 import os
 from pathlib import Path
 
-# Configuration pour compilation PyTorch - désactivé car plus besoin
-os.environ["TORCH_COMPILE_DEBUG"] = "0"
-
 # Chargement des variables d'environnement
 basedir = Path(__file__).parent
 
@@ -57,10 +54,10 @@ class Config:
         try:
             from cryptography.fernet import Fernet
             ENCRYPTION_KEY = Fernet.generate_key()
-            print("⚠️  ATTENTION : Clé de chiffrement temporaire générée!")
-            print("   Définissez ENCRYPTION_KEY dans vos variables d'environnement pour la production")
+            print("[WARN] ATTENTION : Clé de chiffrement temporaire générée!")
+            print("       Définissez ENCRYPTION_KEY dans vos variables d'environnement pour la production")
         except ImportError:
-            print("❌ Module cryptography manquant. Installez-le : pip install cryptography")
+            print("[ERROR] Module cryptography manquant. Installez-le : pip install cryptography")
             ENCRYPTION_KEY = None
     
     # ===== MODÈLES SUPPORTÉS =====
@@ -215,8 +212,8 @@ class Config:
     def init_app(cls, app):
         """Initialisation pour version clés utilisateur"""
         
-        print("🔧 Initialisation de l'application - Mode Clés Utilisateur")
-        
+        print("[INIT] Initialisation de l'application - Mode Clés Utilisateur")
+
         # Création des dossiers essentiels
         paths = [
             app.instance_path,
@@ -224,10 +221,10 @@ class Config:
             Path(app.root_path) / 'static' / 'uploads',
             Path(app.root_path) / 'logs'
         ]
-        
+
         for path in paths:
             Path(path).mkdir(parents=True, exist_ok=True)
-            print(f"✅ Dossier créé/vérifié: {path}")
+            print(f"[OK] Dossier créé/vérifié: {path}")
         
         # Validation de la configuration
         cls._validate_config()
@@ -257,10 +254,10 @@ class Config:
             "MAX_API_REQUESTS_PER_MINUTE": cls.MAX_API_REQUESTS_PER_MINUTE
         })
         
-        print("🚀 Application configurée en mode Clés Utilisateur")
-        print(f"   📊 Providers disponibles: OpenAI, Mistral, Claude")
-        print(f"   🔐 Chiffrement activé: {bool(cls.ENCRYPTION_KEY)}")
-        print(f"   🎯 Provider par défaut: {cls.DEFAULT_PROVIDER}")
+        print("[START] Application configurée en mode Clés Utilisateur")
+        print(f"        [*] Providers disponibles: OpenAI, Mistral, Claude")
+        print(f"        [*] Chiffrement activé: {bool(cls.ENCRYPTION_KEY)}")
+        print(f"        [*] Provider par défaut: {cls.DEFAULT_PROVIDER}")
     
     @classmethod
     def _validate_config(cls):
@@ -287,17 +284,17 @@ class Config:
         
         # Affichage des résultats
         if errors:
-            print("❌ ERREURS DE CONFIGURATION:")
+            print("[ERROR] ERREURS DE CONFIGURATION:")
             for error in errors:
-                print(f"   - {error}")
-        
+                print(f"        - {error}")
+
         if warnings:
-            print("⚠️  AVERTISSEMENTS:")
+            print("[WARN] AVERTISSEMENTS:")
             for warning in warnings:
-                print(f"   - {warning}")
-        
+                print(f"       - {warning}")
+
         if not errors and not warnings:
-            print("✅ Configuration validée sans problème")
+            print("[OK] Configuration validée sans problème")
     
     @classmethod
     def get_model_info(cls, provider: str, model: str) -> dict:
