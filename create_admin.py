@@ -34,9 +34,11 @@ if __name__ == '__main__':
             print(f"[OK] Mot de passe mis à jour\n")
         else:
             print(f"[INFO] Création de '{admin_login}'...")
+            # Si admin_login est un email, utiliser comme email ET username
+            email = admin_login if '@' in admin_login else f'{admin_login}@example.com'
             admin_user = User(
                 username=admin_login,
-                email=f'{admin_login}@example.com'
+                email=email
             )
             admin_user.set_password(admin_password)
             db.session.add(admin_user)
