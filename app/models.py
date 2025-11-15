@@ -95,9 +95,9 @@ class Settings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     # Paramètres généraux du bot
-    bot_name = db.Column(db.String(100), nullable=False, default="MonChatbot")
-    bot_description = db.Column(db.String(500), nullable=True)
-    bot_welcome = db.Column(db.String(500), nullable=False, default="Bienvenue!")
+    bot_name = db.Column(db.String(100), nullable=False, default="Léo")
+    bot_description = db.Column(db.String(500), nullable=True, default="Je suis Léo, votre assistant intelligent et sympathique. Je suis là pour vous aider et répondre à vos questions.")
+    bot_welcome = db.Column(db.String(500), nullable=False, default="Bonjour ! Je suis Léo, ravi de vous rencontrer !")
     bot_avatar = db.Column(db.String(200), nullable=True)
     
     # Configuration API par utilisateur
@@ -517,9 +517,9 @@ def init_default_data():
         # Créer les paramètres par défaut s'ils n'existent pas
         if not Settings.query.first():
             default_settings = Settings(
-                bot_name="MonChatbot",
-                bot_description="Assistant IA intelligent",
-                bot_welcome="Bonjour ! Comment puis-je vous aider aujourd'hui ?"
+                bot_name="Léo",
+                bot_description="Je suis Léo, votre assistant intelligent et sympathique. Je suis là pour vous aider et répondre à vos questions.",
+                bot_welcome="Bonjour ! Je suis Léo, ravi de vous rencontrer !"
             )
             db.session.add(default_settings)
         

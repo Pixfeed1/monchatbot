@@ -258,17 +258,17 @@ class ContextBuilder:
         if general_settings:
             logger.info(f"🎯 PARAMÈTRES CHARGÉS: Nom='{general_settings.bot_name}', Description='{general_settings.bot_description}'")
             return {
-                'name': general_settings.bot_name or 'Assistant',
-                'description': general_settings.bot_description or 'Je suis votre assistant virtuel.',
-                'welcome': general_settings.bot_welcome or 'Bonjour! Comment puis-je vous aider?',
+                'name': general_settings.bot_name or 'Léo',
+                'description': general_settings.bot_description or 'Je suis Léo, votre assistant intelligent et sympathique.',
+                'welcome': general_settings.bot_welcome or 'Bonjour ! Je suis Léo, ravi de vous rencontrer !',
                 'avatar': general_settings.bot_avatar
             }
         else:
             logger.warning("AUCUN PARAMÈTRE TROUVÉ - Utilisation des valeurs par défaut")
             return {
-                'name': 'Assistant',
-                'description': 'Je suis votre assistant virtuel.',
-                'welcome': 'Bonjour! Comment puis-je vous aider?'
+                'name': 'Léo',
+                'description': 'Je suis Léo, votre assistant intelligent et sympathique.',
+                'welcome': 'Bonjour ! Je suis Léo, ravi de vous rencontrer !'
             }
     
     def _get_response_config(self) -> Dict[str, Any]:
