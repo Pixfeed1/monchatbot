@@ -156,10 +156,8 @@ def create_app():
             
             if api_manager.is_ready:
                 logger.info("✅ Gestionnaire API initialisé avec succès")
-                # Test rapide des APIs
-                test_results = api_manager.test_providers()
-                for provider, status in test_results.items():
-                    logger.info(f"   - {provider}: {'✅ OK' if status else '❌ Erreur'}")
+                # Note: Les tests API se font quand l'utilisateur configure ses clés
+                # test_results = api_manager.test_providers()  # Méthode non disponible en mode user_keys
             else:
                 logger.error(f"❌ Échec de l'initialisation API: {api_manager.error_message}")
                 

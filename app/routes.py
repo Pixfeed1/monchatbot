@@ -3050,7 +3050,7 @@ def api_internal_error(error):
        return jsonify({
            'error': 'Internal server error',
            'path': request.path,
-           'message': 'Une erreur inattendue s'est produite'
+           'message': "Une erreur inattendue s'est produite"
        }), 500
    return error
 
