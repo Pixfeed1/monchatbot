@@ -641,8 +641,20 @@ def chatbot():
         # Récupérer la configuration API de l'utilisateur
         user_config = get_user_api_config()
         if not user_config:
+            # Message rigolo et personnalisé quand aucune API n'est configurée
+            funny_messages = [
+                "🚗💨 Oups ! Je suis en panne sèche... Les tokens sont mon carburant, et sans clé API, je ne peux pas démarrer ! Passez à la station de [configuration](/api-config) pour me ravitailler 😊",
+                "🔋 Batterie à plat ! Les clés API sont mon énergie vitale. Sans elles, je suis comme un smartphone à 0%... Rechargez-moi dans les [paramètres](/api-config) !",
+                "🍕 J'ai faim de tokens ! Une clé API, c'est comme une pizza pour moi : indispensable pour fonctionner. Direction la [configuration](/api-config) pour me nourrir !",
+                "🎮 Game Over ! Je ne peux pas jouer sans clé API. C'est mon code de triche pour accéder à l'intelligence. Insérez une pièce dans la [config](/api-config) !",
+                "☕ Besoin de mon café numérique ! Les tokens sont ma caféine, et sans clé API, je suis trop endormi pour discuter... Réveillez-moi dans les [paramètres](/api-config) !"
+            ]
+
+            import random
+            funny_message = random.choice(funny_messages)
+
             return jsonify({
-                "message": "Aucune clé API configurée. Veuillez configurer vos clés dans les paramètres.",
+                "message": funny_message,
                 "error": True,
                 "config_required": True,
                 "config_url": url_for('main.config_api')
