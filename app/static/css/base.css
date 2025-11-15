@@ -76,6 +76,18 @@ body {
 
 .icons {
     margin-left: auto;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.icons i {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.icons i:hover {
+    transform: scale(1.1);
 }
 
 .header-link {

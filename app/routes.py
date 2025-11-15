@@ -3252,7 +3252,7 @@ def save_wizard():
             settings = Settings(user_id=current_user.id)
             db.session.add(settings)
 
-        settings.bot_name = data.get('botName', 'MonChatbot')
+        settings.bot_name = data.get('botName', 'LeoBot')
         settings.bot_description = data.get('botDescription', '')
         settings.bot_welcome = data.get('welcomeMessage', 'Bonjour !')
 

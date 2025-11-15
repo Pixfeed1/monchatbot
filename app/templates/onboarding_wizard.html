@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Bienvenue sur MonChatbot{% endblock %}
+{% block title %}Bienvenue sur LeoBot{% endblock %}
 
 {% block extra_css %}
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
-/* Wizard d'onboarding - Respect de la charte MonChatbot */
+/* Wizard d'onboarding - Respect de la charte LeoBot */
 .wizard-overlay {
     position: fixed;
     top: 0;
@@ -127,7 +128,7 @@
 }
 
 .step-circle.completed::before {
-    content: '✓';
+    content: '✓'; /* Garde le checkmark car c'est un caractère standard, pas un emoji */
 }
 
 .step-label {
@@ -351,7 +352,7 @@
     <div class="wizard-container">
         <!-- Header -->
         <div class="wizard-header">
-            <h1>🤖 Bienvenue sur MonChatbot !</h1>
+            <h1><i data-lucide="bot" style="display: inline-block; width: 28px; height: 28px; vertical-align: middle;"></i> Bienvenue sur LeoBot !</h1>
             <p>Configurez votre assistant en 3 étapes simples</p>
         </div>
 
@@ -384,7 +385,7 @@
                 <div class="form-group">
                     <label for="botName">Nom du bot *</label>
                     <input type="text" id="botName" placeholder="Ex: Julie, AssistantPro, HelpBot..." required>
-                    <p class="form-hint">💡 Ce nom apparaîtra dans toutes les conversations</p>
+                    <p class="form-hint"><i data-lucide="lightbulb" style="display: inline-block; width: 14px; height: 14px; vertical-align: middle;"></i> Ce nom apparaîtra dans toutes les conversations</p>
                 </div>
 
                 <div class="form-group">
@@ -404,7 +405,7 @@
                 <div class="form-group">
                     <label for="welcomeMessage">Message d'accueil *</label>
                     <textarea id="welcomeMessage" rows="4" placeholder="Bonjour ! Comment puis-je vous aider aujourd'hui ?" required></textarea>
-                    <p class="form-hint">✨ Soyez chaleureux et accueillant</p>
+                    <p class="form-hint"><i data-lucide="sparkles" style="display: inline-block; width: 14px; height: 14px; vertical-align: middle;"></i> Soyez chaleureux et accueillant</p>
                 </div>
 
                 <!-- Preview -->
@@ -427,17 +428,17 @@
 
                 <div class="provider-cards">
                     <div class="provider-card" onclick="selectProvider('openai')" data-provider="openai">
-                        <div class="provider-icon">🔵</div>
+                        <div class="provider-icon"><i data-lucide="circle" style="color: #0066FF; width: 32px; height: 32px;"></i></div>
                         <div class="provider-name">OpenAI</div>
                         <div class="provider-description">GPT-4, GPT-3.5</div>
                     </div>
                     <div class="provider-card" onclick="selectProvider('claude')" data-provider="claude">
-                        <div class="provider-icon">🟣</div>
+                        <div class="provider-icon"><i data-lucide="circle" style="color: #7C3AED; width: 32px; height: 32px;"></i></div>
                         <div class="provider-name">Claude</div>
                         <div class="provider-description">Anthropic</div>
                     </div>
                     <div class="provider-card" onclick="selectProvider('mistral')" data-provider="mistral">
-                        <div class="provider-icon">🔶</div>
+                        <div class="provider-icon"><i data-lucide="hexagon" style="color: #F97316; width: 32px; height: 32px;"></i></div>
                         <div class="provider-name">Mistral</div>
                         <div class="provider-description">Mistral AI</div>
                     </div>
@@ -465,7 +466,7 @@
             <!-- Step 4: Succès -->
             <div class="wizard-step" data-step="4">
                 <div class="success-animation">
-                    <div class="success-icon">✓</div>
+                    <div class="success-icon"><i data-lucide="check" style="width: 40px; height: 40px;"></i></div>
                     <h2 class="step-title">Configuration terminée !</h2>
                     <p class="step-description">
                         Votre chatbot <strong id="finalBotName"></strong> est prêt à être utilisé.<br>
@@ -682,5 +683,8 @@ function saveWizardData() {
       .then(data => console.log('Wizard data saved', data))
       .catch(err => console.error('Error saving wizard data', err));
 }
+
+// Initialiser Lucide icons
+lucide.createIcons();
 </script>
 {% endblock %}

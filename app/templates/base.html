@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}MonChatbot{% endblock %}</title>
+    <title>{% block title %}LeoBot{% endblock %}</title>
 
     <!-- Lien vers le favicon dans app/static/images -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
@@ -31,7 +31,7 @@
         <!-- Titre cliquable renvoyant sur index -->
         <h1 class="header-title">
             <a href="{{ url_for('main.home') }}" class="header-link">
-                MonChatbot
+                LeoBot
             </a>
         </h1>
 
@@ -48,12 +48,12 @@
         <div class="sidebar" id="sidebar">
             <div class="menu-container">
                 <ul class="menu">
-                    <!-- Exemple : sous-menu MonChatbot -->
-                    <li class="has-submenu" id="monChatbotMenu">
+                    <!-- Exemple : sous-menu LeoBot -->
+                    <li class="has-submenu" id="leoBotMenu">
                         <a href="#" aria-expanded="false">
                             <!-- Icône robot -->
                             <i class="fas fa-robot"></i>
-                            <span class="menu-text">MonChatbot</span>
+                            <span class="menu-text">LeoBot</span>
                             <!-- Chevron droit par défaut -->
                             <i class="fas fa-chevron-right submenu-icon"></i>
                         </a>
@@ -245,8 +245,8 @@
     <!-- Footer commun -->
     <footer class="footer">
         <p>
-            MonChatbot @ 2025. Tous droits réservés. 
-            Propulsé par 
+            LeoBot @ 2025. Tous droits réservés.
+            Propulsé par
             <a href="https://pixfeed.net/" target="_blank">Pixfeed</a>
         </p>
     </footer>
