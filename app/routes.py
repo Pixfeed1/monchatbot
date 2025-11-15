@@ -18,6 +18,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import NotFound
 from dotenv import set_key, load_dotenv
+from sqlalchemy import text  # ← AJOUT pour corriger le warning
 
 # Importation des modèles et de la base de données
 from .models import (
@@ -231,7 +232,7 @@ def health_check():
         # Vérifier la base de données
         db_status = "ok"
         try:
-            db.session.execute('SELECT 1').fetchone()
+            db.session.execute(text('SELECT 1')).fetchone()  # ← CORRECTION ICI
         except Exception as e:
             db_status = f"error: {str(e)}"
         
