@@ -111,48 +111,24 @@ def login():
         password = request.form.get("password")
         logger.debug(f"Tentative de connexion pour l'utilisateur: {username}")
 
-        # Vérification reCAPTCHA si configuré
-        recaptcha_response = request.form.get("g-recaptcha-response")
-        if current_app.config.get("RECAPTCHA_SECRET_KEY"):
-            secret = current_app.config["RECAPTCHA_SECRET_KEY"]
-            verify_url = "https://www.google.com/recaptcha/api/siteverify"
-            payload = {"secret": secret, "response": recaptcha_response}
-            try:
-                r = requests.post(verify_url, data=payload, timeout=10).json()
-                
-                if not r.get("success"):
-                    logger.warning("Échec de la vérification reCAPTCHA")
-                    error = "Échec de la vérification reCAPTCHA."
-                    return render_template(
-                        "login.html",
-                        error=error,
-                        recaptcha_sitekey=current_app.config.get("RECAPTCHA_SITE_KEY", "")
-                    )
-            except Exception as e:
-                logger.warning(f"Erreur reCAPTCHA: {e}")
-
         # Vérification des identifiants
         user = User.query.filter_by(username=username).first()
-        
+
         if user and user.check_password(password):
             login_user(user, remember=True)
             logger.info(f"Connexion réussie pour: {username}")
-            
+
             next_page = session.get('next')
             if next_page:
                 session.pop('next', None)
                 return redirect(next_page)
-            
+
             return redirect(url_for("main.home"))
         else:
             logger.warning(f"Échec de connexion pour: {username}")
             error = "Identifiant ou mot de passe incorrect."
 
-    return render_template(
-        "login.html",
-        error=error,
-        recaptcha_sitekey=current_app.config.get("RECAPTCHA_SITE_KEY", "")
-    )
+    return render_template("login.html", error=error)
 
 
 @main_bp.route("/logout")
