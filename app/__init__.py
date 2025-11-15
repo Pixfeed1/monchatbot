@@ -39,7 +39,35 @@ def create_app():
     env_file = project_root / '.env'
     load_dotenv(dotenv_path=env_file)
     logger.info(f"»»»» Variables d'environnement chargées depuis: {env_file}")
-    logger.info(f"»»»» DATABASE_URL présent: {bool(os.getenv('DATABASE_URL'))}")
+
+    # Debug: afficher les variables PostgreSQL chargées
+    database_url = os.getenv('DATABASE_URL')
+    postgres_user = os.getenv('POSTGRES_USER')
+    postgres_password = os.getenv('POSTGRES_PASSWORD')
+    postgres_host = os.getenv('POSTGRES_HOST')
+    postgres_db = os.getenv('POSTGRES_DB')
+
+    logger.info(f"»»»» [DEBUG] DATABASE_URL présent: {bool(database_url)}")
+    if database_url:
+        # Masquer le mot de passe mais montrer le format
+        if '@' in database_url:
+            user_part = database_url.split('//')[1].split('@')[0]
+            host_part = database_url.split('@')[1]
+            if ':' in user_part:
+                user, pwd = user_part.split(':', 1)
+                # Montrer les 3 premiers et 3 derniers caractères du mot de passe
+                masked_pwd = f"{pwd[:3]}...{pwd[-3:]}" if len(pwd) > 6 else "***"
+                logger.info(f"»»»» [DEBUG] DATABASE_URL format: postgresql://{user}:{masked_pwd}@{host_part}")
+    else:
+        logger.info(f"»»»» [DEBUG] POSTGRES_USER: {postgres_user}")
+        logger.info(f"»»»» [DEBUG] POSTGRES_HOST: {postgres_host}")
+        logger.info(f"»»»» [DEBUG] POSTGRES_DB: {postgres_db}")
+        if postgres_password:
+            # Montrer les 3 premiers et 3 derniers caractères du mot de passe
+            masked = f"{postgres_password[:3]}...{postgres_password[-3:]}" if len(postgres_password) > 6 else "***"
+            logger.info(f"»»»» [DEBUG] POSTGRES_PASSWORD: {masked} (longueur: {len(postgres_password)})")
+        else:
+            logger.info(f"»»»» [DEBUG] POSTGRES_PASSWORD: NON DÉFINI")
     
     # Configuration CORS
     logger.info("»»»» Configuration de CORS")

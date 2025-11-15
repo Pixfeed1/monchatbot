@@ -18,9 +18,20 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL') or os.getenv('SQLALCHEMY_DATABASE_URI')
 
     if SQLALCHEMY_DATABASE_URI:
-        # Masquer le mot de passe dans les logs
-        safe_uri = SQLALCHEMY_DATABASE_URI.split('@')[1] if '@' in SQLALCHEMY_DATABASE_URI else 'unknown'
-        print(f"[DEBUG] DATABASE_URL trouvé: postgresql://***@{safe_uri}")
+        # Masquer le mot de passe dans les logs mais montrer les détails
+        if '@' in SQLALCHEMY_DATABASE_URI and '//' in SQLALCHEMY_DATABASE_URI:
+            user_part = SQLALCHEMY_DATABASE_URI.split('//')[1].split('@')[0]
+            host_part = SQLALCHEMY_DATABASE_URI.split('@')[1]
+            if ':' in user_part:
+                user, pwd = user_part.split(':', 1)
+                # Montrer les 3 premiers et 3 derniers caractères du mot de passe
+                masked_pwd = f"{pwd[:3]}...{pwd[-3:]}" if len(pwd) > 6 else "***"
+                print(f"[DEBUG] DATABASE_URL trouvé depuis .env")
+                print(f"[DEBUG]   User: {user}")
+                print(f"[DEBUG]   Password: {masked_pwd} (longueur: {len(pwd)})")
+                print(f"[DEBUG]   Host: {host_part}")
+        else:
+            print(f"[DEBUG] DATABASE_URL trouvé mais format inattendu: {SQLALCHEMY_DATABASE_URI[:20]}...")
 
     if not SQLALCHEMY_DATABASE_URI:
         # Configuration PostgreSQL par défaut
@@ -30,12 +41,37 @@ class Config:
         POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
         POSTGRES_DB = os.getenv('POSTGRES_DB', 'jurojinn_leo')
 
+        # Debug: afficher les valeurs lues
+        print(f"[DEBUG] DATABASE_URL non trouvé, construction depuis variables séparées:")
+        print(f"[DEBUG]   POSTGRES_USER: {POSTGRES_USER}")
+        print(f"[DEBUG]   POSTGRES_HOST: {POSTGRES_HOST}")
+        print(f"[DEBUG]   POSTGRES_PORT: {POSTGRES_PORT}")
+        print(f"[DEBUG]   POSTGRES_DB: {POSTGRES_DB}")
+        if POSTGRES_PASSWORD:
+            masked = f"{POSTGRES_PASSWORD[:3]}...{POSTGRES_PASSWORD[-3:]}" if len(POSTGRES_PASSWORD) > 6 else "***"
+            print(f"[DEBUG]   POSTGRES_PASSWORD: {masked} (longueur: {len(POSTGRES_PASSWORD)})")
+        else:
+            print(f"[DEBUG]   POSTGRES_PASSWORD: NON DÉFINI")
+
         SQLALCHEMY_DATABASE_URI = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
-        print(f"[DEBUG] DATABASE_URL non trouvé, construction de l'URI: postgresql://{POSTGRES_USER}:***@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
 
     # Support Heroku DATABASE_URL (commence par postgres:// au lieu de postgresql://)
     if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgres://', 'postgresql://', 1)
+        print(f"[DEBUG] URI Heroku corrigée: postgres:// -> postgresql://")
+
+    # Log final: afficher l'URI qui sera utilisée par SQLAlchemy
+    if SQLALCHEMY_DATABASE_URI:
+        if '@' in SQLALCHEMY_DATABASE_URI and '//' in SQLALCHEMY_DATABASE_URI:
+            try:
+                user_part = SQLALCHEMY_DATABASE_URI.split('//')[1].split('@')[0]
+                host_part = SQLALCHEMY_DATABASE_URI.split('@')[1]
+                if ':' in user_part:
+                    user, pwd = user_part.split(':', 1)
+                    masked_pwd = f"{pwd[:3]}...{pwd[-3:]}" if len(pwd) > 6 else "***"
+                    print(f"[DEBUG] URI finale SQLAlchemy: postgresql://{user}:{masked_pwd}@{host_part}")
+            except Exception as e:
+                print(f"[DEBUG] Erreur lors de l'affichage de l'URI: {e}")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
