@@ -1073,7 +1073,7 @@ def responses_wizard():
    ]
 
    return render_template(
-       'reponses.html',
+       'bot_config/reponses.html',
        config=config,
        settings=settings,
        vocabulary_terms=vocabulary_terms,
