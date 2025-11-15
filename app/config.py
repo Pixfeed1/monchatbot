@@ -19,11 +19,11 @@ class Config:
 
     if not SQLALCHEMY_DATABASE_URI:
         # Configuration PostgreSQL par défaut
-        POSTGRES_USER = os.getenv('POSTGRES_USER', 'monchatbot')
-        POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'monchatbot_password')
+        POSTGRES_USER = os.getenv('POSTGRES_USER', 'jurojinn_mvaertan')
+        POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'changez_ce_mot_de_passe')
         POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
         POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
-        POSTGRES_DB = os.getenv('POSTGRES_DB', 'monchatbot')
+        POSTGRES_DB = os.getenv('POSTGRES_DB', 'jurojinn_leo')
 
         SQLALCHEMY_DATABASE_URI = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
 

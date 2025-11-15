@@ -42,9 +42,9 @@ Téléchargez et installez depuis [postgresql.org/download/windows](https://www.
 sudo -u postgres psql
 
 # Dans le shell PostgreSQL, exécutez:
-CREATE USER monchatbot WITH PASSWORD 'monchatbot_password_secure';
-CREATE DATABASE monchatbot OWNER monchatbot;
-GRANT ALL PRIVILEGES ON DATABASE monchatbot TO monchatbot;
+CREATE USER jurojinn_mvaertan WITH PASSWORD 'votre_mot_de_passe_secure';
+CREATE DATABASE jurojinn_leo OWNER jurojinn_mvaertan;
+GRANT ALL PRIVILEGES ON DATABASE jurojinn_leo TO jurojinn_mvaertan;
 
 # Quitter
 \q
@@ -62,14 +62,14 @@ cp .env.example .env
 
 ```bash
 # Configuration PostgreSQL
-POSTGRES_USER=monchatbot
-POSTGRES_PASSWORD=monchatbot_password_secure
+POSTGRES_USER=jurojinn_mvaertan
+POSTGRES_PASSWORD=votre_mot_de_passe_secure
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=monchatbot
+POSTGRES_DB=jurojinn_leo
 
 # OU utilisez une URL complète
-DATABASE_URL=postgresql://monchatbot:monchatbot_password_secure@localhost:5432/monchatbot
+DATABASE_URL=postgresql://jurojinn_mvaertan:votre_mot_de_passe_secure@localhost:5432/jurojinn_leo
 
 # Générez une clé de chiffrement
 ENCRYPTION_KEY=<générez avec la commande ci-dessous>
@@ -164,14 +164,14 @@ DATABASE_URL=postgresql://user:pass@host:5432/db?sslmode=require
 
 ```
 # IPv4 local connections:
-host    monchatbot    monchatbot    127.0.0.1/32    md5
+host    jurojinn_leo    jurojinn_mvaertan    127.0.0.1/32    md5
 ```
 
 ## 🛠️ Commandes utiles PostgreSQL
 
 ```bash
 # Se connecter à la base
-psql -U monchatbot -d monchatbot
+psql -U jurojinn_mvaertan -d jurojinn_leo
 
 # Lister les tables
 \dt
@@ -183,10 +183,10 @@ psql -U monchatbot -d monchatbot
 SELECT COUNT(*) FROM "user";
 
 # Sauvegarder la base
-pg_dump -U monchatbot monchatbot > backup.sql
+pg_dump -U jurojinn_mvaertan jurojinn_leo > backup.sql
 
 # Restaurer la base
-psql -U monchatbot monchatbot < backup.sql
+psql -U jurojinn_mvaertan jurojinn_leo < backup.sql
 ```
 
 ## 📊 Monitoring
@@ -194,13 +194,13 @@ psql -U monchatbot monchatbot < backup.sql
 ### Voir les connexions actives
 
 ```sql
-SELECT * FROM pg_stat_activity WHERE datname = 'monchatbot';
+SELECT * FROM pg_stat_activity WHERE datname = 'jurojinn_leo';
 ```
 
 ### Taille de la base
 
 ```sql
-SELECT pg_size_pretty(pg_database_size('monchatbot'));
+SELECT pg_size_pretty(pg_database_size('jurojinn_leo'));
 ```
 
 ## 🚨 Dépannage
@@ -228,7 +228,7 @@ pip install psycopg2-binary
 ### Erreur: "database does not exist"
 
 ```bash
-createdb -U postgres monchatbot
+createdb -U postgres jurojinn_leo
 ```
 
 ## 🌐 Déploiement (Heroku, Render, etc.)
