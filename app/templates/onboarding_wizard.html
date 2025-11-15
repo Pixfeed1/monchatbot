@@ -629,7 +629,26 @@ function updateUI() {
 
 function skipWizard() {
     if (confirm('Êtes-vous sûr de vouloir passer cette configuration ? Vous pourrez la faire plus tard.')) {
-        window.location.href = '{{ url_for("main.home") }}';
+        // Appeler l'API pour marquer l'onboarding comme complété
+        fetch('{{ url_for("main.skip_onboarding") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.href = '{{ url_for("main.home") }}';
+            } else {
+                console.error('Erreur lors du skip onboarding');
+                // Rediriger quand même
+                window.location.href = '{{ url_for("main.home") }}';
+            }
+        }).catch(err => {
+            console.error('Erreur:', err);
+            // Rediriger quand même
+            window.location.href = '{{ url_for("main.home") }}';
+        });
     }
 }
 

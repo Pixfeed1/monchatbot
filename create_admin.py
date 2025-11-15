@@ -28,22 +28,24 @@ if __name__ == '__main__':
 
         if existing_admin:
             print(f"[INFO] L'utilisateur '{admin_login}' existe déjà")
-            print("[INFO] Mise à jour du mot de passe...")
+            print("[INFO] Mise à jour du mot de passe et onboarding...")
             existing_admin.set_password(admin_password)
+            existing_admin.onboarding_completed = True  # S'assurer que le wizard ne s'affiche pas
             db.session.commit()
-            print(f"[OK] Mot de passe mis à jour\n")
+            print(f"[OK] Mot de passe mis à jour et onboarding marqué comme complété\n")
         else:
             print(f"[INFO] Création de '{admin_login}'...")
             # Si admin_login est un email, utiliser comme email ET username
             email = admin_login if '@' in admin_login else f'{admin_login}@example.com'
             admin_user = User(
                 username=admin_login,
-                email=email
+                email=email,
+                onboarding_completed=True  # Pas de wizard pour l'admin
             )
             admin_user.set_password(admin_password)
             db.session.add(admin_user)
             db.session.commit()
-            print(f"[OK] Utilisateur créé\n")
+            print(f"[OK] Utilisateur créé avec onboarding complété\n")
 
         # Afficher tous les utilisateurs
         all_users = User.query.all()
