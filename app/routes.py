@@ -465,15 +465,19 @@ def test_api_key():
 
 
 def test_openai_key(api_key, model):
-    """Teste une clé OpenAI."""
+    """Teste une clé OpenAI avec format system/user."""
     try:
         import openai
-        
+
         client = openai.OpenAI(api_key=api_key)
-        
+
+        # Format avec system et user pour tester le format réel
         response = client.chat.completions.create(
             model=model,
-            messages=[{"role": "user", "content": "Test de connexion"}],
+            messages=[
+                {"role": "system", "content": "Tu es un assistant de test."},
+                {"role": "user", "content": "Test"}
+            ],
             max_tokens=5,
             timeout=10
         )
@@ -501,16 +505,20 @@ def test_openai_key(api_key, model):
 
 
 def test_mistral_key(api_key, model):
-    """Teste une clé Mistral."""
+    """Teste une clé Mistral avec format system/user."""
     try:
         headers = {
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json'
         }
-        
+
+        # Format avec system et user pour tester le format réel
         payload = {
             'model': model,
-            'messages': [{'role': 'user', 'content': 'Test de connexion'}],
+            'messages': [
+                {'role': 'system', 'content': 'Tu es un assistant de test.'},
+                {'role': 'user', 'content': 'Test'}
+            ],
             'max_tokens': 5
         }
         
@@ -563,16 +571,18 @@ def test_mistral_key(api_key, model):
 
 
 def test_claude_key(api_key, model):
-    """Teste une clé Claude (Anthropic)."""
+    """Teste une clé Claude (Anthropic) avec format system+user."""
     try:
         from anthropic import Anthropic
 
         client = Anthropic(api_key=api_key)
 
+        # Format avec system séparé (spécifique à Claude) + messages user
         response = client.messages.create(
             model=model,
             max_tokens=5,
-            messages=[{"role": "user", "content": "Test de connexion"}]
+            system="Tu es un assistant de test.",
+            messages=[{"role": "user", "content": "Test"}]
         )
 
         return {
@@ -645,10 +655,10 @@ def chatbot():
         
         # Construction du contexte enrichi
         logger.info(f"Construction du contexte pour {current_user.username}: {user_message[:50]}...")
-        
+
         conversation_history = session.get('conversation_history', [])
-        
-        enriched_prompt, prompt_metadata = context_builder.build_system_prompt(
+
+        prompts, prompt_metadata = context_builder.build_system_prompt(
             user_message=user_message,
             session_context={
                 'session_id': session.get('session_id', str(uuid.uuid4())),
@@ -656,19 +666,20 @@ def chatbot():
                 'user_id': current_user.id
             }
         )
-        
+
         logger.info(f"Métadonnées du prompt: {prompt_metadata}")
-        
+
         # Configuration adaptative basée sur les métadonnées
         complexity = prompt_metadata.get('complexity', 1)
-        
+
         # Récupérer les informations du bot pour le post-traitement
         bot_info = context_builder._get_bot_info()
-        
+
         # Faire l'appel API avec les clés de l'utilisateur ET correction d'identité
+        # prompts = {'system': str, 'user': str}
         api_response = make_api_call_with_user_keys(
-            enriched_prompt, 
-            user_config, 
+            prompts,
+            user_config,
             complexity,
             bot_info=bot_info  # ← NOUVEAU: Passage des infos bot
         )
@@ -798,52 +809,62 @@ def get_user_api_config():
         return None
 
 
-def make_api_call_with_user_keys(prompt, user_config, complexity, bot_info=None):
+def make_api_call_with_user_keys(prompts, user_config, complexity, bot_info=None):
     """
     Fait l'appel API avec les clés de l'utilisateur.
-    VERSION MISE À JOUR avec correction forcée de l'identité.
+    VERSION MISE À JOUR avec séparation system/user et correction forcée de l'identité.
+
+    Args:
+        prompts: Dict avec 'system' (instructions) et 'user' (message utilisateur)
+        user_config: Config API utilisateur
+        complexity: Niveau de complexité 0-3
+        bot_info: Infos du bot pour post-traitement
     """
     try:
         provider = user_config['provider']
         api_key = user_config['api_key']
         model = user_config['model']
-        
+
+        # Extraire system et user du dict prompts
+        system_prompt = prompts.get('system', '')
+        user_message = prompts.get('user', '')
+
         # Valider et limiter la complexité
         complexity = max(0, min(complexity, 3))
-        
+
         # Configuration adaptée à la complexité
         token_limits = [100, 150, 200, 300]
         temperature_values = [0.3, 0.5, 0.7, 0.8]
-        
+
         max_tokens = token_limits[complexity]
         temperature = temperature_values[complexity]
-        
+
         if provider == 'openai':
-            response = call_openai_api(api_key, model, prompt, max_tokens, temperature)
+            response = call_openai_api(api_key, model, system_prompt, user_message, max_tokens, temperature)
         elif provider == 'mistral':
-            response = call_mistral_api(api_key, model, prompt, max_tokens, temperature)
+            response = call_mistral_api(api_key, model, system_prompt, user_message, max_tokens, temperature)
         elif provider == 'claude':
-            response = call_claude_api(api_key, model, prompt, max_tokens, temperature)
+            response = call_claude_api(api_key, model, system_prompt, user_message, max_tokens, temperature)
         else:
             return {'error': f'Provider {provider} non supporté'}
-        
+
         # POST-TRAITEMENT POUR FORCER L'IDENTITÉ
         if 'message' in response and bot_info:
             original_message = response['message']
             corrected_message = post_process_api_response(original_message, bot_info)
-            
+
             if original_message != corrected_message:
                 logger.info("🔧 Identité forcée dans la réponse API")
                 response['message'] = corrected_message
-response['identity_corrected'] = True
-           else:
-               response['identity_corrected'] = False
-       
-       return response
-           
-   except Exception as e:
-       logger.error(f"Erreur appel API: {e}")
-       return {'error': str(e)}
+                response['identity_corrected'] = True
+            else:
+                response['identity_corrected'] = False
+
+        return response
+
+    except Exception as e:
+        logger.error(f"Erreur appel API: {e}")
+        return {'error': str(e)}
 
 
 def post_process_api_response(response_text: str, bot_info: Dict[str, str]) -> str:
@@ -876,21 +897,27 @@ def post_process_api_response(response_text: str, bot_info: Dict[str, str]) -> s
    return corrected_text
 
 
-def call_openai_api(api_key, model, prompt, max_tokens, temperature):
-   """Appel à l'API OpenAI."""
+def call_openai_api(api_key, model, system_prompt, user_message, max_tokens, temperature):
+   """Appel à l'API OpenAI avec séparation system/user."""
    try:
        import openai
-       
+
        client = openai.OpenAI(api_key=api_key)
-       
+
+       # Format correct OpenAI: messages avec role system et user séparés
+       messages = [
+           {"role": "system", "content": system_prompt},
+           {"role": "user", "content": user_message}
+       ]
+
        response = client.chat.completions.create(
            model=model,
-           messages=[{"role": "user", "content": prompt}],
+           messages=messages,
            max_tokens=max_tokens,
            temperature=temperature,
            timeout=30
        )
-       
+
        return {
            'message': response.choices[0].message.content,
            'usage': {
@@ -899,34 +926,40 @@ def call_openai_api(api_key, model, prompt, max_tokens, temperature):
                'total_tokens': response.usage.total_tokens
            } if response.usage else {}
        }
-       
+
    except Exception as e:
        logger.error(f"Erreur OpenAI API: {e}")
        return {'error': f'Erreur OpenAI: {str(e)}'}
 
 
-def call_mistral_api(api_key, model, prompt, max_tokens, temperature):
-   """Appel à l'API Mistral."""
+def call_mistral_api(api_key, model, system_prompt, user_message, max_tokens, temperature):
+   """Appel à l'API Mistral avec séparation system/user."""
    try:
        headers = {
            'Authorization': f'Bearer {api_key}',
            'Content-Type': 'application/json'
        }
-       
+
+       # Format correct Mistral: messages avec role system et user séparés
+       messages = [
+           {'role': 'system', 'content': system_prompt},
+           {'role': 'user', 'content': user_message}
+       ]
+
        payload = {
            'model': model,
-           'messages': [{'role': 'user', 'content': prompt}],
+           'messages': messages,
            'max_tokens': max_tokens,
            'temperature': temperature
        }
-       
+
        response = requests.post(
            'https://api.mistral.ai/v1/chat/completions',
            headers=headers,
            json=payload,
            timeout=30
        )
-       
+
        if response.status_code == 200:
            data = response.json()
            return {
@@ -937,24 +970,27 @@ def call_mistral_api(api_key, model, prompt, max_tokens, temperature):
            error_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else {}
            error_msg = error_data.get('message', f"Erreur HTTP {response.status_code}")
            return {'error': f'Erreur Mistral: {error_msg}'}
-           
+
    except Exception as e:
        logger.error(f"Erreur Mistral API: {e}")
        return {'error': f'Erreur Mistral: {str(e)}'}
 
 
-def call_claude_api(api_key, model, prompt, max_tokens, temperature):
-   """Appel à l'API Claude (Anthropic)."""
+def call_claude_api(api_key, model, system_prompt, user_message, max_tokens, temperature):
+   """Appel à l'API Claude (Anthropic) avec format officiel system+messages."""
    try:
        from anthropic import Anthropic
 
        client = Anthropic(api_key=api_key)
 
+       # Format CORRECT pour Claude: paramètre system séparé + messages user
+       # Documentation: https://docs.anthropic.com/en/api/messages
        response = client.messages.create(
            model=model,
            max_tokens=max_tokens,
            temperature=temperature,
-           messages=[{"role": "user", "content": prompt}]
+           system=system_prompt,  # ← Paramètre séparé pour Claude (pas dans messages)
+           messages=[{"role": "user", "content": user_message}]
        )
 
        return {
