@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Flux de Conversation{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/flux_conversation.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="flow-container">
+    <h1>Configuration des Flux de Conversation</h1>
+
+    <!-- Barre d'outils -->
+    <div class="flow-toolbar">
+        <button class="btn btn-primary" id="newFlowBtn">
+            <i class="fas fa-plus"></i> Nouveau Flux
+        </button>
+        <button class="btn btn-secondary" id="importFlowBtn">
+            <i class="fas fa-file-import"></i> Importer
+        </button>
+        <button class="btn btn-secondary" id="exportFlowBtn">
+            <i class="fas fa-file-export"></i> Exporter
+        </button>
+    </div>
+
+    <!-- Zone principale -->
+    <div class="flow-workspace">
+        <!-- Liste des flux -->
+        <div class="flow-list">
+            <div class="list-header">
+                <h3>Mes Flux</h3>
+                <input type="text" placeholder="Rechercher un flux..." class="flow-search">
+            </div>
+            <div class="flows">
+                <!-- Les flux seront injectés ici -->
+            </div>
+        </div>
+
+        <!-- Éditeur de flux -->
+        <div class="flow-editor">
+            <div class="editor-header">
+                <input type="text" class="flow-name" placeholder="Nom du flux">
+                <div class="editor-actions">
+                    <button class="btn btn-primary" id="saveFlowBtn">Enregistrer</button>
+                    <button class="btn btn-secondary" id="testFlowBtn">Tester</button>
+                </div>
+            </div>
+
+            <!-- Zone de construction du flux -->
+            <div class="flow-builder">
+                <div class="node-palette">
+                    <h4>Éléments</h4>
+                    <div class="node-item" draggable="true" data-type="message">
+                        <i class="fas fa-comment"></i>
+                        Message
+                    </div>
+                    <div class="node-item" draggable="true" data-type="condition">
+                        <i class="fas fa-code-branch"></i>
+                        Condition
+                    </div>
+                    <div class="node-item" draggable="true" data-type="input">
+                        <i class="fas fa-keyboard"></i>
+                        Saisie
+                    </div>
+                    <div class="node-item" draggable="true" data-type="action">
+                        <i class="fas fa-bolt"></i>
+                        Action
+                    </div>
+                    <div class="node-item" draggable="true" data-type="api">
+                        <i class="fas fa-plug"></i>
+                        API
+                    </div>
+                </div>
+
+                <div class="flow-canvas">
+                    <!-- Le canvas de construction du flux -->
+                    <div class="flow-nodes" id="flowNodes">
+                        <!-- Les nœuds seront ajoutés ici -->
+                    </div>
+                </div>
+
+                <div class="node-properties">
+                    <h4>Propriétés</h4>
+                    <div class="properties-content">
+                        <!-- Les propriétés du nœud sélectionné seront affichées ici -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de test -->
+    <div class="modal" id="testModal">
+        <div class="modal-content">
+            <h3>Test du Flux</h3>
+            <div class="test-conversation">
+                <!-- La conversation de test sera affichée ici -->
+            </div>
+            <div class="test-input">
+                <input type="text" placeholder="Entrez votre message...">
+                <button class="btn btn-primary">Envoyer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/flux_conversation.js') }}"></script>
+{% endblock %}

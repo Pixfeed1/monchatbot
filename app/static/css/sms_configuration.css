@@ -1,0 +1,38 @@
+/* Styles spécifiques pour la configuration SMS */
+.settings input[type="password"] {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+}
+
+.settings input[type="password"]:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+/* Style des sections Twilio et Vonage */
+#twilio_settings,
+#vonage_settings {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+#twilio_settings h2,
+#vonage_settings h2 {
+    color: #1e40af;
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+/* Style du sélecteur de fournisseur */
+#sms_provider {
+    margin-bottom: 20px;
+}

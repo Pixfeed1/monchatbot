@@ -1,0 +1,36 @@
+DEBUG:simple_parsing.helpers.serialization.serializable:Registering a new Serializable subclass: <class 'simple_parsing.helpers.serialization.serializable.Serializable'>
+DEBUG:simple_parsing.helpers.serialization.serializable:parents: [<class 'simple_parsing.helpers.serialization.serializable.SerializableMixin'>]
+DEBUG:simple_parsing.helpers.serialization.serializable:Registering a new Serializable subclass: <class 'simple_parsing.helpers.serialization.serializable.FrozenSerializable'>
+DEBUG:simple_parsing.helpers.serialization.serializable:parents: [<class 'simple_parsing.helpers.serialization.serializable.SerializableMixin'>]
+DEBUG:simple_parsing.helpers.serialization.serializable:Registering a new Serializable subclass: <class 'simple_parsing.helpers.serialization.serializable.SimpleSerializable'>
+DEBUG:simple_parsing.helpers.serialization.serializable:Registering a new Serializable subclass: <class 'simple_parsing.helpers.serialization.yaml_serialization.YamlSerializable'>
+DEBUG:simple_parsing.helpers.serialization.serializable:parents: [<class 'simple_parsing.helpers.serialization.serializable.Serializable'>, <class 'simple_parsing.helpers.serialization.serializable.SerializableMixin'>]
+DEBUG:simple_parsing.helpers.serialization.serializable:Parent class <class 'simple_parsing.helpers.serialization.serializable.Serializable'> has decode_into_subclasses = False
+DEBUG:simple_parsing.helpers.serialization.serializable:Registering a new Serializable subclass: <class 'simple_parsing.helpers.hparams.hyperparameters.BoundInfo'>
+DEBUG:simple_parsing.helpers.serialization.serializable:parents: [<class 'simple_parsing.helpers.serialization.serializable.Serializable'>, <class 'simple_parsing.helpers.serialization.serializable.SerializableMixin'>]
+DEBUG:simple_parsing.helpers.serialization.serializable:Parent class <class 'simple_parsing.helpers.serialization.serializable.Serializable'> has decode_into_subclasses = False
+DEBUG:simple_parsing.helpers.serialization.serializable:Registering a new Serializable subclass: <class 'simple_parsing.helpers.hparams.hyperparameters.HyperParameters'>
+DEBUG:simple_parsing.helpers.serialization.serializable:Registering a new Serializable subclass: <class 'mistral_inference.lora.LoraArgs'>
+DEBUG:simple_parsing.helpers.serialization.serializable:parents: [<class 'simple_parsing.helpers.serialization.serializable.Serializable'>, <class 'simple_parsing.helpers.serialization.serializable.SerializableMixin'>]
+DEBUG:simple_parsing.helpers.serialization.serializable:Parent class <class 'simple_parsing.helpers.serialization.serializable.Serializable'> has decode_into_subclasses = False
+DEBUG:simple_parsing.helpers.serialization.serializable:Registering a new Serializable subclass: <class 'mistral_inference.moe.MoeArgs'>
+DEBUG:simple_parsing.helpers.serialization.serializable:parents: [<class 'simple_parsing.helpers.serialization.serializable.Serializable'>, <class 'simple_parsing.helpers.serialization.serializable.SerializableMixin'>]
+DEBUG:simple_parsing.helpers.serialization.serializable:Parent class <class 'simple_parsing.helpers.serialization.serializable.Serializable'> has decode_into_subclasses = False
+DEBUG:simple_parsing.helpers.serialization.serializable:Registering a new Serializable subclass: <class 'mistral_inference.args.TransformerArgs'>
+DEBUG:simple_parsing.helpers.serialization.serializable:parents: [<class 'simple_parsing.helpers.serialization.serializable.Serializable'>, <class 'simple_parsing.helpers.serialization.serializable.SerializableMixin'>]
+DEBUG:simple_parsing.helpers.serialization.serializable:Parent class <class 'simple_parsing.helpers.serialization.serializable.Serializable'> has decode_into_subclasses = False
+DEBUG:simple_parsing.helpers.serialization.serializable:Registering a new Serializable subclass: <class 'mistral_inference.args.MambaArgs'>
+DEBUG:simple_parsing.helpers.serialization.serializable:parents: [<class 'simple_parsing.helpers.serialization.serializable.Serializable'>, <class 'simple_parsing.helpers.serialization.serializable.SerializableMixin'>]
+DEBUG:simple_parsing.helpers.serialization.serializable:Parent class <class 'simple_parsing.helpers.serialization.serializable.Serializable'> has decode_into_subclasses = False
+INFO:app:Démarrage de la création de l'application Flask
+sys.path: ['D:\\monchat-bot', 'C:\\laragon\\bin\\python\\python-3.10\\python310.zip', 'C:\\laragon\\bin\\python\\python-3.10\\DLLs', 'C:\\laragon\\bin\\python\\python-3.10\\lib', 'C:\\laragon\\bin\\python\\python-3.10', 'C:\\laragon\\bin\\python\\python-3.10\\lib\\site-packages', 'C:\\laragon\\bin\\python\\python-3.10\\lib\\site-packages\\win32', 'C:\\laragon\\bin\\python\\python-3.10\\lib\\site-packages\\win32\\lib', 'C:\\laragon\\bin\\python\\python-3.10\\lib\\site-packages\\Pythonwin']
+Traceback (most recent call last):
+  File "D:\monchat-bot\run.py", line 37, in <module>
+    app = create_app()
+  File "D:\monchat-bot\app\__init__.py", line 69, in create_app
+    Config.init_app(app)
+  File "D:\monchat-bot\app\config.py", line 117, in init_app
+    print(f"\U0001f539 Modèle de base : {'Mistral' if cls.USE_LOCAL_MODEL else 'Autre'}")
+  File "C:\laragon\bin\python\python-3.10\lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f539' in position 0: character maps to <undefined>

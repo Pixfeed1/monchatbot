@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}MonChatbot{% endblock %}</title>
+
+    <!-- Lien vers le favicon dans app/static/images -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+
+    <!-- Lien vers Font Awesome pour les icônes (chevrons, etc.) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Feuilles de style (ex. base.css) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+
+    <!-- Balise meta pour CSRF Token -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- HEADER bleu commun -->
+    <header class="header">
+        <!-- Menu hamburger -->
+        <div class="hamburger" id="hamburger-menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <!-- Titre cliquable renvoyant sur index -->
+        <h1 class="header-title">
+            <a href="{{ url_for('main.home') }}" class="header-link">
+                MonChatbot
+            </a>
+        </h1>
+
+        <!-- Icônes à droite (ex. notifications, profil, paramètres) -->
+        <div class="icons">
+            <i class="fas fa-bell"></i>
+            <i class="fas fa-user-circle"></i>
+            <i class="fas fa-cog"></i>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- SIDEBAR (fond sombre) -->
+        <div class="sidebar" id="sidebar">
+            <div class="menu-container">
+                <ul class="menu">
+                    <!-- Exemple : sous-menu MonChatbot -->
+                    <li class="has-submenu" id="monChatbotMenu">
+                        <a href="#" aria-expanded="false">
+                            <!-- Icône robot -->
+                            <i class="fas fa-robot"></i>
+                            <span class="menu-text">MonChatbot</span>
+                            <!-- Chevron droit par défaut -->
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <div class="submenu-container">
+                            <ul class="submenu">
+                                <li>
+                                    <a href="{{ url_for('main.general_settings') }}">
+                                        Paramètres Généraux
+                                    </a>
+                                </li>
+                                <!-- Nouveau sous-menu pour "Contenu" -->
+                                <li class="has-submenu">
+                                    <a href="#" aria-expanded="false">
+                                        Contenu
+                                        <i class="fas fa-chevron-right submenu-icon"></i>
+                                    </a>
+                                    <div class="submenu-container">
+                                        <ul class="submenu">
+                                            <li>
+                                                <a href="{{ url_for('main.reponses') }}">
+                                                    Configuration des Réponses
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('main.base_connaissances') }}">
+                                                    Base de Connaissances
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('main.flux_conversation') }}">
+                                                    Flux de Conversation
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ url_for('main.actions') }}">
+                                                    Actions et Automatisations
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                <li class="has-submenu">
+                                    <a href="#" aria-expanded="false">
+                                        Suivi et analyses
+                                        <i class="fas fa-chevron-right submenu-icon"></i>
+                                    </a>
+                                    <div class="submenu-container">
+                                        <ul class="submenu">
+                                            <li><a href="#">Statistiques</a></li>
+                                            <li><a href="#">Requêtes non comprises</a></li>
+                                        </ul>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Exemple : Configuration -->
+                    <li class="has-submenu" id="configurationMenu">
+                        <a href="#" aria-expanded="false">
+                            <i class="fas fa-cogs"></i>
+                            <span class="menu-text">Configuration</span>
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <div class="submenu-container">
+                            <ul class="submenu">
+                                <li><a href="{{ url_for('main.config_api') }}">API</a></li>
+                                <li class="has-submenu">
+                                    <a href="#" aria-expanded="false">
+                                        Intégration
+                                        <i class="fas fa-chevron-right submenu-icon"></i>
+                                    </a>
+                                    <div class="submenu-container">
+                                        <ul class="submenu">
+                                            <li class="has-submenu">
+                                                <a href="#" aria-expanded="false">
+                                                    Email
+                                                    <i class="fas fa-chevron-right submenu-icon"></i>
+                                                </a>
+                                                <div class="submenu-container">
+                                                    <ul class="submenu">
+                                                        <li><a href="{{ url_for('main.smtp_settings') }}">Paramètres SMTP</a></li>
+                                                        <li><a href="#">Modèles d'Emails</a></li>
+                                                    </ul>
+                                                </div>
+                                            </li>
+                                            <li class="has-submenu">
+                                                <a href="#" aria-expanded="false">
+                                                    SMS
+                                                    <i class="fas fa-chevron-right submenu-icon"></i>
+                                                </a>
+                                                <div class="submenu-container">
+                                                    <ul class="submenu">
+                                                        <li><a href="{{ url_for('main.sms_configuration') }}">Choix du fournisseur</a></li>
+                                                        <li><a href="#">Modèles de SMS</a></li>
+                                                    </ul>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                <li class="has-submenu">
+                                    <a href="#" aria-expanded="false">
+                                        Gestion des comptes
+                                        <i class="fas fa-chevron-right submenu-icon"></i>
+                                    </a>
+                                    <div class="submenu-container">
+                                        <ul class="submenu">
+                                            <li><a href="#">Paramètres de connexion</a></li>
+                                            <li><a href="#">Utilisateur</a></li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                <li><a href="#">Options Avancées</a></li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Exemple : Canaux de Communication -->
+                    <li class="has-submenu" id="communicationMenu">
+                        <a href="#" aria-expanded="false">
+                            <i class="fas fa-comments"></i>
+                            <span class="menu-text">Canaux de Communication</span>
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <div class="submenu-container">
+                            <ul class="submenu">
+                                <li><a href="#">Nombre d'e-mails envoyés</a></li>
+                                <li><a href="#">Nombre de SMS envoyés</a></li>
+                                <li><a href="#">Réponses emails/SMS</a></li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <!-- Exemple : Recommandations -->
+                    <li class="has-submenu" id="recommendationMenu">
+                        <a href="#" aria-expanded="false">
+                            <i class="fas fa-star"></i>
+                            <span class="menu-text">Recommandations</span>
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <div class="submenu-container">
+                            <ul class="submenu">
+                                <li><a href="#">Créer une recommandation</a></li>
+                                <li><a href="#">Suggestions de recommandation</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Lien de déconnexion mis à jour -->
+            <a href="{{ url_for('main.logout') }}" class="logout-link">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="menu-text">Déconnexion</span>
+            </a>
+        </div>
+
+        <!-- Contenu principal (spécifique à chaque page) -->
+        <div class="main-content">
+            <!-- Section des messages flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Footer commun -->
+    <footer class="footer">
+        <p>
+            MonChatbot @ 2025. Tous droits réservés. 
+            Propulsé par 
+            <a href="https://pixfeed.net/" target="_blank">Pixfeed</a>
+        </p>
+    </footer>
+
+    <!-- Script JS commun (pour le hamburger, la sidebar, etc.) -->
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

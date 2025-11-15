@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Paramètres SMTP{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/smtp_settings.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1>Paramètres SMTP</h1>
+
+<div class="info">
+    Configurez les paramètres SMTP pour permettre à ImmoBot d'envoyer des emails via votre serveur de messagerie.
+</div>
+
+<form method="POST" action="{{ url_for('main.smtp_settings') }}" class="settings">
+    <!-- Champ CSRF -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    
+    <label for="smtp-server">Adresse du Serveur SMTP :</label>
+    <input type="text" id="smtp-server" name="smtp_server" value="{{ settings.smtp_server if settings.smtp_server else '' }}" placeholder="smtp.exemple.com" required>
+
+    <label for="smtp-port">Port SMTP :</label>
+    <input type="number" id="smtp-port" name="smtp_port" value="{{ settings.smtp_port if settings.smtp_port else '' }}" placeholder="587" required>
+
+    <label for="smtp-username">Nom d'utilisateur :</label>
+    <input type="text" id="smtp-username" name="smtp_username" value="{{ settings.smtp_username if settings.smtp_username else '' }}" placeholder="votre.email@exemple.com" required>
+
+    <label for="smtp-password">Mot de passe :</label>
+    <input type="password" id="smtp-password" name="smtp_password" placeholder="********" class="form-control">
+
+    <label for="smtp-security">Type de Sécurité :</label>
+    <select id="smtp-security" name="smtp_security" required>
+        <option value="">-- Sélectionnez --</option>
+        <option value="none" {% if settings.smtp_security == 'none' %}selected{% endif %}>Aucun</option>
+        <option value="ssl" {% if settings.smtp_security == 'ssl' %}selected{% endif %}>SSL</option>
+        <option value="tls" {% if settings.smtp_security == 'tls' %}selected{% endif %}>TLS</option>
+    </select>
+
+    <label for="from-email">Adresse Email de l'expéditeur :</label>
+    <input type="email" id="from-email" name="from_email" value="{{ settings.from_email if settings.from_email else '' }}" placeholder="expediteur@exemple.com" required class="form-control">
+
+    <label for="from-name">Nom de l'expéditeur :</label>
+    <input type="text" id="from-name" name="from_name" value="{{ settings.from_name if settings.from_name else '' }}" placeholder="ImmoBot" required>
+
+    <button type="submit">Enregistrer</button>
+</form>
+{% endblock %}

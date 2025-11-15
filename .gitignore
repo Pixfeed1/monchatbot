@@ -1,0 +1,13 @@
+.gradle/ 
+build/ 
+node_modules/ 
+.idea/ 
+*.safetensors 
+__pycache__/ 
+*.log 
+instance/ 
+venv/ 
+.env 
+*.bin 
+*.safetensors 
+app/models/mistralgros/ 

@@ -1,0 +1,193 @@
+/* Styles spécifiques pour la page des compétences */
+
+.competences-container {
+    padding: 20px;
+}
+
+/* Style des cartes de configuration */
+.config-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.config-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* En-tête de carte */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.card-header h3 {
+    color: #1e40af;
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+/* Contenu de la carte */
+.card-content {
+    transition: opacity 0.3s ease;
+}
+
+.card-content.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Groupes de cases à cocher */
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 4px;
+    background-color: #f8fafc;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.checkbox-group label:hover {
+    background-color: #e2e8f0;
+}
+
+/* Style des select */
+select.form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml,...");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    padding-right: 30px;
+}
+
+/* Boutons d'action */
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Indicateurs de niveau */
+.niveau-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-left: 10px;
+}
+
+.niveau-basic {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.niveau-advanced {
+    background-color: #cff4fc;
+    color: #055160;
+}
+
+.niveau-expert {
+    background-color: #cfe2ff;
+    color: #084298;
+}
+
+/* États de switch personnalisés */
+.switch input:checked + .slider {
+    background-color: #0d6efd;
+}
+
+.switch input:focus + .slider {
+    box-shadow: 0 0 1px #0d6efd;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.config-card {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .competences-container {
+        padding: 10px;
+    }
+
+    .checkbox-group {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions button {
+        width: 100%;
+    }
+}
+
+/* États de validation */
+.form-group.has-error input,
+.form-group.has-error select {
+    border-color: #dc3545;
+}
+
+.form-group.has-error .error-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 5px;
+}
+
+/* Tooltips d'aide */
+.help-tooltip {
+    position: relative;
+    display: inline-block;
+    margin-left: 5px;
+    color: #6c757d;
+    cursor: help;
+}
+
+.help-tooltip:hover::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px 10px;
+    background-color: #333;
+    color: white;
+    font-size: 0.875rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 1000;
+}

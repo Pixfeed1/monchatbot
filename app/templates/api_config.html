@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration API{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/general_settings.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/api_config.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1>Configuration API</h1>
+
+<div class="flash-messages">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash success">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
+<!-- Formulaire principal -->
+<form id="apiConfigForm" method="POST" class="settings">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    
+    <!-- Sélection du provider -->
+    <label for="provider_select">Choisissez votre fournisseur d'API :</label>
+    <select id="provider_select" name="provider_select" required>
+        <option value="">-- Sélectionnez un provider --</option>
+        <option value="openai" {% if current_config.provider == 'openai' %}selected{% endif %}>OpenAI (GPT)</option>
+        <option value="mistral" {% if current_config.provider == 'mistral' %}selected{% endif %}>Mistral AI</option>
+    </select>
+    
+    <!-- Section OpenAI (cachée par défaut) -->
+    <div id="openai_section" class="api-section hidden">
+        <h3>Configuration OpenAI</h3>
+        
+        <label for="gpt_key">Clé API OpenAI :</label>
+        <input type="password" id="gpt_key" name="gpt_key" 
+               placeholder="sk-proj-xxxxxxxxxxxxxxxxx ou sk-xxxxxxxxxxxxxxxxx"
+               autocomplete="off">
+        <small style="color: #666;">Votre clé API commence généralement par "sk-"</small>
+        
+        <label for="model_select">Modèle GPT :</label>
+        <select id="model_select" name="model_select">
+            <option value="gpt-3.5-turbo" {% if current_config.openai_model == 'gpt-3.5-turbo' %}selected{% endif %}>GPT-3.5 Turbo (Recommandé)</option>
+            <option value="gpt-4o-mini" {% if current_config.openai_model == 'gpt-4o-mini' %}selected{% endif %}>GPT-4o Mini</option>
+            <option value="gpt-4o" {% if current_config.openai_model == 'gpt-4o' %}selected{% endif %}>GPT-4o</option>
+            <option value="gpt-4" {% if current_config.openai_model == 'gpt-4' %}selected{% endif %}>GPT-4</option>
+            <option value="gpt-4-turbo" {% if current_config.openai_model == 'gpt-4-turbo' %}selected{% endif %}>GPT-4 Turbo</option>
+        </select>
+        
+        <button type="button" id="test_openai" class="test-btn" disabled>Tester la connexion OpenAI</button>
+    </div>
+    
+    <!-- Section Mistral (cachée par défaut) -->
+    <div id="mistral_section" class="api-section hidden">
+        <h3>Configuration Mistral AI</h3>
+        
+        <label for="mistral_key">Clé API Mistral :</label>
+        <input type="password" id="mistral_key" name="mistral_key" 
+               placeholder="Votre clé API Mistral..."
+               autocomplete="off">
+        <small style="color: #666;">Récupérez votre clé sur console.mistral.ai</small>
+        
+        <label for="mistral_model">Modèle Mistral :</label>
+        <select id="mistral_model" name="mistral_model">
+            <option value="mistral-small" {% if current_config.mistral_model == 'mistral-small' %}selected{% endif %}>Mistral Small (Recommandé)</option>
+            <option value="mistral-medium" {% if current_config.mistral_model == 'mistral-medium' %}selected{% endif %}>Mistral Medium</option>
+            <option value="mistral-large" {% if current_config.mistral_model == 'mistral-large' %}selected{% endif %}>Mistral Large</option>
+            <option value="open-mistral-7b" {% if current_config.mistral_model == 'open-mistral-7b' %}selected{% endif %}>Open Mistral 7B</option>
+        </select>
+        
+        <button type="button" id="test_mistral" class="test-btn" disabled>Tester la connexion Mistral</button>
+    </div>
+    
+    <!-- Zone de résultats de test (cachée par défaut) -->
+    <div id="test_results" class="test-zone hidden"></div>
+    
+    <!-- Bouton de sauvegarde -->
+    <button type="submit" id="save_config" disabled>Choisissez d'abord un provider</button>
+</form>
+
+<!-- Informations d'aide -->
+<div style="max-width: 600px; margin: 2rem auto; padding: 1rem; background-color: #e3f2fd; border-radius: 6px;">
+    <h4 style="color: #1976d2; margin-bottom: 0.5rem;">💡 Informations importantes</h4>
+    <ul style="margin: 0; padding-left: 1.5rem; color: #555;">
+        <li>Vos clés API sont chiffrées et stockées de manière sécurisée</li>
+        <li>OpenAI : Créez votre clé sur <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></li>
+        <li>Mistral : Créez votre clé sur <a href="https://console.mistral.ai/" target="_blank">console.mistral.ai</a></li>
+        <li>Testez toujours votre clé avant de sauvegarder</li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/api_config.js') }}"></script>
+{% endblock %}

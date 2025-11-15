@@ -1,0 +1,157 @@
+/* Styles pour la page de configuration de l'API */
+
+.settings {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.settings label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.settings input[type="text"],
+.settings input[type="password"],
+.settings select {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+.settings input[type="text"]:focus,
+.settings input[type="password"]:focus,
+.settings select:focus {
+  border-color: #1976d2;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.settings button {
+  padding: 0.75rem 1.5rem;
+  background-color: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+
+.settings button:hover:not(:disabled) {
+  background-color: #115293;
+}
+
+.settings button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Classes pour l'affichage/masquage des sections */
+.hidden {
+  display: none !important;
+}
+
+.api-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #fff;
+}
+
+.api-section h3 {
+  margin-bottom: 1rem;
+  color: #1976d2;
+  font-size: 18px;
+}
+
+/* Styles pour les boutons de test */
+.test-btn {
+  background-color: #28a745;
+  margin-top: 0.5rem;
+}
+
+.test-btn:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.test-btn:disabled {
+  background-color: #6c757d;
+}
+
+/* Zone de résultats de test */
+.test-zone {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.test-zone.test-success {
+  background-color: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+}
+
+.test-zone.test-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-color: #f5c6cb;
+}
+
+.test-zone.test-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border-color: #bee5eb;
+}
+
+.test-zone p {
+  margin: 0;
+}
+
+/* Validation visuelle des champs */
+.valid {
+  border-color: #28a745 !important;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2) !important;
+}
+
+.invalid {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2) !important;
+}
+
+/* Styles pour le select de provider */
+#provider_select {
+  font-weight: bold;
+  border: 2px solid #1976d2;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .settings {
+    margin: 0 10px;
+    padding: 1rem;
+  }
+  
+  .api-section {
+    padding: 1rem;
+  }
+  
+  .settings button {
+    width: 100%;
+    margin-right: 0;
+  }
+}

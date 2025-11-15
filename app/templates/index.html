@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de Bord Monchatbot{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="banner">
+    <div class="banner-content">
+        <h1>Bienvenue sur votre tableau de bord Monchatbot</h1>
+        <p>Cliquez sur le bouton pour démarrer une conversation et échanger avec votre assistant(e) virtuel(le).</p>
+        
+        <!-- Bouton toujours visible -->
+        <button id="toggleChatBtn">Démarrer une Conversation</button>
+    </div>
+    <picture>
+        <source srcset="{{ url_for('static', filename='images/banners/banner-small.png') }}" media="(max-width: 480px)">
+        <source srcset="{{ url_for('static', filename='images/banners/banner-medium.png') }}" media="(max-width: 768px)">
+        <img src="{{ url_for('static', filename='images/banners/banner.png') }}" alt="Encart Image" class="banner-image">
+    </picture>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Synthèse d'utilisation globale</h2>
+    </div>
+    <div class="card-content">
+        <div class="table-wrapper">
+            <table class="usage-summary">
+                <thead>
+                    <tr>
+                        <th>Widgets</th>
+                        <th>Utilisateurs</th>
+                        <th>Conversations</th>
+                        <th>Messages</th>
+                        <th>Messages/Utilisateur</th>
+                        <th>Conversations/Utilisateur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-label="Widgets">10</td>
+                        <td data-label="Utilisateurs">150</td>
+                        <td data-label="Conversations">450</td>
+                        <td data-label="Messages">2000</td>
+                        <td data-label="Messages/Utilisateur">13</td>
+                        <td data-label="Conversations/Utilisateur">3</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="limits">
+    <h2>Indicateurs de performance</h2>
+    <ul>
+        <li>Taux de satisfaction des utilisateurs</li>
+        <li>Taux de recommandation réussi (moteur de recommandations)</li>
+        <li>Nombre de messages envoyés (emails et SMS)</li>
+        <li>Temps moyen de réponse</li>
+        <li>Taux d'utilisation des fonctionnalités multi-plateformes</li>
+    </ul>
+</div>
+
+<!-- Conteneur où le chatbot React sera injecté (masqué par défaut) -->
+<div id="react-chat-root" style="display: none;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.MODEL_CONFIG = {
+        hasMistral: {{ use_mistral|tojson|safe }},
+        hasGPT: {{ openai_key|default(false)|tojson|safe }}
+    };
+</script>
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% if main_js %}
+    <script src="{{ url_for('static', filename=main_js) }}"></script>
+{% endif %}
+{% endblock %}

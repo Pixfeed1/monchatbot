@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}
+Configuration SMS
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sms_configuration.css') }}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/sms_configuration.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<h1>Configuration SMS</h1>
+
+<form method="POST" action="{{ url_for('main.sms_configuration') }}" class="settings">
+    <!-- Champ CSRF inséré manuellement -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="sms_provider">Choisir le fournisseur SMS :</label>
+    <select id="sms_provider" name="sms_provider" aria-label="Fournisseur SMS">
+        <option value="twilio" {% if current_provider == 'twilio' %}selected{% endif %}>Twilio</option>
+        <option value="vonage" {% if current_provider == 'vonage' %}selected{% endif %}>Vonage (Nexmo)</option>
+    </select>
+
+    <!-- Paramètres Twilio -->
+    <div id="twilio_settings" style="display: {% if current_provider == 'twilio' %}block{% else %}none{% endif %};">
+        <h2>Paramètres Twilio</h2>
+        <label for="twilio_account_sid">Account SID :</label>
+        <input type="text" id="twilio_account_sid" name="twilio_account_sid"
+               value="{{ twilio_account_sid|default('') }}"
+               placeholder="Votre Account SID" required>
+
+        <label for="twilio_auth_token">Auth Token :</label>
+        <input type="password" id="twilio_auth_token" name="twilio_auth_token"
+               value="{{ twilio_auth_token|default('') }}"
+               placeholder="Votre Auth Token" required>
+
+        <label for="twilio_from">Numéro expéditeur Twilio :</label>
+        <input type="text" id="twilio_from" name="twilio_from"
+               value="{{ twilio_from|default('') }}"
+               placeholder="+1234567890" required>
+    </div>
+
+    <!-- Paramètres Vonage (Nexmo) -->
+    <div id="vonage_settings" style="display: {% if current_provider == 'vonage' %}block{% else %}none{% endif %};">
+        <h2>Paramètres Vonage (Nexmo)</h2>
+        <label for="vonage_api_key">API Key :</label>
+        <input type="text" id="vonage_api_key" name="vonage_api_key"
+               value="{{ vonage_api_key|default('') }}"
+               placeholder="Votre API Key" required>
+
+        <label for="vonage_api_secret">API Secret :</label>
+        <input type="password" id="vonage_api_secret" name="vonage_api_secret"
+               value="{{ vonage_api_secret|default('') }}"
+               placeholder="Votre API Secret" required>
+
+        <label for="vonage_from">Numéro expéditeur Vonage :</label>
+        <input type="text" id="vonage_from" name="vonage_from"
+               value="{{ vonage_from|default('') }}"
+               placeholder="+1234567890" required>
+    </div>
+
+    <button type="submit">Enregistrer</button>
+</form>
+{% endblock %}

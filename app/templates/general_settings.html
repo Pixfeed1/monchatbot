@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Paramètres Généraux{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/general_settings.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1>Paramètres Généraux</h1>
+
+<!-- Formulaire principal pour les paramètres généraux -->
+<form method="POST" enctype="multipart/form-data" class="settings">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    
+    <label for="bot-name">Nom du Bot :</label>
+    <input type="text" id="bot-name" name="bot-name" 
+            value="{{ settings.bot_name if settings.bot_name else '' }}"
+            placeholder="Entrez le nom du bot..." required>
+    
+    <label for="description">Description Technique :</label>
+    <textarea id="description" name="description" 
+              placeholder="Entrez la description technique du bot...">{{ settings.bot_description if settings.bot_description else '' }}</textarea>
+    
+    <label for="avatar">Avatar du Bot :</label>
+    <input type="file" id="avatar" name="avatar" accept="image/*">
+    
+    <button type="submit">Enregistrer</button>
+</form>
+
+{% if settings.bot_avatar %}
+<div class="avatar-container">
+    <p>Avatar Actuel :</p>
+    <div class="avatar-wrapper">
+        <img src="{{ settings.bot_avatar }}" alt="Avatar du Bot" class="current-avatar">
+        <form method="POST" action="{{ url_for('main.delete_avatar') }}" class="delete-avatar-form" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="delete-avatar-button" 
+                    title="Supprimer l'avatar"
+                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer l\'avatar ?');">×</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,31 @@
+/* app/static/css/smtp_settings.css */
+
+/* Style pour le texte de description */
+.info {
+    margin: 20px auto;
+    text-align: center;
+    color: #666;
+    max-width: 600px;
+}
+
+/* Assurer que tous les champs de formulaire ont le même style */
+.settings input,
+.settings select {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+/* Style spécifique pour les champs de type password et email si nécessaire */
+.settings input[type="password"],
+.settings input[type="email"] {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}

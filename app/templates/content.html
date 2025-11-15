@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration du Bot{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="bot-config-container">
+    <!-- Navigation des sections -->
+    <div class="config-nav">
+        <ul>
+            <li class="nav-item active" data-section="competences">
+                <i class="fas fa-robot"></i>
+                <span>Compétences</span>
+            </li>
+            <li class="nav-item" data-section="connaissances">
+                <i class="fas fa-brain"></i>
+                <span>Base de Connaissances</span>
+            </li>
+            <li class="nav-item" data-section="conversations">
+                <i class="fas fa-comments"></i>
+                <span>Flux de Conversation</span>
+            </li>
+            <li class="nav-item" data-section="actions">
+                <i class="fas fa-cogs"></i>
+                <span>Actions & Automatisations</span>
+            </li>
+            <li class="nav-item" data-section="reponses">
+                <i class="fas fa-reply"></i>
+                <span>Configuration des Réponses</span>
+            </li>
+            <li class="nav-item" data-section="integrations">
+                <i class="fas fa-plug"></i>
+                <span>Intégrations</span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Contenu dynamique -->
+    <div class="config-content">
+        <div id="section-competences" class="config-section active">
+            {% include 'bot_config/competences.html' %}
+        </div>
+        <div id="section-connaissances" class="config-section">
+            {% include 'bot_config/base_connaissances.html' %}
+        </div>
+        <!-- ... autres sections ... -->
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/bot_config.js') }}"></script>
+{% endblock %}

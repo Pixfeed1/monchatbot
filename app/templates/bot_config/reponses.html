@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration des Réponses{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reponses.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="responses-container">
+    <!-- En-tête avec assistant de configuration -->
+    <div class="responses-header">
+        <h1><i class="fas fa-robot"></i> Assistant de Configuration</h1>
+        <p class="subtitle">Configurez facilement les réponses automatiques de votre bot en quelques clics</p>
+        
+        <!-- Indicateur de progression -->
+        <div class="progress-indicator">
+            <div class="progress-step active" data-step="1">
+                <span class="step-number">1</span>
+                <span class="step-label">Messages de base</span>
+            </div>
+            <div class="progress-step" data-step="2">
+                <span class="step-number">2</span>
+                <span class="step-label">Réponses spécialisées</span>
+            </div>
+            <div class="progress-step" data-step="3">
+                <span class="step-number">3</span>
+                <span class="step-label">Situations d'erreur</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- État de sauvegarde -->
+    <div class="save-status" id="saveStatus">
+        <div class="status-indicator">
+            <i class="fas fa-check-circle"></i>
+            <span>Toutes les modifications sont sauvegardées</span>
+        </div>
+    </div>
+
+    <!-- Navigation simplifiée -->
+    <div class="wizard-navigation">
+        <button class="nav-btn active" data-section="essentials">
+            <i class="fas fa-star"></i>
+            <span>Messages Essentiels</span>
+            <small>Les réponses indispensables</small>
+        </button>
+        <button class="nav-btn" data-section="specialized">
+            <i class="fas fa-tools"></i>
+            <span>Réponses Métier</span>
+            <small>Spécifiques à votre activité</small>
+        </button>
+        <button class="nav-btn" data-section="advanced">
+            <i class="fas fa-cog"></i>
+            <span>Configuration Avancée</span>
+            <small>Erreurs et cas particuliers</small>
+        </button>
+    </div>
+
+    <!-- Section Messages Essentiels -->
+    <div class="wizard-section active" id="essentials">
+        <div class="section-header">
+            <h2>Messages Essentiels</h2>
+            <p>Ces messages de base garantissent une expérience utilisateur fluide</p>
+        </div>
+
+        <!-- Message de bienvenue -->
+        <div class="essential-card welcome-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-hand-wave"></i>
+                </div>
+                <div class="card-title">
+                    <h3>Message de Bienvenue</h3>
+                    <p>Premier message que voient vos visiteurs</p>
+                </div>
+                <div class="card-status">
+                    <span class="status-badge required">Obligatoire</span>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="message-preview">
+                    <div class="bot-bubble">
+                        <span id="welcomePreview">Bonjour ! Comment puis-je vous aider aujourd'hui ?</span>
+                    </div>
+                </div>
+                <div class="message-editor">
+                    <textarea class="smart-textarea" data-preview="welcomePreview" rows="3" 
+                              placeholder="Écrivez votre message de bienvenue...">{{ settings.bot_welcome if settings.bot_welcome else 'Bonjour ! Comment puis-je vous aider aujourd\'hui ?' }}</textarea>
+                    <div class="editor-help">
+                        <small>💡 Personnalisez avec: <code>{bot_name}</code>, <code>{user_name}</code>, <code>{current_time}</code></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Templates de réponses essentielles -->
+        <div class="templates-grid">
+            <!-- Salutations -->
+            <div class="template-card" data-category="greeting">
+                <div class="template-header">
+                    <i class="fas fa-comments template-icon"></i>
+                    <h3>Salutations</h3>
+                    <button class="toggle-template active">
+                        <i class="fas fa-toggle-on"></i>
+                    </button>
+                </div>
+                <div class="template-content">
+                    <div class="quick-setup">
+                        <p><strong>Déclenché par:</strong> bonjour, salut, hello, bonsoir</p>
+                        <div class="response-options">
+                            <label class="radio-option">
+                                <input type="radio" name="greeting-style" value="formal" checked>
+                                <span class="option-label">Formel</span>
+                                <span class="option-preview">"Bonjour, comment puis-je vous aider ?"</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="greeting-style" value="friendly">
+                                <span class="option-label">Amical</span>
+                                <span class="option-preview">"Salut ! Que puis-je faire pour toi ?"</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="greeting-style" value="custom">
+                                <span class="option-label">Personnalisé</span>
+                                <input type="text" class="custom-input" placeholder="Votre réponse personnalisée...">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Au revoir -->
+            <div class="template-card" data-category="goodbye">
+                <div class="template-header">
+                    <i class="fas fa-hand-peace template-icon"></i>
+                    <h3>Au revoir</h3>
+                    <button class="toggle-template active">
+                        <i class="fas fa-toggle-on"></i>
+                    </button>
+                </div>
+                <div class="template-content">
+                    <div class="quick-setup">
+                        <p><strong>Déclenché par:</strong> au revoir, bye, à bientôt, merci</p>
+                        <div class="response-options">
+                            <label class="radio-option">
+                                <input type="radio" name="goodbye-style" value="polite" checked>
+                                <span class="option-label">Poli</span>
+                                <span class="option-preview">"Au revoir, bonne journée !"</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="goodbye-style" value="helpful">
+                                <span class="option-label">Serviable</span>
+                                <span class="option-preview">"N'hésitez pas à revenir si vous avez d'autres questions !"</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="goodbye-style" value="custom">
+                                <span class="option-label">Personnalisé</span>
+                                <input type="text" class="custom-input" placeholder="Votre message d'au revoir...">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remerciements -->
+            <div class="template-card" data-category="thanks">
+                <div class="template-header">
+                    <i class="fas fa-heart template-icon"></i>
+                    <h3>Remerciements</h3>
+                    <button class="toggle-template active">
+                        <i class="fas fa-toggle-on"></i>
+                    </button>
+                </div>
+                <div class="template-content">
+                    <div class="quick-setup">
+                        <p><strong>Déclenché par:</strong> merci, thanks, super</p>
+                        <div class="response-options">
+                            <label class="radio-option">
+                                <input type="radio" name="thanks-style" value="simple" checked>
+                                <span class="option-label">Simple</span>
+                                <span class="option-preview">"De rien, ravi d'avoir pu vous aider !"</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="thanks-style" value="encouraging">
+                                <span class="option-label">Encourageant</span>
+                                <span class="option-preview">"Avec plaisir ! Je suis là si vous avez d'autres questions."</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Incompréhension -->
+            <div class="template-card" data-category="unclear">
+                <div class="template-header">
+                    <i class="fas fa-question-circle template-icon"></i>
+                    <h3>Question pas claire</h3>
+                    <button class="toggle-template active">
+                        <i class="fas fa-toggle-on"></i>
+                    </button>
+                </div>
+                <div class="template-content">
+                    <div class="quick-setup">
+                        <p><strong>Utilisé quand:</strong> La question n'est pas comprise</p>
+                        <div class="response-options">
+                            <label class="radio-option">
+                                <input type="radio" name="unclear-style" value="helpful" checked>
+                                <span class="option-label">Bienveillant</span>
+                                <span class="option-preview">"Pourriez-vous reformuler votre question ? Je veux être sûr de bien vous aider."</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="unclear-style" value="guiding">
+                                <span class="option-label">Guidant</span>
+                                <span class="option-preview">"Je ne suis pas sûr de comprendre. Pouvez-vous me donner plus de détails ?"</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Testeur rapide -->
+        <div class="quick-tester">
+            <h3><i class="fas fa-flask"></i> Testeur Rapide</h3>
+            <div class="tester-input">
+                <input type="text" class="test-input" placeholder="Tapez 'bonjour' pour tester...">
+                <button class="test-btn">Tester</button>
+            </div>
+            <div class="test-result">
+                <div class="bot-response">
+                    <i class="fas fa-robot"></i>
+                    <span id="testResponse">Tapez un message pour voir la réponse</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Réponses Métier -->
+    <div class="wizard-section" id="specialized">
+        <div class="section-header">
+            <h2>Réponses Métier</h2>
+            <p>Configurez des réponses spécifiques à votre domaine d'activité</p>
+        </div>
+
+        <!-- Assistant de création -->
+        <div class="creation-assistant">
+            <div class="assistant-header">
+                <i class="fas fa-magic"></i>
+                <h3>Assistant de Création</h3>
+            </div>
+            <div class="assistant-content">
+                <div class="scenario-selector">
+                    <h4>Choisissez un scénario courant :</h4>
+                    <div class="scenarios-grid">
+                        <button class="scenario-btn" data-scenario="services">
+                            <i class="fas fa-briefcase"></i>
+                            <span>Présenter mes services</span>
+                        </button>
+                        <button class="scenario-btn" data-scenario="pricing">
+                            <i class="fas fa-euro-sign"></i>
+                            <span>Questions de tarifs</span>
+                        </button>
+                        <button class="scenario-btn" data-scenario="contact">
+                            <i class="fas fa-phone"></i>
+                            <span>Informations de contact</span>
+                        </button>
+                        <button class="scenario-btn" data-scenario="hours">
+                            <i class="fas fa-clock"></i>
+                            <span>Horaires d'ouverture</span>
+                        </button>
+                        <button class="scenario-btn" data-scenario="faq">
+                            <i class="fas fa-question"></i>
+                            <span>FAQ métier</span>
+                        </button>
+                        <button class="scenario-btn" data-scenario="custom">
+                            <i class="fas fa-plus"></i>
+                            <span>Réponse personnalisée</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Formulaire de création guidée -->
+                <div class="guided-form" id="guidedForm" style="display: none;">
+                    <div class="form-step">
+                        <label>Quels mots-clés déclenchent cette réponse ?</label>
+                        <div class="keywords-input">
+                            <input type="text" id="keywordsInput" placeholder="Ex: prix, tarif, coût">
+                            <div class="keywords-suggestions">
+                                <span class="suggestion-tag">prix</span>
+                                <span class="suggestion-tag">tarif</span>
+                                <span class="suggestion-tag">coût</span>
+                                <span class="suggestion-tag">combien</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-step">
+                        <label>Réponse à donner :</label>
+                        <textarea id="responseInput" rows="4" placeholder="Votre réponse..."></textarea>
+                        <div class="response-tips">
+                            <small>💡 Conseil: Soyez précis et utile. Proposez une action si possible.</small>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn-secondary" id="cancelForm">Annuler</button>
+                        <button class="btn-primary" id="saveResponse">Ajouter cette réponse</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Liste des réponses métier créées -->
+        <div class="custom-responses" id="customResponses">
+            <h3>Vos Réponses Métier</h3>
+            <div class="responses-list" id="businessResponsesList">
+                <div class="empty-state">
+                    <i class="fas fa-lightbulb"></i>
+                    <p>Aucune réponse métier configurée</p>
+                    <small>Utilisez l'assistant ci-dessus pour en créer facilement</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vocabulaire métier -->
+        <div class="vocabulary-section">
+            <h3><i class="fas fa-book"></i> Vocabulaire Métier</h3>
+            <p>Définissez les termes techniques que votre bot doit connaître</p>
+            
+            <div class="vocabulary-quick-add">
+                <div class="vocab-input-group">
+                    <input type="text" id="termInput" placeholder="Terme technique (ex: consultation)">
+                    <input type="text" id="definitionInput" placeholder="Définition ou synonymes">
+                    <button class="add-vocab-btn">
+                        <i class="fas fa-plus"></i>
+                        Ajouter
+                    </button>
+                </div>
+            </div>
+
+            <div class="vocabulary-list" id="vocabularyList">
+                <!-- Les termes ajoutés apparaîtront ici -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Configuration Avancée -->
+    <div class="wizard-section" id="advanced">
+        <div class="section-header">
+            <h2>Configuration Avancée</h2>
+            <p>Gérez les situations d'erreur et les cas particuliers</p>
+        </div>
+
+        <!-- Messages d'erreur -->
+        <div class="error-management">
+            <h3><i class="fas fa-exclamation-triangle"></i> Messages d'Erreur</h3>
+            <p>Personnalisez les messages en cas de problème technique</p>
+
+            <div class="error-templates">
+                <div class="error-card">
+                    <div class="error-header">
+                        <div class="error-icon">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <div class="error-info">
+                            <h4>Temps de réponse dépassé</h4>
+                            <span class="error-code">TIMEOUT</span>
+                        </div>
+                    </div>
+                    <div class="error-content">
+                        <textarea rows="3">Je prends un peu plus de temps que prévu pour traiter votre demande. Pouvez-vous patienter quelques instants ou reformuler votre question ?</textarea>
+                    </div>
+                </div>
+
+                <div class="error-card">
+                    <div class="error-header">
+                        <div class="error-icon">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="error-info">
+                            <h4>Erreur technique</h4>
+                            <span class="error-code">SYSTEM_ERROR</span>
+                        </div>
+                    </div>
+                    <div class="error-content">
+                        <textarea rows="3">Je rencontre un petit problème technique. Pouvez-vous réessayer dans quelques minutes ? Si le problème persiste, contactez notre support.</textarea>
+                    </div>
+                </div>
+
+                <div class="error-card">
+                    <div class="error-header">
+                        <div class="error-icon">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <div class="error-info">
+                            <h4>Limite atteinte</h4>
+                            <span class="error-code">RATE_LIMIT</span>
+                        </div>
+                    </div>
+                    <div class="error-content">
+                        <textarea rows="3">Vous avez fait beaucoup de demandes récemment. Merci de patienter quelques minutes avant de continuer.</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration du comportement -->
+        <div class="behavior-config">
+            <h3><i class="fas fa-sliders-h"></i> Comportement du Bot</h3>
+            
+            <div class="config-options">
+                <div class="option-group">
+                    <label class="option-label">
+                        <input type="checkbox" checked>
+                        <span class="checkmark"></span>
+                        <div class="option-content">
+                            <strong>Correspondance flexible</strong>
+                            <small>Le bot reconnaît les variations d'orthographe et de formulation</small>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="option-group">
+                    <label class="option-label">
+                        <input type="checkbox" checked>
+                        <span class="checkmark"></span>
+                        <div class="option-content">
+                            <strong>Réponses contextuelles</strong>
+                            <small>Le bot adapte ses réponses selon la conversation précédente</small>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="option-group">
+                    <label class="option-label">
+                        <input type="checkbox">
+                        <span class="checkmark"></span>
+                        <div class="option-content">
+                            <strong>Mode strict</strong>
+                            <small>Correspondance exacte uniquement (pour réponses très spécifiques)</small>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions globales -->
+    <div class="global-actions">
+        <div class="actions-left">
+            <button class="btn-secondary" id="resetAll">
+                <i class="fas fa-undo"></i>
+                Réinitialiser
+            </button>
+            <button class="btn-secondary" id="exportConfig">
+                <i class="fas fa-download"></i>
+                Exporter
+            </button>
+        </div>
+        <div class="actions-right">
+            <button class="btn-primary" id="saveAll">
+                <i class="fas fa-save"></i>
+                Tout Sauvegarder
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modales -->
+<div class="modal" id="confirmModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Confirmation</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Êtes-vous sûr de vouloir effectuer cette action ?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" id="confirmCancel">Annuler</button>
+            <button class="btn-primary" id="confirmOk">Confirmer</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/reponses.js') }}"></script>
+{% endblock %}
