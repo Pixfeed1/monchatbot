@@ -37,9 +37,26 @@
 
         <!-- Icônes à droite (ex. notifications, profil, paramètres) -->
         <div class="icons">
-            <i class="fas fa-bell"></i>
-            <i class="fas fa-user-circle"></i>
-            <i class="fas fa-cog"></i>
+            <div class="notification-wrapper">
+                <i class="fas fa-bell" id="notificationBell" title="Notifications"></i>
+                <span class="notification-badge" id="notificationBadge" style="display: none;">1</span>
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <span>Notifications</span>
+                    </div>
+                    <div class="notification-list">
+                        <a href="{{ url_for('main.reopen_wizard') }}" class="notification-item">
+                            <i class="fas fa-magic notification-icon"></i>
+                            <div class="notification-content">
+                                <div class="notification-title">Assistant de configuration</div>
+                                <div class="notification-text">Relancez l'assistant pour reconfigurer votre bot</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <i class="fas fa-user-circle" title="Profil"></i>
+            <i class="fas fa-cog" title="Paramètres"></i>
         </div>
     </header>
 

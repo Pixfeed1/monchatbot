@@ -80,6 +80,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialiser le mode UI au chargement
     initializeUIMode();
+
+    // Gestion du dropdown de notifications
+    const notificationBell = document.getElementById('notificationBell');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+
+    if (notificationBell && notificationDropdown) {
+        notificationBell.addEventListener('click', function(e) {
+            e.stopPropagation();
+            notificationDropdown.classList.toggle('show');
+        });
+
+        // Fermer le dropdown au clic en dehors
+        document.addEventListener('click', function(e) {
+            if (!notificationDropdown.contains(e.target) && e.target !== notificationBell) {
+                notificationDropdown.classList.remove('show');
+            }
+        });
+    }
 });
 
 /**
