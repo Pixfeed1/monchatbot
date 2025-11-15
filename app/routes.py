@@ -776,6 +776,18 @@ def get_user_api_config():
             except Exception as e:
                 logger.error(f"Erreur déchiffrement Mistral: {e}")
                 return None
+
+        elif user_settings.current_provider == 'claude' and user_settings.encrypted_claude_key:
+            try:
+                encrypted_key = base64.b64decode(user_settings.encrypted_claude_key)
+                api_key = cipher_suite.decrypt(encrypted_key).decode()
+                config.update({
+                    'api_key': api_key,
+                    'model': user_settings.claude_model or 'claude-sonnet-4'
+                })
+            except Exception as e:
+                logger.error(f"Erreur déchiffrement Claude: {e}")
+                return None
         else:
             return None
         
@@ -1532,8 +1544,10 @@ def config_api():
                'provider': user_settings.current_provider,
                'openai_model': user_settings.openai_model,
                'mistral_model': user_settings.mistral_model,
+               'claude_model': user_settings.claude_model,
                'has_openai': bool(user_settings.encrypted_openai_key),
-               'has_mistral': bool(user_settings.encrypted_mistral_key)
+               'has_mistral': bool(user_settings.encrypted_mistral_key),
+               'has_claude': bool(user_settings.encrypted_claude_key)
            }
    except Exception as e:
        logger.error(f"Erreur récupération config: {e}")
@@ -1548,8 +1562,10 @@ def config_api():
        # Pas de clés affichées pour sécurité
        mistral_key="",
        gpt_key="",
+       claude_key="",
        model_select=current_config.get('openai_model', 'gpt-3.5-turbo'),
        mistral_model_select=current_config.get('mistral_model', 'mistral-small'),
+       claude_model_select=current_config.get('claude_model', 'claude-sonnet-4'),
        # Information pour l'utilisateur
        info_message="Vos clés API sont chiffrées et stockées de manière sécurisée sur le serveur."
    )
