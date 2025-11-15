@@ -3213,7 +3213,30 @@ def test_response_matching():
 @login_required
 def onboarding_wizard():
     """Wizard d'onboarding pour nouveaux utilisateurs."""
-    return render_template("onboarding_wizard.html")
+    # Récupérer les paramètres existants pour pré-remplissage
+    settings = Settings.query.filter_by(user_id=current_user.id).first()
+    initial_data = {
+        'botName': settings.bot_name if settings else '',
+        'botDescription': settings.bot_description if settings else '',
+        'welcomeMessage': settings.bot_welcome if settings else '',
+        'provider': current_user.preferred_provider if current_user.preferred_provider else ''
+    }
+    return render_template("onboarding_wizard.html", initial_data=initial_data)
+
+
+@main_bp.route("/reopen-wizard")
+@login_required
+def reopen_wizard():
+    """Permet de ré-ouvrir le wizard pour modifier la configuration."""
+    # Récupérer les paramètres existants
+    settings = Settings.query.filter_by(user_id=current_user.id).first()
+    initial_data = {
+        'botName': settings.bot_name if settings else '',
+        'botDescription': settings.bot_description if settings else '',
+        'welcomeMessage': settings.bot_welcome if settings else '',
+        'provider': current_user.preferred_provider if current_user.preferred_provider else ''
+    }
+    return render_template("onboarding_wizard.html", initial_data=initial_data, is_reopen=True)
 
 
 @main_bp.route("/api/save-wizard", methods=["POST"])

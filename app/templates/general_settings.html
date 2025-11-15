@@ -7,7 +7,13 @@
 {% endblock %}
 
 {% block content %}
-<h1>Paramètres Généraux</h1>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h1 style="margin: 0;">Paramètres Généraux</h1>
+    <a href="{{ url_for('main.reopen_wizard') }}" class="wizard-reopen-btn" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3); transition: all 0.2s;">
+        <span style="font-size: 18px;">🎯</span>
+        Assistant de configuration
+    </a>
+</div>
 
 <!-- Formulaire principal pour les paramètres généraux -->
 <form method="POST" enctype="multipart/form-data" class="settings">
