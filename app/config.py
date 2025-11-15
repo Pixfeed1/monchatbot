@@ -38,11 +38,13 @@ class Config:
     # Les APIs sont disponibles mais les clés sont fournies par l'utilisateur
     USE_GPT = True  # Interface disponible pour OpenAI
     USE_MISTRAL_API = True  # Interface disponible pour Mistral
+    USE_CLAUDE = True  # Interface disponible pour Claude (Anthropic)
     
     # Clés API serveur (SUPPRIMÉES - maintenant gérées par utilisateur)
     # Les clés sont maintenant stockées chiffrées en base pour chaque utilisateur
     OPENAI_API_KEY = ""  # Vide - géré par utilisateur
     MISTRAL_API_KEY = ""  # Vide - géré par utilisateur
+    CLAUDE_API_KEY = ""  # Vide - géré par utilisateur
     
     # ===== CHIFFREMENT DES CLÉS UTILISATEUR =====
     
@@ -78,13 +80,21 @@ class Config:
             'mistral-large': 'Mistral Large (Plus intelligent)',
             'open-mistral-7b': 'Open Mistral 7B',
             'open-mixtral-8x7b': 'Open Mixtral 8x7B'
+        },
+        'claude': {
+            'claude-sonnet-4-5': 'Claude Sonnet 4.5 (Meilleur pour le code)',
+            'claude-opus-4-1': 'Claude Opus 4.1 (Le plus puissant)',
+            'claude-sonnet-4': 'Claude Sonnet 4 (Équilibré)',
+            'claude-haiku-4-5': 'Claude Haiku 4.5 (Rapide et économique)',
+            'claude-3-7-sonnet': 'Claude 3.7 Sonnet (Raisonnement hybride)'
         }
     }
     
     # Modèles par défaut recommandés
     DEFAULT_MODELS = {
         'openai': 'gpt-3.5-turbo',
-        'mistral': 'mistral-small'
+        'mistral': 'mistral-small',
+        'claude': 'claude-sonnet-4'
     }
     
     # Provider par défaut (pour suggestions)
@@ -248,7 +258,7 @@ class Config:
         })
         
         print("🚀 Application configurée en mode Clés Utilisateur")
-        print(f"   📊 Providers disponibles: OpenAI, Mistral")
+        print(f"   📊 Providers disponibles: OpenAI, Mistral, Claude")
         print(f"   🔐 Chiffrement activé: {bool(cls.ENCRYPTION_KEY)}")
         print(f"   🎯 Provider par défaut: {cls.DEFAULT_PROVIDER}")
     
@@ -346,10 +356,10 @@ class Config:
     def is_api_available(cls, provider: str) -> bool:
         """
         Vérifie si un provider API est disponible.
-        
+
         Args:
             provider (str): Nom du provider
-            
+
         Returns:
             bool: True si disponible
         """
@@ -357,6 +367,8 @@ class Config:
             return cls.USE_GPT
         elif provider == 'mistral':
             return cls.USE_MISTRAL_API
+        elif provider == 'claude':
+            return cls.USE_CLAUDE
         else:
             return False
 

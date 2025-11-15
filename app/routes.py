@@ -181,7 +181,7 @@ def check_key():
     has_user_config = False
     if current_user.is_authenticated:
         user_settings = Settings.query.filter_by(user_id=current_user.id).first()
-        has_user_config = bool(user_settings and (user_settings.encrypted_openai_key or user_settings.encrypted_mistral_key))
+        has_user_config = bool(user_settings and (user_settings.encrypted_openai_key or user_settings.encrypted_mistral_key or user_settings.encrypted_claude_key))
     
     api_status = {
         "local_model": {
@@ -315,13 +315,20 @@ def save_api_config():
             user_settings.encrypted_openai_key = base64.b64encode(encrypted_key).decode()
             user_settings.openai_model = data.get('openai_model', 'gpt-3.5-turbo')
             logger.info(f"Clé OpenAI configurée pour {current_user.username}")
-            
+
         elif provider == 'mistral' and data.get('mistral_key'):
             # Chiffrer la clé Mistral
             encrypted_key = cipher_suite.encrypt(data['mistral_key'].encode())
             user_settings.encrypted_mistral_key = base64.b64encode(encrypted_key).decode()
             user_settings.mistral_model = data.get('mistral_model', 'mistral-small')
             logger.info(f"Clé Mistral configurée pour {current_user.username}")
+
+        elif provider == 'claude' and data.get('claude_key'):
+            # Chiffrer la clé Claude
+            encrypted_key = cipher_suite.encrypt(data['claude_key'].encode())
+            user_settings.encrypted_claude_key = base64.b64encode(encrypted_key).decode()
+            user_settings.claude_model = data.get('claude_model', 'claude-sonnet-4')
+            logger.info(f"Clé Claude configurée pour {current_user.username}")
         
         user_settings.current_provider = provider
         user_settings.updated_at = datetime.utcnow()
@@ -378,7 +385,7 @@ def get_api_config():
             except Exception as e:
                 logger.error(f"Erreur déchiffrement OpenAI pour {current_user.username}: {e}")
         
-        # Déchiffrer Mistral si présent  
+        # Déchiffrer Mistral si présent
         if user_settings.encrypted_mistral_key:
             try:
                 encrypted_key = base64.b64decode(user_settings.encrypted_mistral_key)
@@ -387,7 +394,17 @@ def get_api_config():
                 config_data["mistral_model"] = user_settings.mistral_model or 'mistral-small'
             except Exception as e:
                 logger.error(f"Erreur déchiffrement Mistral pour {current_user.username}: {e}")
-        
+
+        # Déchiffrer Claude si présent
+        if user_settings.encrypted_claude_key:
+            try:
+                encrypted_key = base64.b64decode(user_settings.encrypted_claude_key)
+                decrypted_key = cipher_suite.decrypt(encrypted_key).decode()
+                config_data["claude_key"] = decrypted_key
+                config_data["claude_model"] = user_settings.claude_model or 'claude-sonnet-4'
+            except Exception as e:
+                logger.error(f"Erreur déchiffrement Claude pour {current_user.username}: {e}")
+
         return jsonify({
             "success": True,
             "data": config_data
@@ -422,6 +439,8 @@ def test_api_key():
             result = test_openai_key(api_key, model)
         elif provider == 'mistral':
             result = test_mistral_key(api_key, model)
+        elif provider == 'claude':
+            result = test_claude_key(api_key, model)
         else:
             return jsonify({
                 "success": False,
@@ -535,6 +554,41 @@ def test_mistral_key(api_key, model):
         return {
             "success": False,
             "error": f"Erreur inattendue: {str(e)}"
+        }
+
+
+def test_claude_key(api_key, model):
+    """Teste une clé Claude (Anthropic)."""
+    try:
+        from anthropic import Anthropic
+
+        client = Anthropic(api_key=api_key)
+
+        response = client.messages.create(
+            model=model,
+            max_tokens=5,
+            messages=[{"role": "user", "content": "Test de connexion"}]
+        )
+
+        return {
+            "success": True,
+            "message": f"Clé Claude valide - Modèle {model} opérationnel",
+            "model": model,
+            "usage": response.usage.input_tokens + response.usage.output_tokens if hasattr(response, 'usage') else None
+        }
+
+    except Exception as e:
+        error_msg = str(e)
+        if "invalid" in error_msg.lower() or "unauthorized" in error_msg.lower() or "authentication" in error_msg.lower():
+            error_msg = "Clé API invalide ou expirée"
+        elif "model" in error_msg.lower() or "not found" in error_msg.lower():
+            error_msg = f"Modèle {model} non disponible avec cette clé"
+        elif "quota" in error_msg.lower() or "rate" in error_msg.lower():
+            error_msg = "Quota dépassé ou limite de requêtes atteinte"
+
+        return {
+            "success": False,
+            "error": error_msg
         }
 
 
@@ -751,6 +805,8 @@ def make_api_call_with_user_keys(prompt, user_config, complexity, bot_info=None)
             response = call_openai_api(api_key, model, prompt, max_tokens, temperature)
         elif provider == 'mistral':
             response = call_mistral_api(api_key, model, prompt, max_tokens, temperature)
+        elif provider == 'claude':
+            response = call_claude_api(api_key, model, prompt, max_tokens, temperature)
         else:
             return {'error': f'Provider {provider} non supporté'}
         
@@ -868,6 +924,34 @@ def call_mistral_api(api_key, model, prompt, max_tokens, temperature):
    except Exception as e:
        logger.error(f"Erreur Mistral API: {e}")
        return {'error': f'Erreur Mistral: {str(e)}'}
+
+
+def call_claude_api(api_key, model, prompt, max_tokens, temperature):
+   """Appel à l'API Claude (Anthropic)."""
+   try:
+       from anthropic import Anthropic
+
+       client = Anthropic(api_key=api_key)
+
+       response = client.messages.create(
+           model=model,
+           max_tokens=max_tokens,
+           temperature=temperature,
+           messages=[{"role": "user", "content": prompt}]
+       )
+
+       return {
+           'message': response.content[0].text,
+           'usage': {
+               'prompt_tokens': response.usage.input_tokens,
+               'completion_tokens': response.usage.output_tokens,
+               'total_tokens': response.usage.input_tokens + response.usage.output_tokens
+           } if hasattr(response, 'usage') else {}
+       }
+
+   except Exception as e:
+       logger.error(f"Erreur Claude API: {e}")
+       return {'error': f'Erreur Claude: {str(e)}'}
 
 
 #######################################

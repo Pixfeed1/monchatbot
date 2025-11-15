@@ -104,9 +104,11 @@ class Settings(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     encrypted_openai_key = db.Column(db.Text, nullable=True)
     encrypted_mistral_key = db.Column(db.Text, nullable=True)
-    current_provider = db.Column(db.String(20), nullable=True)  # openai, mistral
+    encrypted_claude_key = db.Column(db.Text, nullable=True)
+    current_provider = db.Column(db.String(20), nullable=True)  # openai, mistral, claude
     openai_model = db.Column(db.String(50), nullable=True, default='gpt-3.5-turbo')
     mistral_model = db.Column(db.String(50), nullable=True, default='mistral-small')
+    claude_model = db.Column(db.String(50), nullable=True, default='claude-sonnet-4')
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
