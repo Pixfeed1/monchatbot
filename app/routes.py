@@ -60,12 +60,17 @@ def inject_settings():
 
 
 @main_bp.route("/")
+@login_required
 def home():
     """Page d'accueil - Version avec clés utilisateur."""
+    # Vérifier si l'utilisateur doit faire l'onboarding
+    if not current_user.onboarding_completed:
+        return redirect(url_for('main.onboarding_wizard'))
+
     # En mode clés utilisateur, les APIs sont configurées par l'utilisateur
     use_mistral = True  # Interface peut configurer Mistral
     use_openai = True   # Interface peut configurer OpenAI
-    
+
     # Lecture du manifest pour récupérer le fichier JS correct
     manifest_path = os.path.join(current_app.root_path, 'static', 'react', 'asset-manifest.json')
     main_js = None
@@ -78,7 +83,7 @@ def home():
         main_js = None
 
     return render_template(
-        "index.html", 
+        "index.html",
         # Variables pour la compatibilité avec les templates existants
         use_mistral=use_mistral,
         use_mistral_api=use_mistral,
@@ -3144,17 +3149,127 @@ def test_response_matching():
        return jsonify({'error': str(e)}), 500
 
 
+############################################################################
+# WIZARD D'ONBOARDING ET MODE SIMPLE/AVANCÉ
+############################################################################
+
+@main_bp.route("/onboarding")
+@login_required
+def onboarding_wizard():
+    """Wizard d'onboarding pour nouveaux utilisateurs."""
+    return render_template("onboarding_wizard.html")
+
+
+@main_bp.route("/api/save-wizard", methods=["POST"])
+@login_required
+def save_wizard():
+    """Sauvegarde les données du wizard d'onboarding."""
+    try:
+        data = request.get_json()
+
+        # Sauvegarder les paramètres généraux
+        settings = Settings.query.filter_by(user_id=current_user.id).first()
+        if not settings:
+            settings = Settings(user_id=current_user.id)
+            db.session.add(settings)
+
+        settings.bot_name = data.get('botName', 'MonChatbot')
+        settings.bot_description = data.get('botDescription', '')
+        settings.bot_welcome = data.get('welcomeMessage', 'Bonjour !')
+
+        # Sauvegarder le provider préféré
+        current_user.preferred_provider = data.get('provider')
+        current_user.onboarding_completed = True
+
+        db.session.commit()
+
+        logger.info(f"Wizard complété pour {current_user.username}")
+
+        return jsonify({
+            "success": True,
+            "message": "Configuration sauvegardée",
+            "redirect_to": url_for('main.config_api')
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur sauvegarde wizard: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route("/api/toggle-ui-mode", methods=["POST"])
+@login_required
+def toggle_ui_mode():
+    """Bascule entre mode simple et mode avancé."""
+    try:
+        data = request.get_json()
+        new_mode = data.get('mode', 'simple')
+
+        if new_mode not in ['simple', 'advanced']:
+            return jsonify({
+                "success": False,
+                "error": "Mode invalide"
+            }), 400
+
+        current_user.ui_mode = new_mode
+        db.session.commit()
+
+        logger.info(f"Mode UI changé pour {current_user.username}: {new_mode}")
+
+        return jsonify({
+            "success": True,
+            "mode": new_mode,
+            "message": f"Mode {new_mode} activé"
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur toggle UI mode: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route("/api/skip-onboarding", methods=["POST"])
+@login_required
+def skip_onboarding():
+    """Permet de sauter l'onboarding."""
+    try:
+        current_user.onboarding_completed = True
+        db.session.commit()
+
+        logger.info(f"Onboarding sauté par {current_user.username}")
+
+        return jsonify({
+            "success": True,
+            "message": "Onboarding sauté"
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur skip onboarding: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"Erreur: {str(e)}"
+        }), 500
+
+
 # ========================
 # FIN DU FICHIER routes.py - VERSION COMPLÈTE MISE À JOUR
 # ========================
 
 # Note: Ce fichier contient maintenant toutes les routes nécessaires pour:
 # 1. La nouvelle interface de configuration des réponses
-# 2. La compatibilité avec l'ancienne interface  
+# 2. La compatibilité avec l'ancienne interface
 # 3. La gestion des clés API utilisateur
 # 4. Les fonctionnalités avancées (export/import, cache, etc.)
 # 5. La correction d'identité et post-traitement des réponses
 # 6. Les routes de diagnostic et monitoring
 # 7. Les fonctionnalités de sécurité et audit
+# 8. Le wizard d'onboarding et le mode simple/avancé
 
 logger.info("🚀 Module routes.py chargé avec succès - Version 2.0 avec nouvelle interface de réponses")

@@ -439,6 +439,96 @@ img, picture {
     height: auto;
 }
 
+/* MODE TOGGLE - Simple/Avancé (UX 2025) */
+.mode-toggle-item {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+.mode-toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 10px;
+    background-color: rgba(13, 110, 253, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(13, 110, 253, 0.2);
+    transition: all 0.3s ease;
+}
+
+.mode-toggle-container:hover {
+    background-color: rgba(13, 110, 253, 0.15);
+    border-color: rgba(13, 110, 253, 0.3);
+}
+
+.mode-status {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mode-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    display: block;
+}
+
+.mode-hint {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    display: block;
+}
+
+.mode-toggle-btn {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mode-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.4);
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+}
+
+.mode-toggle-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mode-toggle-btn i {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.mode-toggle-btn:hover i {
+    transform: scale(1.1);
+}
+
+/* Animation pour les menus qui apparaissent/disparaissent */
+.advanced-only {
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateX(-10px);
+}
+
+.advanced-only.show {
+    opacity: 1;
+    transform: translateX(0);
+    display: block !important;
+}
+
 /* Media Queries */
 @media (max-width: 768px) {
     .hamburger {

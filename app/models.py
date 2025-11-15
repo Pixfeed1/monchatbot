@@ -397,10 +397,14 @@ class User(UserMixin, db.Model):
     login_count = db.Column(db.Integer, default=0)
     
     # Préférences utilisateur pour l'API
-    preferred_provider = db.Column(db.String(20), nullable=True)  # openai, mistral
+    preferred_provider = db.Column(db.String(20), nullable=True)  # openai, mistral, claude
     api_usage_limit = db.Column(db.Integer, nullable=True)  # Limite mensuelle
     api_usage_current = db.Column(db.Integer, default=0)  # Usage actuel du mois
     api_usage_reset_date = db.Column(db.DateTime, nullable=True)  # Date de reset du compteur
+
+    # Préférences UX - Mode Simple/Avancé
+    onboarding_completed = db.Column(db.Boolean, default=False)  # A terminé le wizard
+    ui_mode = db.Column(db.String(20), default='simple')  # 'simple' ou 'advanced'
 
     def set_password(self, password):
         """Hash et stocke le mot de passe"""

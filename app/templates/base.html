@@ -111,8 +111,21 @@
                         </div>
                     </li>
 
+                    <!-- Toggle Mode Simple/Avancé -->
+                    <li class="mode-toggle-item">
+                        <div class="mode-toggle-container">
+                            <div class="mode-status">
+                                <span class="mode-label">Mode Simple</span>
+                                <small class="mode-hint">Fonctions essentielles</small>
+                            </div>
+                            <button class="mode-toggle-btn" onclick="toggleUIMode()" title="Passer en mode avancé">
+                                <i class="fas fa-rocket"></i>
+                            </button>
+                        </div>
+                    </li>
+
                     <!-- Exemple : Configuration -->
-                    <li class="has-submenu" id="configurationMenu">
+                    <li class="has-submenu advanced-only" id="configurationMenu" style="display: none;">
                         <a href="#" aria-expanded="false">
                             <i class="fas fa-cogs"></i>
                             <span class="menu-text">Configuration</span>
@@ -173,7 +186,7 @@
                     </li>
 
                     <!-- Exemple : Canaux de Communication -->
-                    <li class="has-submenu" id="communicationMenu">
+                    <li class="has-submenu advanced-only" id="communicationMenu" style="display: none;">
                         <a href="#" aria-expanded="false">
                             <i class="fas fa-comments"></i>
                             <span class="menu-text">Canaux de Communication</span>
@@ -189,7 +202,7 @@
                     </li>
 
                     <!-- Exemple : Recommandations -->
-                    <li class="has-submenu" id="recommendationMenu">
+                    <li class="has-submenu advanced-only" id="recommendationMenu" style="display: none;">
                         <a href="#" aria-expanded="false">
                             <i class="fas fa-star"></i>
                             <span class="menu-text">Recommandations</span>

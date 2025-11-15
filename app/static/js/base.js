@@ -77,4 +77,121 @@ document.addEventListener('DOMContentLoaded', function() {
             hamburger.classList.remove('active');
         }
     });
+
+    // Initialiser le mode UI au chargement
+    initializeUIMode();
 });
+
+/**
+ * Initialise le mode UI (Simple/Avancé) au chargement de la page
+ */
+function initializeUIMode() {
+    // Récupérer le mode actuel depuis localStorage ou défaut simple
+    const currentMode = localStorage.getItem('uiMode') || 'simple';
+
+    if (currentMode === 'advanced') {
+        showAdvancedMode();
+    } else {
+        showSimpleMode();
+    }
+}
+
+/**
+ * Bascule entre le mode Simple et Avancé
+ */
+function toggleUIMode() {
+    const modeLabel = document.querySelector('.mode-label');
+    const currentMode = modeLabel.textContent.includes('Simple') ? 'simple' : 'advanced';
+    const newMode = currentMode === 'simple' ? 'advanced' : 'simple';
+
+    // Récupérer le CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    // Envoyer la requête au backend
+    fetch('/api/toggle-ui-mode', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({ mode: newMode })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Sauvegarder le nouveau mode
+            localStorage.setItem('uiMode', newMode);
+
+            // Mettre à jour l'interface
+            if (newMode === 'advanced') {
+                showAdvancedMode();
+            } else {
+                showSimpleMode();
+            }
+
+            // Animation de feedback (micro-interaction 2025)
+            const toggleBtn = document.querySelector('.mode-toggle-btn');
+            toggleBtn.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                toggleBtn.style.transform = '';
+            }, 150);
+        } else {
+            console.error('Erreur lors du changement de mode:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur réseau:', error);
+    });
+}
+
+/**
+ * Affiche le mode Simple (masque les menus avancés)
+ */
+function showSimpleMode() {
+    const advancedItems = document.querySelectorAll('.advanced-only');
+    const modeLabel = document.querySelector('.mode-label');
+    const modeHint = document.querySelector('.mode-hint');
+    const toggleBtn = document.querySelector('.mode-toggle-btn');
+
+    // Masquer les menus avancés avec animation
+    advancedItems.forEach(item => {
+        item.classList.remove('show');
+        setTimeout(() => {
+            item.style.display = 'none';
+        }, 300);
+    });
+
+    // Mettre à jour les textes
+    if (modeLabel) modeLabel.textContent = 'Mode Simple';
+    if (modeHint) modeHint.textContent = 'Fonctions essentielles';
+    if (toggleBtn) {
+        toggleBtn.title = 'Passer en mode avancé';
+        toggleBtn.querySelector('i').className = 'fas fa-rocket';
+    }
+}
+
+/**
+ * Affiche le mode Avancé (affiche tous les menus)
+ */
+function showAdvancedMode() {
+    const advancedItems = document.querySelectorAll('.advanced-only');
+    const modeLabel = document.querySelector('.mode-label');
+    const modeHint = document.querySelector('.mode-hint');
+    const toggleBtn = document.querySelector('.mode-toggle-btn');
+
+    // Afficher les menus avancés avec animation
+    advancedItems.forEach((item, index) => {
+        item.style.display = 'block';
+        setTimeout(() => {
+            item.classList.add('show');
+        }, 50 + (index * 50)); // Animation décalée pour chaque item
+    });
+
+    // Mettre à jour les textes
+    if (modeLabel) modeLabel.textContent = 'Mode Avancé';
+    if (modeHint) modeHint.textContent = 'Toutes les fonctions';
+    if (toggleBtn) {
+        toggleBtn.title = 'Passer en mode simple';
+        toggleBtn.querySelector('i').className = 'fas fa-sliders-h';
+    }
+}
