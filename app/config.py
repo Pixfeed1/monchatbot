@@ -14,12 +14,28 @@ class Config:
     # Désactivation du reloader de Flask
     USE_RELOADER = False
 
-    # Configuration de la base de données
-    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
+    # Configuration de la base de données - PostgreSQL par défaut
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL') or os.getenv('SQLALCHEMY_DATABASE_URI')
+
     if not SQLALCHEMY_DATABASE_URI:
-        db_path = basedir / 'instance' / 'site.db'
-        SQLALCHEMY_DATABASE_URI = f'sqlite:///{db_path}'
+        # Configuration PostgreSQL par défaut
+        POSTGRES_USER = os.getenv('POSTGRES_USER', 'monchatbot')
+        POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'monchatbot_password')
+        POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
+        POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+        POSTGRES_DB = os.getenv('POSTGRES_DB', 'monchatbot')
+
+        SQLALCHEMY_DATABASE_URI = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
+
+    # Support Heroku DATABASE_URL (commence par postgres:// au lieu de postgresql://)
+    if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
+        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgres://', 'postgresql://', 1)
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,  # Vérifie les connexions avant utilisation
+        'pool_recycle': 300,    # Recycle les connexions après 5 minutes
+    }
 
     # ===== CONFIGURATION MODE CLÉS UTILISATEUR =====
     
