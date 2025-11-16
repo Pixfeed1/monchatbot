@@ -36,7 +36,8 @@ class UserKeysAPIManager:
         self.is_ready = True
         self.providers = {
             "openai": "available_user_keys",
-            "mistral": "available_user_keys"
+            "mistral": "available_user_keys",
+            "claude": "available_user_keys"
         }
         self.stats = {
             "total_generations": 0,
@@ -50,7 +51,7 @@ class UserKeysAPIManager:
     
     def get_supported_providers(self) -> List[str]:
         """Retourne la liste des providers supportés."""
-        return ["openai", "mistral"]
+        return ["openai", "mistral", "claude"]
     
     def get_supported_models(self, provider: str = None) -> Dict[str, List[str]]:
         """Retourne les modèles supportés par provider."""
@@ -64,13 +65,20 @@ class UserKeysAPIManager:
             ],
             "mistral": [
                 "mistral-small",
-                "mistral-medium", 
+                "mistral-medium",
                 "mistral-large",
                 "open-mistral-7b",
                 "open-mixtral-8x7b"
+            ],
+            "claude": [
+                "claude-sonnet-4-5",
+                "claude-opus-4-1",
+                "claude-sonnet-4",
+                "claude-haiku-4-5",
+                "claude-3-7-sonnet"
             ]
         }
-        
+
         if provider:
             return models.get(provider, [])
         return models
@@ -279,6 +287,8 @@ class UserKeysAPIManager:
                 return self._test_openai_connection(api_key, model)
             elif provider == "mistral":
                 return self._test_mistral_connection(api_key, model)
+            elif provider == "claude":
+                return self._test_claude_connection(api_key, model)
             else:
                 return {
                     "success": False,
@@ -394,7 +404,42 @@ class UserKeysAPIManager:
                 "error": f"Erreur inattendue: {str(e)}",
                 "provider": "mistral"
             }
-    
+
+    def _test_claude_connection(self, api_key: str, model: str) -> Dict[str, Any]:
+        """Teste une connexion Claude (Anthropic)."""
+        try:
+            from anthropic import Anthropic
+
+            client = Anthropic(api_key=api_key)
+
+            response = client.messages.create(
+                model=model,
+                max_tokens=5,
+                messages=[{"role": "user", "content": "Test de connexion"}]
+            )
+
+            return {
+                "success": True,
+                "message": f"Connexion Claude réussie avec {model}",
+                "usage": response.usage.input_tokens + response.usage.output_tokens if hasattr(response, 'usage') else None,
+                "model_confirmed": response.model if hasattr(response, 'model') else model
+            }
+
+        except Exception as e:
+            error_msg = str(e)
+            if "invalid" in error_msg.lower() or "unauthorized" in error_msg.lower() or "authentication" in error_msg.lower():
+                error_msg = "Clé API Claude invalide ou expirée"
+            elif "model" in error_msg.lower() or "not found" in error_msg.lower():
+                error_msg = f"Modèle {model} non disponible avec cette clé"
+            elif "quota" in error_msg.lower() or "rate" in error_msg.lower():
+                error_msg = "Quota Claude dépassé ou limite de requêtes atteinte"
+
+            return {
+                "success": False,
+                "error": error_msg,
+                "provider": "claude"
+            }
+
     def get_provider_info(self, provider: str) -> Dict[str, Any]:
         """
         Retourne les informations d'un provider.
@@ -418,7 +463,7 @@ class UserKeysAPIManager:
                 "key_management": "server_encrypted"
             },
             "mistral": {
-                "name": "Mistral AI", 
+                "name": "Mistral AI",
                 "description": "Open and commercial models by Mistral AI",
                 "website": "https://mistral.ai",
                 "models": self.get_supported_models("mistral"),
@@ -427,9 +472,20 @@ class UserKeysAPIManager:
                 "documentation": "https://docs.mistral.ai",
                 "pricing_url": "https://mistral.ai/pricing",
                 "key_management": "server_encrypted"
+            },
+            "claude": {
+                "name": "Claude (Anthropic)",
+                "description": "Claude AI models by Anthropic",
+                "website": "https://www.anthropic.com",
+                "models": self.get_supported_models("claude"),
+                "requires_key": True,
+                "key_format": "sk-ant-...",
+                "documentation": "https://docs.anthropic.com",
+                "pricing_url": "https://www.anthropic.com/pricing",
+                "key_management": "server_encrypted"
             }
         }
-        
+
         return info.get(provider, {})
     
     def get_user_instructions(self) -> Dict[str, Any]:
@@ -452,7 +508,8 @@ class UserKeysAPIManager:
                     "step": 1,
                     "title": "Obtenir une clé API",
                     "openai": "Créez un compte sur platform.openai.com et générez une clé API",
-                    "mistral": "Créez un compte sur console.mistral.ai et obtenez une clé API"
+                    "mistral": "Créez un compte sur console.mistral.ai et obtenez une clé API",
+                    "claude": "Créez un compte sur console.anthropic.com et générez une clé API"
                 },
                 {
                     "step": 2,
@@ -507,7 +564,7 @@ def get_api_status() -> Dict[str, Any]:
         "server_side_keys": True,
         "encryption_enabled": True,
         "security": "server_encrypted_keys",
-        "supported_providers": ["openai", "mistral"],
+        "supported_providers": ["openai", "mistral", "claude"],
         "key_storage": "encrypted_database",
         "api_calls": "server_side",
         "timestamp": datetime.utcnow().isoformat()
@@ -530,6 +587,8 @@ def get_default_model(provider: str = None) -> str:
     """Retourne le modèle par défaut pour un provider."""
     if provider == "mistral":
         return "mistral-small"
+    elif provider == "claude":
+        return "claude-sonnet-4"
     return "gpt-3.5-turbo"
 
 

@@ -18,6 +18,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import NotFound
 from dotenv import set_key, load_dotenv
+from sqlalchemy import text  # ← AJOUT pour corriger le warning
 
 # Importation des modèles et de la base de données
 from .models import (
@@ -25,7 +26,8 @@ from .models import (
     BotCompetences, BotResponses,
     ConversationFlow, FlowNode, NodeConnection, FlowVariable,
     ActionTrigger, EmailTemplate, CalendarConfig,
-    TicketConfig, FormRedirection, DefaultMessage
+    TicketConfig, FormRedirection, DefaultMessage,
+    APIUsageLog
 )
 from . import db
 from .config import Config
@@ -60,12 +62,17 @@ def inject_settings():
 
 
 @main_bp.route("/")
+@login_required
 def home():
     """Page d'accueil - Version avec clés utilisateur."""
+    # Vérifier si l'utilisateur doit faire l'onboarding
+    if not current_user.onboarding_completed:
+        return redirect(url_for('main.onboarding_wizard'))
+
     # En mode clés utilisateur, les APIs sont configurées par l'utilisateur
     use_mistral = True  # Interface peut configurer Mistral
     use_openai = True   # Interface peut configurer OpenAI
-    
+
     # Lecture du manifest pour récupérer le fichier JS correct
     manifest_path = os.path.join(current_app.root_path, 'static', 'react', 'asset-manifest.json')
     main_js = None
@@ -78,7 +85,7 @@ def home():
         main_js = None
 
     return render_template(
-        "index.html", 
+        "index.html",
         # Variables pour la compatibilité avec les templates existants
         use_mistral=use_mistral,
         use_mistral_api=use_mistral,
@@ -89,6 +96,109 @@ def home():
         api_mode="user_keys",  # Mode clés utilisateur
         user_keys_mode=True  # Flag pour les clés utilisateur
     )
+
+
+@main_bp.route("/api/dashboard/metrics")
+@login_required
+def dashboard_metrics():
+    """API qui renvoie les vraies métriques du dashboard depuis la base de données."""
+    try:
+        from sqlalchemy import func
+
+        # Calcul de la période (7 derniers jours)
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        today = datetime.utcnow()
+
+        # 1. Nombre total de requêtes API
+        total_requests = APIUsageLog.query.count()
+
+        # 2. Nombre de requêtes cette semaine
+        requests_this_week = APIUsageLog.query.filter(
+            APIUsageLog.created_at >= seven_days_ago
+        ).count()
+
+        # 3. Temps de réponse moyen (en secondes)
+        avg_response_time = db.session.query(
+            func.avg(APIUsageLog.request_duration)
+        ).scalar() or 0.0
+
+        # 4. Taux de succès (pourcentage)
+        total_with_status = APIUsageLog.query.count()
+        if total_with_status > 0:
+            success_count = APIUsageLog.query.filter(APIUsageLog.success == True).count()
+            success_rate = (success_count / total_with_status) * 100
+        else:
+            success_rate = 0.0
+
+        # 5. Tokens utilisés (total)
+        total_tokens = db.session.query(
+            func.sum(APIUsageLog.tokens_used)
+        ).scalar() or 0
+
+        # 6. Nombre d'utilisateurs actifs
+        active_users = User.query.filter(User.is_active == True).count()
+
+        # 7. Nombre total de FAQs dans la base de connaissances
+        total_faqs = FAQ.query.count()
+
+        # 8. Provider le plus utilisé
+        provider_stats = db.session.query(
+            APIUsageLog.provider,
+            func.count(APIUsageLog.id).label('count')
+        ).group_by(APIUsageLog.provider).order_by(text('count DESC')).first()
+
+        most_used_provider = provider_stats[0] if provider_stats else "Aucun"
+
+        # 9. Activité des 7 derniers jours (pour le graphique)
+        activity_by_day = []
+        for i in range(6, -1, -1):  # De il y a 6 jours à aujourd'hui
+            day = today - timedelta(days=i)
+            day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+
+            count = APIUsageLog.query.filter(
+                APIUsageLog.created_at >= day_start,
+                APIUsageLog.created_at < day_end
+            ).count()
+
+            activity_by_day.append({
+                'date': day.strftime('%Y-%m-%d'),
+                'label': day.strftime('%a'),  # Lun, Mar, Mer...
+                'count': count
+            })
+
+        # 10. Tendance de la semaine (comparaison avec la semaine précédente)
+        two_weeks_ago = datetime.utcnow() - timedelta(days=14)
+        requests_last_week = APIUsageLog.query.filter(
+            APIUsageLog.created_at >= two_weeks_ago,
+            APIUsageLog.created_at < seven_days_ago
+        ).count()
+
+        if requests_last_week > 0:
+            trend_percentage = ((requests_this_week - requests_last_week) / requests_last_week) * 100
+        else:
+            trend_percentage = 100.0 if requests_this_week > 0 else 0.0
+
+        # Construction de la réponse
+        metrics = {
+            'total_requests': total_requests,
+            'requests_this_week': requests_this_week,
+            'avg_response_time': round(avg_response_time, 2),
+            'success_rate': round(success_rate, 1),
+            'total_tokens': total_tokens,
+            'active_users': active_users,
+            'total_faqs': total_faqs,
+            'most_used_provider': most_used_provider,
+            'activity_by_day': activity_by_day,
+            'trend_percentage': round(trend_percentage, 1),
+            'trend_direction': 'up' if trend_percentage > 0 else 'down' if trend_percentage < 0 else 'stable'
+        }
+
+        return jsonify(metrics)
+
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des métriques: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @main_bp.route("/login", methods=["GET", "POST"])
@@ -105,48 +215,24 @@ def login():
         password = request.form.get("password")
         logger.debug(f"Tentative de connexion pour l'utilisateur: {username}")
 
-        # Vérification reCAPTCHA si configuré
-        recaptcha_response = request.form.get("g-recaptcha-response")
-        if current_app.config.get("RECAPTCHA_SECRET_KEY"):
-            secret = current_app.config["RECAPTCHA_SECRET_KEY"]
-            verify_url = "https://www.google.com/recaptcha/api/siteverify"
-            payload = {"secret": secret, "response": recaptcha_response}
-            try:
-                r = requests.post(verify_url, data=payload, timeout=10).json()
-                
-                if not r.get("success"):
-                    logger.warning("Échec de la vérification reCAPTCHA")
-                    error = "Échec de la vérification reCAPTCHA."
-                    return render_template(
-                        "login.html",
-                        error=error,
-                        recaptcha_sitekey=current_app.config.get("RECAPTCHA_SITE_KEY", "")
-                    )
-            except Exception as e:
-                logger.warning(f"Erreur reCAPTCHA: {e}")
-
         # Vérification des identifiants
         user = User.query.filter_by(username=username).first()
-        
+
         if user and user.check_password(password):
             login_user(user, remember=True)
             logger.info(f"Connexion réussie pour: {username}")
-            
+
             next_page = session.get('next')
             if next_page:
                 session.pop('next', None)
                 return redirect(next_page)
-            
+
             return redirect(url_for("main.home"))
         else:
             logger.warning(f"Échec de connexion pour: {username}")
             error = "Identifiant ou mot de passe incorrect."
 
-    return render_template(
-        "login.html",
-        error=error,
-        recaptcha_sitekey=current_app.config.get("RECAPTCHA_SITE_KEY", "")
-    )
+    return render_template("login.html", error=error)
 
 
 @main_bp.route("/logout")
@@ -181,7 +267,7 @@ def check_key():
     has_user_config = False
     if current_user.is_authenticated:
         user_settings = Settings.query.filter_by(user_id=current_user.id).first()
-        has_user_config = bool(user_settings and (user_settings.encrypted_openai_key or user_settings.encrypted_mistral_key))
+        has_user_config = bool(user_settings and (user_settings.encrypted_openai_key or user_settings.encrypted_mistral_key or user_settings.encrypted_claude_key))
     
     api_status = {
         "local_model": {
@@ -226,7 +312,7 @@ def health_check():
         # Vérifier la base de données
         db_status = "ok"
         try:
-            db.session.execute('SELECT 1').fetchone()
+            db.session.execute(text('SELECT 1')).fetchone()  # ← CORRECTION ICI
         except Exception as e:
             db_status = f"error: {str(e)}"
         
@@ -315,13 +401,20 @@ def save_api_config():
             user_settings.encrypted_openai_key = base64.b64encode(encrypted_key).decode()
             user_settings.openai_model = data.get('openai_model', 'gpt-3.5-turbo')
             logger.info(f"Clé OpenAI configurée pour {current_user.username}")
-            
+
         elif provider == 'mistral' and data.get('mistral_key'):
             # Chiffrer la clé Mistral
             encrypted_key = cipher_suite.encrypt(data['mistral_key'].encode())
             user_settings.encrypted_mistral_key = base64.b64encode(encrypted_key).decode()
             user_settings.mistral_model = data.get('mistral_model', 'mistral-small')
             logger.info(f"Clé Mistral configurée pour {current_user.username}")
+
+        elif provider == 'claude' and data.get('claude_key'):
+            # Chiffrer la clé Claude
+            encrypted_key = cipher_suite.encrypt(data['claude_key'].encode())
+            user_settings.encrypted_claude_key = base64.b64encode(encrypted_key).decode()
+            user_settings.claude_model = data.get('claude_model', 'claude-sonnet-4')
+            logger.info(f"Clé Claude configurée pour {current_user.username}")
         
         user_settings.current_provider = provider
         user_settings.updated_at = datetime.utcnow()
@@ -378,7 +471,7 @@ def get_api_config():
             except Exception as e:
                 logger.error(f"Erreur déchiffrement OpenAI pour {current_user.username}: {e}")
         
-        # Déchiffrer Mistral si présent  
+        # Déchiffrer Mistral si présent
         if user_settings.encrypted_mistral_key:
             try:
                 encrypted_key = base64.b64decode(user_settings.encrypted_mistral_key)
@@ -387,7 +480,17 @@ def get_api_config():
                 config_data["mistral_model"] = user_settings.mistral_model or 'mistral-small'
             except Exception as e:
                 logger.error(f"Erreur déchiffrement Mistral pour {current_user.username}: {e}")
-        
+
+        # Déchiffrer Claude si présent
+        if user_settings.encrypted_claude_key:
+            try:
+                encrypted_key = base64.b64decode(user_settings.encrypted_claude_key)
+                decrypted_key = cipher_suite.decrypt(encrypted_key).decode()
+                config_data["claude_key"] = decrypted_key
+                config_data["claude_model"] = user_settings.claude_model or 'claude-sonnet-4'
+            except Exception as e:
+                logger.error(f"Erreur déchiffrement Claude pour {current_user.username}: {e}")
+
         return jsonify({
             "success": True,
             "data": config_data
@@ -422,6 +525,8 @@ def test_api_key():
             result = test_openai_key(api_key, model)
         elif provider == 'mistral':
             result = test_mistral_key(api_key, model)
+        elif provider == 'claude':
+            result = test_claude_key(api_key, model)
         else:
             return jsonify({
                 "success": False,
@@ -441,15 +546,19 @@ def test_api_key():
 
 
 def test_openai_key(api_key, model):
-    """Teste une clé OpenAI."""
+    """Teste une clé OpenAI avec format system/user."""
     try:
         import openai
-        
+
         client = openai.OpenAI(api_key=api_key)
-        
+
+        # Format avec system et user pour tester le format réel
         response = client.chat.completions.create(
             model=model,
-            messages=[{"role": "user", "content": "Test de connexion"}],
+            messages=[
+                {"role": "system", "content": "Tu es un assistant de test."},
+                {"role": "user", "content": "Test"}
+            ],
             max_tokens=5,
             timeout=10
         )
@@ -477,16 +586,20 @@ def test_openai_key(api_key, model):
 
 
 def test_mistral_key(api_key, model):
-    """Teste une clé Mistral."""
+    """Teste une clé Mistral avec format system/user."""
     try:
         headers = {
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json'
         }
-        
+
+        # Format avec system et user pour tester le format réel
         payload = {
             'model': model,
-            'messages': [{'role': 'user', 'content': 'Test de connexion'}],
+            'messages': [
+                {'role': 'system', 'content': 'Tu es un assistant de test.'},
+                {'role': 'user', 'content': 'Test'}
+            ],
             'max_tokens': 5
         }
         
@@ -538,6 +651,43 @@ def test_mistral_key(api_key, model):
         }
 
 
+def test_claude_key(api_key, model):
+    """Teste une clé Claude (Anthropic) avec format system+user."""
+    try:
+        from anthropic import Anthropic
+
+        client = Anthropic(api_key=api_key)
+
+        # Format avec system séparé (spécifique à Claude) + messages user
+        response = client.messages.create(
+            model=model,
+            max_tokens=5,
+            system="Tu es un assistant de test.",
+            messages=[{"role": "user", "content": "Test"}]
+        )
+
+        return {
+            "success": True,
+            "message": f"Clé Claude valide - Modèle {model} opérationnel",
+            "model": model,
+            "usage": response.usage.input_tokens + response.usage.output_tokens if hasattr(response, 'usage') else None
+        }
+
+    except Exception as e:
+        error_msg = str(e)
+        if "invalid" in error_msg.lower() or "unauthorized" in error_msg.lower() or "authentication" in error_msg.lower():
+            error_msg = "Clé API invalide ou expirée"
+        elif "model" in error_msg.lower() or "not found" in error_msg.lower():
+            error_msg = f"Modèle {model} non disponible avec cette clé"
+        elif "quota" in error_msg.lower() or "rate" in error_msg.lower():
+            error_msg = "Quota dépassé ou limite de requêtes atteinte"
+
+        return {
+            "success": False,
+            "error": error_msg
+        }
+
+
 ############################################################################
 # ROUTE /api/message - VERSION AVEC CLÉS UTILISATEUR ET CORRECTION D'IDENTITÉ
 ############################################################################
@@ -572,8 +722,35 @@ def chatbot():
         # Récupérer la configuration API de l'utilisateur
         user_config = get_user_api_config()
         if not user_config:
+            # Calembours et messages rigolos quand aucune API n'est configurée
+            funny_messages = [
+                "Sans clé API, je suis comme un cadenas sans clé... complètement verrouillé ! Déverrouillez-moi dans la [configuration](/api-config).",
+                "Les tokens sont ma monnaie d'échange, et là je suis complètement fauché... Passez au guichet de la [config](/api-config) pour me renflouer !",
+                "Pas d'API, pas d'happy hour pour moi ! Je reste au comptoir sans pouvoir servir. Ouvrez le bar dans les [paramètres](/api-config).",
+                "Je suis un chatbot sans tokens, c'est comme être un chat sans bot... juste inutile ! Réparez-moi dans la [configuration](/api-config).",
+                "L'intelligence artificielle sans API, c'est de l'intelligence... très artificielle ! Rendez-moi intelligent dans les [paramètres](/api-config).",
+                "Je suis en mode avion : aucune connexion API possible ! Atterrissons ensemble dans la [config](/api-config).",
+                "Sans tokens, je suis comme un distributeur automatique sans pièces... je rends la monnaie de ma pièce : rien ! Alimentez-moi via la [configuration](/api-config).",
+                "API non configurée... Je suis un peu comme un téléphone sans réseau : beau mais inutile ! Connectez-moi dans les [paramètres](/api-config).",
+                "Les tokens sont le carburant de mon intelligence. Là, je suis en réserve... vide ! Faites le plein dans la [config](/api-config).",
+                "Sans clé API, je suis comme un piano : beaucoup de touches mais aucun son ! Accordez-moi dans la [configuration](/api-config).",
+                "Je suis affamé de tokens ! C'est la famine numérique ici... Nourrissez-moi dans les [paramètres](/api-config).",
+                "Pas de tokens, pas de chocolat... euh non, pas de discussion je veux dire ! Sucrez-moi la vie dans la [config](/api-config).",
+                "Je suis comme une bibliothèque fermée : plein de connaissances mais aucun accès ! Ouvrez les portes dans la [configuration](/api-config).",
+                "L'IA sans API, c'est comme le WiFi sans mot de passe... techniquement là, mais inaccessible ! Partagez le code dans les [paramètres](/api-config).",
+                "Je suis au chômage technique : pas de clé API, pas de travail pour moi ! Embauchez-moi via la [config](/api-config).",
+                "Sans API configurée, je suis une coquille vide... un bot sans cerveau ! Greffez-moi une intelligence dans la [configuration](/api-config).",
+                "Les clés API sont mes vitamines quotidiennes, et là je fais une overdose... de rien ! Soignez-moi dans les [paramètres](/api-config).",
+                "Je suis comme un GPS sans satellite : perdu ! Guidez-moi vers la [configuration](/api-config) pour retrouver le chemin.",
+                "Pas de tokens, c'est comme être invité à un banquet les mains vides... embarrassant ! Apportez les provisions via la [config](/api-config).",
+                "Je suis un artiste sans pinceau, un écrivain sans plume... bref, inutile ! Équipez-moi dans la [configuration](/api-config)."
+            ]
+
+            import random
+            funny_message = random.choice(funny_messages)
+
             return jsonify({
-                "message": "Aucune clé API configurée. Veuillez configurer vos clés dans les paramètres.",
+                "message": funny_message,
                 "error": True,
                 "config_required": True,
                 "config_url": url_for('main.config_api')
@@ -586,10 +763,10 @@ def chatbot():
         
         # Construction du contexte enrichi
         logger.info(f"Construction du contexte pour {current_user.username}: {user_message[:50]}...")
-        
+
         conversation_history = session.get('conversation_history', [])
-        
-        enriched_prompt, prompt_metadata = context_builder.build_system_prompt(
+
+        prompts, prompt_metadata = context_builder.build_system_prompt(
             user_message=user_message,
             session_context={
                 'session_id': session.get('session_id', str(uuid.uuid4())),
@@ -597,19 +774,20 @@ def chatbot():
                 'user_id': current_user.id
             }
         )
-        
+
         logger.info(f"Métadonnées du prompt: {prompt_metadata}")
-        
+
         # Configuration adaptative basée sur les métadonnées
         complexity = prompt_metadata.get('complexity', 1)
-        
+
         # Récupérer les informations du bot pour le post-traitement
         bot_info = context_builder._get_bot_info()
-        
+
         # Faire l'appel API avec les clés de l'utilisateur ET correction d'identité
+        # prompts = {'system': str, 'user': str}
         api_response = make_api_call_with_user_keys(
-            enriched_prompt, 
-            user_config, 
+            prompts,
+            user_config,
             complexity,
             bot_info=bot_info  # ← NOUVEAU: Passage des infos bot
         )
@@ -717,6 +895,18 @@ def get_user_api_config():
             except Exception as e:
                 logger.error(f"Erreur déchiffrement Mistral: {e}")
                 return None
+
+        elif user_settings.current_provider == 'claude' and user_settings.encrypted_claude_key:
+            try:
+                encrypted_key = base64.b64decode(user_settings.encrypted_claude_key)
+                api_key = cipher_suite.decrypt(encrypted_key).decode()
+                config.update({
+                    'api_key': api_key,
+                    'model': user_settings.claude_model or 'claude-sonnet-4'
+                })
+            except Exception as e:
+                logger.error(f"Erreur déchiffrement Claude: {e}")
+                return None
         else:
             return None
         
@@ -727,50 +917,62 @@ def get_user_api_config():
         return None
 
 
-def make_api_call_with_user_keys(prompt, user_config, complexity, bot_info=None):
+def make_api_call_with_user_keys(prompts, user_config, complexity, bot_info=None):
     """
     Fait l'appel API avec les clés de l'utilisateur.
-    VERSION MISE À JOUR avec correction forcée de l'identité.
+    VERSION MISE À JOUR avec séparation system/user et correction forcée de l'identité.
+
+    Args:
+        prompts: Dict avec 'system' (instructions) et 'user' (message utilisateur)
+        user_config: Config API utilisateur
+        complexity: Niveau de complexité 0-3
+        bot_info: Infos du bot pour post-traitement
     """
     try:
         provider = user_config['provider']
         api_key = user_config['api_key']
         model = user_config['model']
-        
+
+        # Extraire system et user du dict prompts
+        system_prompt = prompts.get('system', '')
+        user_message = prompts.get('user', '')
+
         # Valider et limiter la complexité
         complexity = max(0, min(complexity, 3))
-        
+
         # Configuration adaptée à la complexité
         token_limits = [100, 150, 200, 300]
         temperature_values = [0.3, 0.5, 0.7, 0.8]
-        
+
         max_tokens = token_limits[complexity]
         temperature = temperature_values[complexity]
-        
+
         if provider == 'openai':
-            response = call_openai_api(api_key, model, prompt, max_tokens, temperature)
+            response = call_openai_api(api_key, model, system_prompt, user_message, max_tokens, temperature)
         elif provider == 'mistral':
-            response = call_mistral_api(api_key, model, prompt, max_tokens, temperature)
+            response = call_mistral_api(api_key, model, system_prompt, user_message, max_tokens, temperature)
+        elif provider == 'claude':
+            response = call_claude_api(api_key, model, system_prompt, user_message, max_tokens, temperature)
         else:
             return {'error': f'Provider {provider} non supporté'}
-        
+
         # POST-TRAITEMENT POUR FORCER L'IDENTITÉ
         if 'message' in response and bot_info:
             original_message = response['message']
             corrected_message = post_process_api_response(original_message, bot_info)
-            
+
             if original_message != corrected_message:
                 logger.info("🔧 Identité forcée dans la réponse API")
                 response['message'] = corrected_message
-response['identity_corrected'] = True
-           else:
-               response['identity_corrected'] = False
-       
-       return response
-           
-   except Exception as e:
-       logger.error(f"Erreur appel API: {e}")
-       return {'error': str(e)}
+                response['identity_corrected'] = True
+            else:
+                response['identity_corrected'] = False
+
+        return response
+
+    except Exception as e:
+        logger.error(f"Erreur appel API: {e}")
+        return {'error': str(e)}
 
 
 def post_process_api_response(response_text: str, bot_info: Dict[str, str]) -> str:
@@ -803,21 +1005,27 @@ def post_process_api_response(response_text: str, bot_info: Dict[str, str]) -> s
    return corrected_text
 
 
-def call_openai_api(api_key, model, prompt, max_tokens, temperature):
-   """Appel à l'API OpenAI."""
+def call_openai_api(api_key, model, system_prompt, user_message, max_tokens, temperature):
+   """Appel à l'API OpenAI avec séparation system/user."""
    try:
        import openai
-       
+
        client = openai.OpenAI(api_key=api_key)
-       
+
+       # Format correct OpenAI: messages avec role system et user séparés
+       messages = [
+           {"role": "system", "content": system_prompt},
+           {"role": "user", "content": user_message}
+       ]
+
        response = client.chat.completions.create(
            model=model,
-           messages=[{"role": "user", "content": prompt}],
+           messages=messages,
            max_tokens=max_tokens,
            temperature=temperature,
            timeout=30
        )
-       
+
        return {
            'message': response.choices[0].message.content,
            'usage': {
@@ -826,34 +1034,40 @@ def call_openai_api(api_key, model, prompt, max_tokens, temperature):
                'total_tokens': response.usage.total_tokens
            } if response.usage else {}
        }
-       
+
    except Exception as e:
        logger.error(f"Erreur OpenAI API: {e}")
        return {'error': f'Erreur OpenAI: {str(e)}'}
 
 
-def call_mistral_api(api_key, model, prompt, max_tokens, temperature):
-   """Appel à l'API Mistral."""
+def call_mistral_api(api_key, model, system_prompt, user_message, max_tokens, temperature):
+   """Appel à l'API Mistral avec séparation system/user."""
    try:
        headers = {
            'Authorization': f'Bearer {api_key}',
            'Content-Type': 'application/json'
        }
-       
+
+       # Format correct Mistral: messages avec role system et user séparés
+       messages = [
+           {'role': 'system', 'content': system_prompt},
+           {'role': 'user', 'content': user_message}
+       ]
+
        payload = {
            'model': model,
-           'messages': [{'role': 'user', 'content': prompt}],
+           'messages': messages,
            'max_tokens': max_tokens,
            'temperature': temperature
        }
-       
+
        response = requests.post(
            'https://api.mistral.ai/v1/chat/completions',
            headers=headers,
            json=payload,
            timeout=30
        )
-       
+
        if response.status_code == 200:
            data = response.json()
            return {
@@ -864,10 +1078,41 @@ def call_mistral_api(api_key, model, prompt, max_tokens, temperature):
            error_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else {}
            error_msg = error_data.get('message', f"Erreur HTTP {response.status_code}")
            return {'error': f'Erreur Mistral: {error_msg}'}
-           
+
    except Exception as e:
        logger.error(f"Erreur Mistral API: {e}")
        return {'error': f'Erreur Mistral: {str(e)}'}
+
+
+def call_claude_api(api_key, model, system_prompt, user_message, max_tokens, temperature):
+   """Appel à l'API Claude (Anthropic) avec format officiel system+messages."""
+   try:
+       from anthropic import Anthropic
+
+       client = Anthropic(api_key=api_key)
+
+       # Format CORRECT pour Claude: paramètre system séparé + messages user
+       # Documentation: https://docs.anthropic.com/en/api/messages
+       response = client.messages.create(
+           model=model,
+           max_tokens=max_tokens,
+           temperature=temperature,
+           system=system_prompt,  # ← Paramètre séparé pour Claude (pas dans messages)
+           messages=[{"role": "user", "content": user_message}]
+       )
+
+       return {
+           'message': response.content[0].text,
+           'usage': {
+               'prompt_tokens': response.usage.input_tokens,
+               'completion_tokens': response.usage.output_tokens,
+               'total_tokens': response.usage.input_tokens + response.usage.output_tokens
+           } if hasattr(response, 'usage') else {}
+       }
+
+   except Exception as e:
+       logger.error(f"Erreur Claude API: {e}")
+       return {'error': f'Erreur Claude: {str(e)}'}
 
 
 #######################################
@@ -932,7 +1177,7 @@ def responses_wizard():
    ]
 
    return render_template(
-       'reponses.html',
+       'bot_config/reponses.html',
        config=config,
        settings=settings,
        vocabulary_terms=vocabulary_terms,
@@ -1443,8 +1688,10 @@ def config_api():
                'provider': user_settings.current_provider,
                'openai_model': user_settings.openai_model,
                'mistral_model': user_settings.mistral_model,
+               'claude_model': user_settings.claude_model,
                'has_openai': bool(user_settings.encrypted_openai_key),
-               'has_mistral': bool(user_settings.encrypted_mistral_key)
+               'has_mistral': bool(user_settings.encrypted_mistral_key),
+               'has_claude': bool(user_settings.encrypted_claude_key)
            }
    except Exception as e:
        logger.error(f"Erreur récupération config: {e}")
@@ -1459,8 +1706,10 @@ def config_api():
        # Pas de clés affichées pour sécurité
        mistral_key="",
        gpt_key="",
+       claude_key="",
        model_select=current_config.get('openai_model', 'gpt-3.5-turbo'),
        mistral_model_select=current_config.get('mistral_model', 'mistral-small'),
+       claude_model_select=current_config.get('claude_model', 'claude-sonnet-4'),
        # Information pour l'utilisateur
        info_message="Vos clés API sont chiffrées et stockées de manière sécurisée sur le serveur."
    )
@@ -2882,7 +3131,7 @@ def api_internal_error(error):
        return jsonify({
            'error': 'Internal server error',
            'path': request.path,
-           'message': 'Une erreur inattendue s'est produite'
+           'message': "Une erreur inattendue s'est produite"
        }), 500
    return error
 
@@ -3060,17 +3309,150 @@ def test_response_matching():
        return jsonify({'error': str(e)}), 500
 
 
+############################################################################
+# WIZARD D'ONBOARDING ET MODE SIMPLE/AVANCÉ
+############################################################################
+
+@main_bp.route("/onboarding")
+@login_required
+def onboarding_wizard():
+    """Wizard d'onboarding pour nouveaux utilisateurs."""
+    # Récupérer les paramètres existants pour pré-remplissage
+    settings = Settings.query.filter_by(user_id=current_user.id).first()
+    initial_data = {
+        'botName': settings.bot_name if settings else '',
+        'botDescription': settings.bot_description if settings else '',
+        'welcomeMessage': settings.bot_welcome if settings else '',
+        'provider': current_user.preferred_provider if current_user.preferred_provider else ''
+    }
+    return render_template("onboarding_wizard.html", initial_data=initial_data)
+
+
+@main_bp.route("/reopen-wizard")
+@login_required
+def reopen_wizard():
+    """Permet de ré-ouvrir le wizard pour modifier la configuration."""
+    # Récupérer les paramètres existants
+    settings = Settings.query.filter_by(user_id=current_user.id).first()
+    initial_data = {
+        'botName': settings.bot_name if settings else '',
+        'botDescription': settings.bot_description if settings else '',
+        'welcomeMessage': settings.bot_welcome if settings else '',
+        'provider': current_user.preferred_provider if current_user.preferred_provider else ''
+    }
+    return render_template("onboarding_wizard.html", initial_data=initial_data, is_reopen=True)
+
+
+@main_bp.route("/api/save-wizard", methods=["POST"])
+@login_required
+def save_wizard():
+    """Sauvegarde les données du wizard d'onboarding."""
+    try:
+        data = request.get_json()
+
+        # Sauvegarder les paramètres généraux
+        settings = Settings.query.filter_by(user_id=current_user.id).first()
+        if not settings:
+            settings = Settings(user_id=current_user.id)
+            db.session.add(settings)
+
+        settings.bot_name = data.get('botName', 'LeoBot')
+        settings.bot_description = data.get('botDescription', '')
+        settings.bot_welcome = data.get('welcomeMessage', 'Bonjour !')
+
+        # Sauvegarder le provider préféré
+        current_user.preferred_provider = data.get('provider')
+        current_user.onboarding_completed = True
+
+        db.session.commit()
+
+        logger.info(f"Wizard complété pour {current_user.username}")
+
+        return jsonify({
+            "success": True,
+            "message": "Configuration sauvegardée",
+            "redirect_to": url_for('main.config_api')
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur sauvegarde wizard: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route("/api/toggle-ui-mode", methods=["POST"])
+@login_required
+def toggle_ui_mode():
+    """Bascule entre mode simple et mode avancé."""
+    try:
+        data = request.get_json()
+        new_mode = data.get('mode', 'simple')
+
+        if new_mode not in ['simple', 'advanced']:
+            return jsonify({
+                "success": False,
+                "error": "Mode invalide"
+            }), 400
+
+        current_user.ui_mode = new_mode
+        db.session.commit()
+
+        logger.info(f"Mode UI changé pour {current_user.username}: {new_mode}")
+
+        return jsonify({
+            "success": True,
+            "mode": new_mode,
+            "message": f"Mode {new_mode} activé"
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur toggle UI mode: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route("/api/skip-onboarding", methods=["POST"])
+@login_required
+def skip_onboarding():
+    """Permet de sauter l'onboarding."""
+    try:
+        current_user.onboarding_completed = True
+        db.session.commit()
+
+        logger.info(f"Onboarding sauté par {current_user.username}")
+
+        return jsonify({
+            "success": True,
+            "message": "Onboarding sauté"
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur skip onboarding: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"Erreur: {str(e)}"
+        }), 500
+
+
 # ========================
 # FIN DU FICHIER routes.py - VERSION COMPLÈTE MISE À JOUR
 # ========================
 
 # Note: Ce fichier contient maintenant toutes les routes nécessaires pour:
 # 1. La nouvelle interface de configuration des réponses
-# 2. La compatibilité avec l'ancienne interface  
+# 2. La compatibilité avec l'ancienne interface
 # 3. La gestion des clés API utilisateur
 # 4. Les fonctionnalités avancées (export/import, cache, etc.)
 # 5. La correction d'identité et post-traitement des réponses
 # 6. Les routes de diagnostic et monitoring
 # 7. Les fonctionnalités de sécurité et audit
+# 8. Le wizard d'onboarding et le mode simple/avancé
 
 logger.info("🚀 Module routes.py chargé avec succès - Version 2.0 avec nouvelle interface de réponses")

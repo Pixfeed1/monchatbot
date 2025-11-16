@@ -32,10 +32,42 @@ def create_app():
     """Crée et configure l'application Flask en mode API uniquement."""
     logger.info("»»»» Démarrage de la création de l'application Flask (API)")
     app = Flask(__name__)
-    
-    # Charger les variables d'environnement
-    load_dotenv()
-    logger.info("»»»» Variables d'environnement chargées")
+
+    # Charger les variables d'environnement depuis la racine du projet
+    from pathlib import Path
+    project_root = Path(__file__).parent.parent
+    env_file = project_root / '.env'
+    load_dotenv(dotenv_path=env_file)
+    logger.info(f"»»»» Variables d'environnement chargées depuis: {env_file}")
+
+    # Debug: afficher les variables PostgreSQL chargées
+    database_url = os.getenv('DATABASE_URL')
+    postgres_user = os.getenv('POSTGRES_USER')
+    postgres_password = os.getenv('POSTGRES_PASSWORD')
+    postgres_host = os.getenv('POSTGRES_HOST')
+    postgres_db = os.getenv('POSTGRES_DB')
+
+    logger.info(f"»»»» [DEBUG] DATABASE_URL présent: {bool(database_url)}")
+    if database_url:
+        # Masquer le mot de passe mais montrer le format
+        if '@' in database_url:
+            user_part = database_url.split('//')[1].split('@')[0]
+            host_part = database_url.split('@')[1]
+            if ':' in user_part:
+                user, pwd = user_part.split(':', 1)
+                # Montrer les 3 premiers et 3 derniers caractères du mot de passe
+                masked_pwd = f"{pwd[:3]}...{pwd[-3:]}" if len(pwd) > 6 else "***"
+                logger.info(f"»»»» [DEBUG] DATABASE_URL format: postgresql://{user}:{masked_pwd}@{host_part}")
+    else:
+        logger.info(f"»»»» [DEBUG] POSTGRES_USER: {postgres_user}")
+        logger.info(f"»»»» [DEBUG] POSTGRES_HOST: {postgres_host}")
+        logger.info(f"»»»» [DEBUG] POSTGRES_DB: {postgres_db}")
+        if postgres_password:
+            # Montrer les 3 premiers et 3 derniers caractères du mot de passe
+            masked = f"{postgres_password[:3]}...{postgres_password[-3:]}" if len(postgres_password) > 6 else "***"
+            logger.info(f"»»»» [DEBUG] POSTGRES_PASSWORD: {masked} (longueur: {len(postgres_password)})")
+        else:
+            logger.info(f"»»»» [DEBUG] POSTGRES_PASSWORD: NON DÉFINI")
     
     # Configuration CORS
     logger.info("»»»» Configuration de CORS")
@@ -156,10 +188,8 @@ def create_app():
             
             if api_manager.is_ready:
                 logger.info("✅ Gestionnaire API initialisé avec succès")
-                # Test rapide des APIs
-                test_results = api_manager.test_providers()
-                for provider, status in test_results.items():
-                    logger.info(f"   - {provider}: {'✅ OK' if status else '❌ Erreur'}")
+                # Note: Les tests API se font quand l'utilisateur configure ses clés
+                # test_results = api_manager.test_providers()  # Méthode non disponible en mode user_keys
             else:
                 logger.error(f"❌ Échec de l'initialisation API: {api_manager.error_message}")
                 

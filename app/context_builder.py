@@ -38,23 +38,23 @@ class ContextBuilder:
             'yes_no': ['oui', 'non', 'yes', 'no', 'ok', 'd\'accord']
         }
         
-    def build_system_prompt(self, user_message: str, session_context: Dict = None) -> Tuple[str, Dict]:
+    def build_system_prompt(self, user_message: str, session_context: Dict = None) -> Tuple[Dict[str, str], Dict]:
         """
         Construit un prompt système adaptatif selon la complexité du message.
         FORCE l'utilisation des paramètres utilisateur configurés.
-        
+
         Returns:
-            Tuple[str, Dict]: (prompt_enrichi, metadata)
+            Tuple[Dict, Dict]: ({'system': str, 'user': str}, metadata)
         """
         logger.info(f"Construction du contexte pour: {user_message[:50]}...")
-        
+
         # 1. Analyse préliminaire du message
         message_type = self._analyze_message_type(user_message)
-        
+
         # 2. Si c'est un message très simple, utiliser un contexte minimal
         if message_type['is_simple']:
             return self._build_simple_prompt(user_message, message_type)
-        
+
         # 3. Pour les messages complexes, construire le contexte enrichi
         return self._build_enriched_prompt(user_message, session_context)
     
@@ -131,25 +131,31 @@ class ContextBuilder:
         
         return analysis
     
-    def _build_simple_prompt(self, user_message: str, message_type: Dict) -> Tuple[str, Dict]:
+    def _build_simple_prompt(self, user_message: str, message_type: Dict) -> Tuple[Dict[str, str], Dict]:
         """
         Construit un prompt minimal pour les messages simples.
         FORCE l'utilisation des paramètres configurés.
+        Retourne séparément system et user pour les APIs.
         """
         bot_info = self._get_bot_info()
-        
-        # Prompt ultra-minimal avec identité FORCÉE
+
+        # System prompt avec identité FORCÉE
         base_identity = f"Tu es {bot_info['name']}. {bot_info['description']} Tu n'es PAS une assistante virtuelle générique."
-        
+
         if message_type['category'] == 'greetings':
-            prompt = f"{base_identity} Réponds amicalement à cette salutation en restant dans ton rôle.\n\nUtilisateur: {user_message}"
+            system_prompt = f"{base_identity} Réponds amicalement à cette salutation en restant dans ton rôle."
         elif message_type['category'] == 'thanks':
-            prompt = f"{base_identity} L'utilisateur te remercie, réponds poliment.\n\nUtilisateur: {user_message}"
+            system_prompt = f"{base_identity} L'utilisateur te remercie, réponds poliment."
         elif message_type['category'] == 'goodbye':
-            prompt = f"{base_identity} L'utilisateur dit au revoir, réponds courtoisement.\n\nUtilisateur: {user_message}"
+            system_prompt = f"{base_identity} L'utilisateur dit au revoir, réponds courtoisement."
         else:
-            prompt = f"{base_identity}\n\nUtilisateur: {user_message}"
-        
+            system_prompt = base_identity
+
+        prompts = {
+            'system': system_prompt,
+            'user': user_message
+        }
+
         metadata = {
             'complexity': 0,
             'has_examples': False,
@@ -157,56 +163,57 @@ class ContextBuilder:
             'has_knowledge': False,
             'is_personal': False,
             'knowledge_score': 0,
-            'estimated_tokens': len(prompt.split()) * 1.3
+            'estimated_tokens': len(system_prompt.split()) * 1.3 + len(user_message.split()) * 1.3
         }
-        
+
         logger.info(f"Prompt simplifié généré ({metadata['estimated_tokens']:.1f} tokens)")
-        return prompt, metadata
+        return prompts, metadata
     
-    def _build_enriched_prompt(self, user_message: str, session_context: Dict = None) -> Tuple[str, Dict]:
+    def _build_enriched_prompt(self, user_message: str, session_context: Dict = None) -> Tuple[Dict[str, str], Dict]:
         """
         Construit un prompt enrichi pour les messages complexes.
         FORCE l'utilisation des paramètres configurés.
+        Retourne séparément system et user pour les APIs.
         """
         # Récupérer les infos de base
         bot_info = self._get_bot_info()
         response_config = self._get_response_config()
-        
+
         # Analyser si c'est une question personnelle
         try:
             from .bot_answers import check_personal_questions
             personal_question_context = check_personal_questions(user_message)
         except ImportError:
             personal_question_context = None
-        
+
         # Recherche intelligente selon le besoin
         message_analysis = self._analyze_message_type(user_message)
-        
+
         relevant_examples = []
         relevant_faqs = []
         knowledge_results = {'has_knowledge': False, 'relevance_score': 0}
         vocabulary_rules = {}
-        
+
         # Charger les données selon les besoins
         if message_analysis['needs_examples']:
             relevant_examples = self._find_relevant_examples(user_message, max_examples=2)
-        
+
         if message_analysis['needs_knowledge']:
             knowledge_results = self.knowledge_integrator.search_knowledge(user_message, max_results=3)
             relevant_faqs = self._search_faqs(user_message, max_results=2)
-        
+
         if message_analysis['needs_vocabulary']:
             vocabulary_rules = self._get_vocabulary_rules()
-        
+
         # Estimer la complexité finale
         complexity = self._estimate_complexity(
-            user_message, 
+            user_message,
             has_knowledge=knowledge_results.get('has_knowledge', False),
             is_personal=personal_question_context is not None
         )
-        
-        # Construire le prompt adaptatif avec IDENTITÉ FORCÉE
-        prompt = self._assemble_adaptive_prompt(
+
+        # Construire le system prompt adaptatif avec IDENTITÉ FORCÉE
+        system_prompt = self._assemble_adaptive_prompt(
             bot_info=bot_info,
             response_config=response_config,
             examples=relevant_examples,
@@ -214,10 +221,14 @@ class ContextBuilder:
             vocabulary=vocabulary_rules,
             knowledge=knowledge_results,
             personal_context=personal_question_context,
-            user_message=user_message,
             complexity=complexity
         )
-        
+
+        prompts = {
+            'system': system_prompt,
+            'user': user_message
+        }
+
         metadata = {
             'complexity': complexity,
             'has_examples': len(relevant_examples) > 0,
@@ -225,11 +236,11 @@ class ContextBuilder:
             'has_knowledge': knowledge_results.get('has_knowledge', False),
             'is_personal': personal_question_context is not None,
             'knowledge_score': knowledge_results.get('relevance_score', 0),
-            'estimated_tokens': len(prompt.split()) * 1.3
+            'estimated_tokens': len(system_prompt.split()) * 1.3 + len(user_message.split()) * 1.3
         }
-        
+
         logger.info(f"Prompt enrichi généré ({metadata['estimated_tokens']:.1f} tokens) - Complexité: {complexity}")
-        return prompt, metadata
+        return prompts, metadata
     
     def _get_bot_info(self) -> Dict[str, str]:
         """
@@ -247,17 +258,17 @@ class ContextBuilder:
         if general_settings:
             logger.info(f"🎯 PARAMÈTRES CHARGÉS: Nom='{general_settings.bot_name}', Description='{general_settings.bot_description}'")
             return {
-                'name': general_settings.bot_name or 'Assistant',
-                'description': general_settings.bot_description or 'Je suis votre assistant virtuel.',
-                'welcome': general_settings.bot_welcome or 'Bonjour! Comment puis-je vous aider?',
+                'name': general_settings.bot_name or 'Léo',
+                'description': general_settings.bot_description or 'Je suis Léo, votre assistant intelligent et sympathique.',
+                'welcome': general_settings.bot_welcome or 'Bonjour ! Je suis Léo, ravi de vous rencontrer !',
                 'avatar': general_settings.bot_avatar
             }
         else:
             logger.warning("AUCUN PARAMÈTRE TROUVÉ - Utilisation des valeurs par défaut")
             return {
-                'name': 'Assistant',
-                'description': 'Je suis votre assistant virtuel.',
-                'welcome': 'Bonjour! Comment puis-je vous aider?'
+                'name': 'Léo',
+                'description': 'Je suis Léo, votre assistant intelligent et sympathique.',
+                'welcome': 'Bonjour ! Je suis Léo, ravi de vous rencontrer !'
             }
     
     def _get_response_config(self) -> Dict[str, Any]:
@@ -372,9 +383,10 @@ class ContextBuilder:
     def _assemble_adaptive_prompt(self, **kwargs) -> str:
         """
         VERSION ULTRA-RENFORCÉE qui FORCE l'identité même pour GPT/Mistral récalcitrants.
+        Retourne SEULEMENT le system prompt, sans le message utilisateur.
         """
         sections = []
-        
+
         bot_info = kwargs.get('bot_info', {})
         response_config = kwargs.get('response_config', {})
         examples = kwargs.get('examples', [])
@@ -382,7 +394,6 @@ class ContextBuilder:
         vocabulary = kwargs.get('vocabulary', {})
         knowledge = kwargs.get('knowledge', {})
         personal_context = kwargs.get('personal_context')
-        user_message = kwargs.get('user_message', '')
         complexity = kwargs.get('complexity', 1)
         
         # 1. IDENTITÉ ULTRA-FORCÉE AVEC RÉPÉTITION ET EXEMPLES
@@ -420,10 +431,9 @@ INSTRUCTIONS:
 - N'ajoute RIEN d'autre
 - Pas d'explication supplémentaire
 - Pas de phrase générique d'IA""")
-                    
-                    # Prompt ultra-simplifié pour questions personnelles
-                    final_prompt = "\n\n".join(sections) + f"\n\nUtilisateur: {user_message}\nRéponse:"
-                    return final_prompt
+
+                    # Return system prompt only (no user message)
+                    return "\n\n".join(sections)
         
         # 3. CONTEXTE RENFORCÉ SELON COMPLEXITÉ
         if complexity >= 1:
@@ -482,11 +492,9 @@ Ta réponse en tant que {bot_info['name']}: "{example['response'][:80]}...\""""
 Si l'utilisateur demande qui tu es, réponds:
 "Je suis {bot_info['name']}. {bot_info['description']}"
 
-Maintenant, réponds à l'utilisateur en respectant ton identité:""")
-        
-        # 9. MESSAGE UTILISATEUR
-        sections.append(f"Utilisateur: {user_message}")
-        
+Maintenant, réponds à l'utilisateur en respectant ton identité.""")
+
+        # Return system prompt only (user message handled separately by API calls)
         return "\n\n".join(sections)
     
     def post_process_response(self, response: str, bot_info: Dict[str, str]) -> str:

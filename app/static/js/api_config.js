@@ -47,13 +47,17 @@ class APIConfigManager {
             saveButton: 'save_config',
             openaiSection: 'openai_section',
             mistralSection: 'mistral_section',
+            claudeSection: 'claude_section',
             testResults: 'test_results',
             gptKey: 'gpt_key',
             modelSelect: 'model_select',
             testOpenAI: 'test_openai',
             mistralKey: 'mistral_key',
             mistralModel: 'mistral_model',
-            testMistral: 'test_mistral'
+            testMistral: 'test_mistral',
+            claudeKey: 'claude_key',
+            claudeModel: 'claude_model',
+            testClaude: 'test_claude'
         };
         
         // Récupérer tous les éléments
@@ -65,7 +69,7 @@ class APIConfigManager {
         }
         
         // Vérifier les éléments critiques
-        const criticalElements = ['providerSelect', 'form', 'saveButton', 'openaiSection', 'mistralSection'];
+        const criticalElements = ['providerSelect', 'form', 'saveButton', 'openaiSection', 'mistralSection', 'claudeSection'];
         for (const key of criticalElements) {
             if (!this.elements[key]) {
                 throw new Error(`Élément critique manquant: ${key}`);
@@ -98,7 +102,14 @@ class APIConfigManager {
                 this.validateKeys();
             });
         }
-        
+
+        if (this.elements.claudeKey) {
+            this.elements.claudeKey.addEventListener('input', () => {
+                console.log("⌨️ Saisie Claude key");
+                this.validateKeys();
+            });
+        }
+
         // Tests API
         if (this.elements.testOpenAI) {
             this.elements.testOpenAI.addEventListener('click', () => {
@@ -106,11 +117,18 @@ class APIConfigManager {
                 this.testAPI('openai');
             });
         }
-        
+
         if (this.elements.testMistral) {
             this.elements.testMistral.addEventListener('click', () => {
                 console.log("🧪 Test Mistral demandé");
                 this.testAPI('mistral');
+            });
+        }
+
+        if (this.elements.testClaude) {
+            this.elements.testClaude.addEventListener('click', () => {
+                console.log("🧪 Test Claude demandé");
+                this.testAPI('claude');
             });
         }
         
@@ -147,26 +165,37 @@ class APIConfigManager {
             console.log("👁️ Affichage section Mistral");
             this.elements.mistralSection.classList.remove('hidden');
             this.elements.testResults.classList.remove('hidden');
-            
+
             // Focus sur le champ clé
             if (this.elements.mistralKey) {
                 setTimeout(() => this.elements.mistralKey.focus(), 100);
             }
+
+        } else if (provider === 'claude') {
+            console.log("👁️ Affichage section Claude");
+            this.elements.claudeSection.classList.remove('hidden');
+            this.elements.testResults.classList.remove('hidden');
+
+            // Focus sur le champ clé
+            if (this.elements.claudeKey) {
+                setTimeout(() => this.elements.claudeKey.focus(), 100);
+            }
         }
-        
+
         // Revalider après changement
         this.validateKeys();
     }
     
     hideAllSections() {
         console.log("🙈 Masquage de toutes les sections");
-        
+
         const sectionsToHide = [
             this.elements.openaiSection,
             this.elements.mistralSection,
+            this.elements.claudeSection,
             this.elements.testResults
         ];
-        
+
         sectionsToHide.forEach(section => {
             if (section) {
                 section.classList.add('hidden');
@@ -203,25 +232,42 @@ class APIConfigManager {
             
         } else if (provider === 'mistral' && this.elements.mistralKey) {
             const key = this.elements.mistralKey.value.trim();
-            
+
             // Validation Mistral
             isValid = key.length >= 10;
-            
+
             console.log("🔑 Mistral key valid:", isValid, "longueur:", key.length);
-            
+
             // Styles visuels
             this.elements.mistralKey.classList.toggle('valid', isValid);
             this.elements.mistralKey.classList.toggle('invalid', !isValid && key.length > 0);
-            
+
             // Bouton test
             if (this.elements.testMistral) {
                 this.elements.testMistral.disabled = !isValid;
             }
+
+        } else if (provider === 'claude' && this.elements.claudeKey) {
+            const key = this.elements.claudeKey.value.trim();
+
+            // Validation Claude (clé commence par sk-ant-)
+            isValid = key.length >= 20 && key.startsWith('sk-ant-');
+
+            console.log("🔑 Claude key valid:", isValid, "longueur:", key.length);
+
+            // Styles visuels
+            this.elements.claudeKey.classList.toggle('valid', isValid);
+            this.elements.claudeKey.classList.toggle('invalid', !isValid && key.length > 0);
+
+            // Bouton test
+            if (this.elements.testClaude) {
+                this.elements.testClaude.disabled = !isValid;
+            }
         }
-        
+
         // Mise à jour du bouton de sauvegarde
         this.updateSaveButton(provider, isValid);
-        
+
         return isValid;
     }
     
@@ -242,30 +288,41 @@ class APIConfigManager {
     
     async testAPI(provider) {
         console.log("🧪 Test API:", provider);
-        
-        const button = provider === 'openai' ? this.elements.testOpenAI : this.elements.testMistral;
+
+        let button;
+        if (provider === 'openai') {
+            button = this.elements.testOpenAI;
+        } else if (provider === 'mistral') {
+            button = this.elements.testMistral;
+        } else if (provider === 'claude') {
+            button = this.elements.testClaude;
+        }
+
         if (!button) {
             console.error("❌ Bouton de test non trouvé pour", provider);
             return;
         }
-        
+
         const originalText = button.textContent;
-        
+
         // État de chargement
         button.disabled = true;
         button.textContent = 'Test en cours...';
-        
+
         try {
             const testData = {
                 provider: provider
             };
-            
+
             if (provider === 'openai') {
                 testData.api_key = this.elements.gptKey.value;
                 testData.model = this.elements.modelSelect.value;
-            } else {
+            } else if (provider === 'mistral') {
                 testData.api_key = this.elements.mistralKey.value;
                 testData.model = this.elements.mistralModel.value;
+            } else if (provider === 'claude') {
+                testData.api_key = this.elements.claudeKey.value;
+                testData.model = this.elements.claudeModel.value;
             }
             
             console.log("📤 Envoi test:", { provider, model: testData.model });
@@ -322,6 +379,9 @@ class APIConfigManager {
             } else if (this.elements.providerSelect.value === 'mistral') {
                 configData.mistral_key = this.elements.mistralKey.value;
                 configData.mistral_model = this.elements.mistralModel.value;
+            } else if (this.elements.providerSelect.value === 'claude') {
+                configData.claude_key = this.elements.claudeKey.value;
+                configData.claude_model = this.elements.claudeModel.value;
             }
             
             console.log("📤 Envoi config:", { provider: configData.provider });
@@ -382,7 +442,10 @@ class APIConfigManager {
                 if (data.mistral_key && this.elements.mistralKey) {
                     this.elements.mistralKey.value = data.mistral_key;
                 }
-                
+                if (data.claude_key && this.elements.claudeKey) {
+                    this.elements.claudeKey.value = data.claude_key;
+                }
+
                 // Revalider après chargement
                 this.validateKeys();
                 

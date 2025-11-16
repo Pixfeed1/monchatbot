@@ -91,22 +91,22 @@ def get_bot_info(force_refresh: bool = False, user_id: int = None) -> Dict[str, 
             if settings:
                 # Utiliser VOS paramètres configurés
                 bot_data = {
-                    "name": settings.bot_name or "Assistant",
-                    "description": settings.bot_description or "Je suis votre assistant virtuel spécialisé.",
-                    "welcome": settings.bot_welcome or "",
+                    "name": settings.bot_name or "Léo",
+                    "description": settings.bot_description or "Je suis Léo, votre assistant intelligent et sympathique.",
+                    "welcome": settings.bot_welcome or "Bonjour ! Je suis Léo, ravi de vous rencontrer !",
                     "avatar": settings.bot_avatar or ""
                 }
-                
+
                 _bot_info_cache[cache_key] = bot_data
                 _bot_info_cache[f"{cache_key}_timestamp"] = current_time
-                
+
                 logger.info(f"🎯 Bot info chargée pour {cache_key}: Nom='{settings.bot_name}', Description='{settings.bot_description}'")
             else:
                 # Valeurs par défaut si aucun paramètre trouvé
                 bot_data = {
-                    "name": "Assistant",
-                    "description": "Je suis votre assistant virtuel spécialisé.",
-                    "welcome": "Bonjour ! Comment puis-je vous aider aujourd'hui ?",
+                    "name": "Léo",
+                    "description": "Je suis Léo, votre assistant intelligent et sympathique.",
+                    "welcome": "Bonjour ! Je suis Léo, ravi de vous rencontrer !",
                     "avatar": ""
                 }
                 
@@ -119,9 +119,9 @@ def get_bot_info(force_refresh: bool = False, user_id: int = None) -> Dict[str, 
             logger.error(f"Erreur lors de la récupération des infos du bot: {str(e)}", exc_info=True)
             # Valeurs par défaut en cas d'erreur
             _bot_info_cache[cache_key] = {
-                "name": "Assistant",
-                "description": "Je suis votre assistant virtuel spécialisé.",
-                "welcome": "Bonjour ! Comment puis-je vous aider aujourd'hui ?",
+                "name": "Léo",
+                "description": "Je suis Léo, votre assistant intelligent et sympathique.",
+                "welcome": "Bonjour ! Je suis Léo, ravi de vous rencontrer !",
                 "avatar": ""
             }
             _bot_info_cache[f"{cache_key}_timestamp"] = current_time

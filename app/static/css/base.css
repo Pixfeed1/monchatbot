@@ -76,6 +76,127 @@ body {
 
 .icons {
     margin-left: auto;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.icons i {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.icons i:hover {
+    transform: scale(1.1);
+}
+
+/* Notification wrapper */
+.notification-wrapper {
+    position: relative;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #dc3545;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.notification-dropdown {
+    position: absolute;
+    top: 45px;
+    right: 0;
+    width: 320px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    display: none;
+    z-index: 2000;
+    overflow: hidden;
+}
+
+.notification-dropdown.show {
+    display: block;
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notification-header {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 14px;
+}
+
+.notification-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+    color: inherit;
+    gap: 12px;
+}
+
+.notification-item:hover {
+    background: #f8f9fa;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-icon {
+    color: #0d6efd;
+    font-size: 18px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.notification-text {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.4;
 }
 
 .header-link {
@@ -437,6 +558,96 @@ form.delete-avatar-form button[type="submit"]:hover {
 img, picture {
     max-width: 100%;
     height: auto;
+}
+
+/* MODE TOGGLE - Simple/Avancé (UX 2025) */
+.mode-toggle-item {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+.mode-toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 10px;
+    background-color: rgba(13, 110, 253, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(13, 110, 253, 0.2);
+    transition: all 0.3s ease;
+}
+
+.mode-toggle-container:hover {
+    background-color: rgba(13, 110, 253, 0.15);
+    border-color: rgba(13, 110, 253, 0.3);
+}
+
+.mode-status {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mode-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    display: block;
+}
+
+.mode-hint {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    display: block;
+}
+
+.mode-toggle-btn {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mode-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.4);
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+}
+
+.mode-toggle-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mode-toggle-btn i {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.mode-toggle-btn:hover i {
+    transform: scale(1.1);
+}
+
+/* Animation pour les menus qui apparaissent/disparaissent */
+.advanced-only {
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateX(-10px);
+}
+
+.advanced-only.show {
+    opacity: 1;
+    transform: translateX(0);
+    display: block !important;
 }
 
 /* Media Queries */

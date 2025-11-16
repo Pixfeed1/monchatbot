@@ -1,0 +1,690 @@
+{% extends "base.html" %}
+
+{% block title %}Bienvenue sur LeoBot{% endblock %}
+
+{% block extra_css %}
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+/* Wizard d'onboarding - Respect de la charte LeoBot */
+.wizard-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(30, 41, 59, 0.95); /* #1e293b avec transparence */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.wizard-container {
+    background: white;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Header avec logo/branding */
+.wizard-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    padding: 32px;
+    text-align: center;
+}
+
+.wizard-header h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.wizard-header p {
+    opacity: 0.9;
+    font-size: 15px;
+}
+
+/* Progression */
+.wizard-progress {
+    display: flex;
+    justify-content: space-between;
+    padding: 24px 32px 0;
+    position: relative;
+}
+
+.wizard-progress::before {
+    content: '';
+    position: absolute;
+    top: 36px;
+    left: 32px;
+    right: 32px;
+    height: 2px;
+    background: #e2e8f0;
+    z-index: 0;
+}
+
+.progress-fill {
+    position: absolute;
+    top: 36px;
+    left: 32px;
+    height: 2px;
+    background: #0d6efd;
+    transition: width 0.3s ease;
+    z-index: 1;
+}
+
+.wizard-step-indicator {
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+}
+
+.step-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    margin: 0 auto 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #64748b;
+    transition: all 0.3s ease;
+}
+
+.step-circle.active {
+    background: #0d6efd;
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.step-circle.completed {
+    background: #10b981;
+    color: white;
+}
+
+.step-circle.completed::before {
+    content: '✓'; /* Garde le checkmark car c'est un caractère standard, pas un emoji */
+}
+
+.step-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.step-label.active {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+/* Contenu des étapes */
+.wizard-content {
+    padding: 32px;
+    min-height: 300px;
+}
+
+.wizard-step {
+    display: none;
+    animation: fadeInStep 0.3s ease-in;
+}
+
+.wizard-step.active {
+    display: block;
+}
+
+@keyframes fadeInStep {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.step-title {
+    font-size: 22px;
+    color: #1e293b;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.step-description {
+    color: #64748b;
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+/* Formulaires */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+.form-hint {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 6px;
+}
+
+/* Cards de sélection provider */
+.provider-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.provider-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.provider-card:hover {
+    border-color: #0d6efd;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(13, 110, 253, 0.1);
+}
+
+.provider-card.selected {
+    border-color: #0d6efd;
+    background: #f0f7ff;
+}
+
+.provider-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.provider-name {
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.provider-description {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Navigation buttons */
+.wizard-footer {
+    padding: 24px 32px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-wizard {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-wizard-primary {
+    background: #0d6efd;
+    color: white;
+}
+
+.btn-wizard-primary:hover {
+    background: #0a58ca;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.btn-wizard-secondary {
+    background: transparent;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+}
+
+.btn-wizard-secondary:hover {
+    border-color: #cbd5e1;
+    color: #475569;
+}
+
+.skip-link {
+    color: #64748b;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.skip-link:hover {
+    color: #475569;
+    text-decoration: underline;
+}
+
+/* Success animation */
+.success-animation {
+    text-align: center;
+    padding: 40px 0;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    background: #10b981;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 40px;
+    animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wizard-overlay">
+    <div class="wizard-container">
+        <!-- Header -->
+        <div class="wizard-header">
+            <h1><i data-lucide="bot" style="display: inline-block; width: 28px; height: 28px; vertical-align: middle;"></i> Bienvenue sur LeoBot !</h1>
+            <p>Configurez votre assistant en 3 étapes simples</p>
+        </div>
+
+        <!-- Progress -->
+        <div class="wizard-progress">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            <div class="wizard-step-indicator">
+                <div class="step-circle active" data-step="1">1</div>
+                <div class="step-label active">Identité</div>
+            </div>
+            <div class="wizard-step-indicator">
+                <div class="step-circle" data-step="2">2</div>
+                <div class="step-label">Accueil</div>
+            </div>
+            <div class="wizard-step-indicator">
+                <div class="step-circle" data-step="3">3</div>
+                <div class="step-label">IA</div>
+            </div>
+        </div>
+
+        <!-- Steps -->
+        <div class="wizard-content">
+            <!-- Step 1: Identité du bot -->
+            <div class="wizard-step active" data-step="1">
+                <h2 class="step-title">Donnez un nom à votre assistant</h2>
+                <p class="step-description">
+                    Choisissez un nom qui reflète votre marque ou votre service.
+                </p>
+
+                <div class="form-group">
+                    <label for="botName">Nom du bot *</label>
+                    <input type="text" id="botName" placeholder="Ex: Julie, AssistantPro, HelpBot..." required>
+                    <p class="form-hint"><i data-lucide="lightbulb" style="display: inline-block; width: 14px; height: 14px; vertical-align: middle;"></i> Ce nom apparaîtra dans toutes les conversations</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="botDescription">Rôle du bot</label>
+                    <textarea id="botDescription" rows="3" placeholder="Ex: Je suis votre assistant pour répondre à vos questions sur nos produits..."></textarea>
+                    <p class="form-hint">Décrivez brièvement ce que fait votre bot</p>
+                </div>
+            </div>
+
+            <!-- Step 2: Message d'accueil -->
+            <div class="wizard-step" data-step="2">
+                <h2 class="step-title">Personnalisez votre message d'accueil</h2>
+                <p class="step-description">
+                    C'est le premier message que vos visiteurs verront.
+                </p>
+
+                <div class="form-group">
+                    <label for="welcomeMessage">Message d'accueil *</label>
+                    <textarea id="welcomeMessage" rows="4" placeholder="Bonjour ! Comment puis-je vous aider aujourd'hui ?" required></textarea>
+                    <p class="form-hint"><i data-lucide="sparkles" style="display: inline-block; width: 14px; height: 14px; vertical-align: middle;"></i> Soyez chaleureux et accueillant</p>
+                </div>
+
+                <!-- Preview -->
+                <div style="margin-top: 24px; padding: 16px; background: #f0f7ff; border-radius: 8px; border-left: 4px solid #0d6efd;">
+                    <strong style="color: #0d6efd; font-size: 13px;">Aperçu</strong>
+                    <div style="margin-top: 8px; background: white; padding: 12px; border-radius: 8px;">
+                        <div id="messagePreview" style="color: #1e293b;">
+                            Bonjour ! Comment puis-je vous aider aujourd'hui ?
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Choix du provider IA -->
+            <div class="wizard-step" data-step="3">
+                <h2 class="step-title">Choisissez votre moteur d'IA</h2>
+                <p class="step-description">
+                    Sélectionnez le fournisseur d'IA que vous souhaitez utiliser.
+                </p>
+
+                <div class="provider-cards">
+                    <div class="provider-card" onclick="selectProvider('openai')" data-provider="openai">
+                        <div class="provider-icon"><i data-lucide="circle" style="color: #0066FF; width: 32px; height: 32px;"></i></div>
+                        <div class="provider-name">OpenAI</div>
+                        <div class="provider-description">GPT-4, GPT-3.5</div>
+                    </div>
+                    <div class="provider-card" onclick="selectProvider('claude')" data-provider="claude">
+                        <div class="provider-icon"><i data-lucide="circle" style="color: #7C3AED; width: 32px; height: 32px;"></i></div>
+                        <div class="provider-name">Claude</div>
+                        <div class="provider-description">Anthropic</div>
+                    </div>
+                    <div class="provider-card" onclick="selectProvider('mistral')" data-provider="mistral">
+                        <div class="provider-icon"><i data-lucide="hexagon" style="color: #F97316; width: 32px; height: 32px;"></i></div>
+                        <div class="provider-name">Mistral</div>
+                        <div class="provider-description">Mistral AI</div>
+                    </div>
+                </div>
+
+                <div id="providerSetup" style="margin-top: 24px; display: none;">
+                    <div style="padding: 16px; background: #f8fafc; border-radius: 8px;">
+                        <p style="margin-bottom: 12px; color: #475569; font-size: 14px;">
+                            <strong>Pour obtenir votre clé API :</strong>
+                        </p>
+                        <ol style="margin-left: 20px; color: #64748b; font-size: 14px; line-height: 1.8;">
+                            <li id="providerStep1"></li>
+                            <li>Générez une clé API</li>
+                            <li>Collez-la ci-dessous</li>
+                        </ol>
+                        <a id="providerLink" href="#" target="_blank" style="display: inline-block; margin-top: 12px; color: #0d6efd; text-decoration: none; font-weight: 600;">
+                            → Obtenir ma clé API
+                        </a>
+                    </div>
+                </div>
+
+                <input type="hidden" id="selectedProvider">
+            </div>
+
+            <!-- Step 4: Succès -->
+            <div class="wizard-step" data-step="4">
+                <div class="success-animation">
+                    <div class="success-icon"><i data-lucide="check" style="width: 40px; height: 40px;"></i></div>
+                    <h2 class="step-title">Configuration terminée !</h2>
+                    <p class="step-description">
+                        Votre chatbot <strong id="finalBotName"></strong> est prêt à être utilisé.<br>
+                        Vous pourrez configurer les détails plus tard.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="wizard-footer">
+            <button class="btn-wizard btn-wizard-secondary" id="btnBack" style="display: none;" onclick="previousStep()">
+                ← Retour
+            </button>
+            <a href="#" class="skip-link" id="skipLink" onclick="skipWizard()">
+                Passer cette étape
+            </a>
+            <button class="btn-wizard btn-wizard-primary" id="btnNext" onclick="nextStep()">
+                Suivant →
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentStep = 1;
+let wizardData = {
+    botName: '{{ initial_data.botName if initial_data else "" }}',
+    botDescription: '{{ initial_data.botDescription if initial_data else "" }}',
+    welcomeMessage: '{{ initial_data.welcomeMessage if initial_data else "" }}',
+    provider: '{{ initial_data.provider if initial_data else "" }}'
+};
+
+// Pré-remplir les champs au chargement
+window.addEventListener('DOMContentLoaded', function() {
+    if (wizardData.botName) {
+        document.getElementById('botName').value = wizardData.botName;
+    }
+    if (wizardData.botDescription) {
+        document.getElementById('botDescription').value = wizardData.botDescription;
+    }
+    if (wizardData.welcomeMessage) {
+        document.getElementById('welcomeMessage').value = wizardData.welcomeMessage;
+        document.getElementById('messagePreview').textContent = wizardData.welcomeMessage;
+    }
+    if (wizardData.provider) {
+        selectProvider(wizardData.provider);
+    }
+});
+
+// Preview temps réel du message
+document.getElementById('welcomeMessage').addEventListener('input', (e) => {
+    document.getElementById('messagePreview').textContent = e.target.value || 'Bonjour ! Comment puis-je vous aider aujourd\'hui ?';
+});
+
+function selectProvider(provider) {
+    wizardData.provider = provider;
+    document.getElementById('selectedProvider').value = provider;
+
+    // Visual feedback
+    document.querySelectorAll('.provider-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    document.querySelector(`[data-provider="${provider}"]`).classList.add('selected');
+
+    // Show setup instructions
+    const providerSetup = document.getElementById('providerSetup');
+    const providerLink = document.getElementById('providerLink');
+    const providerStep1 = document.getElementById('providerStep1');
+
+    const providers = {
+        openai: {
+            text: 'Créez un compte sur platform.openai.com',
+            link: 'https://platform.openai.com/api-keys'
+        },
+        claude: {
+            text: 'Créez un compte sur console.anthropic.com',
+            link: 'https://console.anthropic.com/'
+        },
+        mistral: {
+            text: 'Créez un compte sur console.mistral.ai',
+            link: 'https://console.mistral.ai/'
+        }
+    };
+
+    providerStep1.textContent = providers[provider].text;
+    providerLink.href = providers[provider].link;
+    providerSetup.style.display = 'block';
+
+    // Enable next button
+    document.getElementById('btnNext').disabled = false;
+}
+
+function nextStep() {
+    // Validation
+    if (currentStep === 1) {
+        const botName = document.getElementById('botName').value;
+        if (!botName) {
+            alert('Veuillez entrer un nom pour votre bot');
+            return;
+        }
+        wizardData.botName = botName;
+        wizardData.botDescription = document.getElementById('botDescription').value;
+    }
+
+    if (currentStep === 2) {
+        const welcomeMessage = document.getElementById('welcomeMessage').value;
+        if (!welcomeMessage) {
+            alert('Veuillez entrer un message d\'accueil');
+            return;
+        }
+        wizardData.welcomeMessage = welcomeMessage;
+    }
+
+    if (currentStep === 3) {
+        if (!wizardData.provider) {
+            alert('Veuillez sélectionner un moteur d\'IA');
+            return;
+        }
+        // Prepare final step
+        document.getElementById('finalBotName').textContent = wizardData.botName;
+        // Save and redirect
+        saveWizardData();
+        currentStep++;
+        updateUI();
+
+        // Redirect after 2 seconds
+        setTimeout(() => {
+            window.location.href = '{{ url_for("main.config_api") }}';
+        }, 2000);
+        return;
+    }
+
+    if (currentStep === 4) {
+        window.location.href = '{{ url_for("main.home") }}';
+        return;
+    }
+
+    currentStep++;
+    updateUI();
+}
+
+function previousStep() {
+    currentStep--;
+    updateUI();
+}
+
+function updateUI() {
+    // Update steps visibility
+    document.querySelectorAll('.wizard-step').forEach((step, index) => {
+        step.classList.toggle('active', index + 1 === currentStep);
+    });
+
+    // Update progress circles
+    document.querySelectorAll('.step-circle').forEach((circle, index) => {
+        const stepNum = index + 1;
+        circle.classList.toggle('active', stepNum === currentStep);
+        circle.classList.toggle('completed', stepNum < currentStep);
+    });
+
+    // Update progress bar
+    const progress = ((currentStep - 1) / 3) * 100;
+    document.getElementById('progressFill').style.width = progress + '%';
+
+    // Update buttons
+    document.getElementById('btnBack').style.display = currentStep > 1 && currentStep < 4 ? 'block' : 'none';
+    document.getElementById('skipLink').style.display = currentStep < 3 ? 'inline' : 'none';
+
+    const btnNext = document.getElementById('btnNext');
+    if (currentStep === 4) {
+        btnNext.textContent = 'Accéder au dashboard →';
+    } else if (currentStep === 3) {
+        btnNext.textContent = 'Terminer';
+    } else {
+        btnNext.textContent = 'Suivant →';
+    }
+}
+
+function skipWizard() {
+    if (confirm('Êtes-vous sûr de vouloir passer cette configuration ? Vous pourrez la faire plus tard.')) {
+        // Appeler l'API pour marquer l'onboarding comme complété
+        fetch('{{ url_for("main.skip_onboarding") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.href = '{{ url_for("main.home") }}';
+            } else {
+                console.error('Erreur lors du skip onboarding');
+                // Rediriger quand même
+                window.location.href = '{{ url_for("main.home") }}';
+            }
+        }).catch(err => {
+            console.error('Erreur:', err);
+            // Rediriger quand même
+            window.location.href = '{{ url_for("main.home") }}';
+        });
+    }
+}
+
+function saveWizardData() {
+    // Save via AJAX
+    fetch('{{ url_for("main.save_wizard") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify(wizardData)
+    }).then(response => response.json())
+      .then(data => console.log('Wizard data saved', data))
+      .catch(err => console.error('Error saving wizard data', err));
+}
+
+// Initialiser Lucide icons
+lucide.createIcons();
+</script>
+{% endblock %}

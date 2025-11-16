@@ -95,18 +95,20 @@ class Settings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     # Paramètres généraux du bot
-    bot_name = db.Column(db.String(100), nullable=False, default="MonChatbot")
-    bot_description = db.Column(db.String(500), nullable=True)
-    bot_welcome = db.Column(db.String(500), nullable=False, default="Bienvenue!")
+    bot_name = db.Column(db.String(100), nullable=False, default="Léo")
+    bot_description = db.Column(db.String(500), nullable=True, default="Je suis Léo, votre assistant intelligent et sympathique. Je suis là pour vous aider et répondre à vos questions.")
+    bot_welcome = db.Column(db.String(500), nullable=False, default="Bonjour ! Je suis Léo, ravi de vous rencontrer !")
     bot_avatar = db.Column(db.String(200), nullable=True)
     
     # Configuration API par utilisateur
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     encrypted_openai_key = db.Column(db.Text, nullable=True)
     encrypted_mistral_key = db.Column(db.Text, nullable=True)
-    current_provider = db.Column(db.String(20), nullable=True)  # openai, mistral
+    encrypted_claude_key = db.Column(db.Text, nullable=True)
+    current_provider = db.Column(db.String(20), nullable=True)  # openai, mistral, claude
     openai_model = db.Column(db.String(50), nullable=True, default='gpt-3.5-turbo')
     mistral_model = db.Column(db.String(50), nullable=True, default='mistral-small')
+    claude_model = db.Column(db.String(50), nullable=True, default='claude-sonnet-4')
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -395,10 +397,14 @@ class User(UserMixin, db.Model):
     login_count = db.Column(db.Integer, default=0)
     
     # Préférences utilisateur pour l'API
-    preferred_provider = db.Column(db.String(20), nullable=True)  # openai, mistral
+    preferred_provider = db.Column(db.String(20), nullable=True)  # openai, mistral, claude
     api_usage_limit = db.Column(db.Integer, nullable=True)  # Limite mensuelle
     api_usage_current = db.Column(db.Integer, default=0)  # Usage actuel du mois
     api_usage_reset_date = db.Column(db.DateTime, nullable=True)  # Date de reset du compteur
+
+    # Préférences UX - Mode Simple/Avancé
+    onboarding_completed = db.Column(db.Boolean, default=False)  # A terminé le wizard
+    ui_mode = db.Column(db.String(20), default='simple')  # 'simple' ou 'advanced'
 
     def set_password(self, password):
         """Hash et stocke le mot de passe"""
@@ -511,9 +517,9 @@ def init_default_data():
         # Créer les paramètres par défaut s'ils n'existent pas
         if not Settings.query.first():
             default_settings = Settings(
-                bot_name="MonChatbot",
-                bot_description="Assistant IA intelligent",
-                bot_welcome="Bonjour ! Comment puis-je vous aider aujourd'hui ?"
+                bot_name="Léo",
+                bot_description="Je suis Léo, votre assistant intelligent et sympathique. Je suis là pour vous aider et répondre à vos questions.",
+                bot_welcome="Bonjour ! Je suis Léo, ravi de vous rencontrer !"
             )
             db.session.add(default_settings)
         
