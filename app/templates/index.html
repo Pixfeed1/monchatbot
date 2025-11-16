@@ -1,68 +1,196 @@
 {% extends "base.html" %}
 
-{% block title %}Tableau de Bord Monchatbot{% endblock %}
+{% block title %}Tableau de Bord LeoBot{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 {% endblock %}
 
 {% block content %}
+<!-- Bannière avec CTA -->
 <div class="banner">
     <div class="banner-content">
-        <h1>Bienvenue sur votre tableau de bord Monchatbot</h1>
-        <p>Cliquez sur le bouton pour démarrer une conversation et échanger avec votre assistant(e) virtuel(le).</p>
-        
-        <!-- Bouton toujours visible -->
-        <button id="toggleChatBtn">Démarrer une Conversation</button>
+        <h1>Bienvenue sur votre tableau de bord LeoBot</h1>
+        <p>Démarrez une conversation et échangez avec votre assistant virtuel.</p>
+
+        <button id="toggleChatBtn">
+            <i class="fas fa-comments"></i>
+            Démarrer une Conversation
+        </button>
     </div>
     <picture>
         <source srcset="{{ url_for('static', filename='images/banners/banner-small.png') }}" media="(max-width: 480px)">
         <source srcset="{{ url_for('static', filename='images/banners/banner-medium.png') }}" media="(max-width: 768px)">
-        <img src="{{ url_for('static', filename='images/banners/banner.png') }}" alt="Encart Image" class="banner-image">
+        <img src="{{ url_for('static', filename='images/banners/banner.png') }}" alt="Banner" class="banner-image">
     </picture>
 </div>
 
-<div class="card">
-    <div class="card-header">
-        <h2>Synthèse d'utilisation globale</h2>
+<!-- KPIs Principaux -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background: #e0f2fe;">
+            <i class="fas fa-comments" style="color: #0284c7;"></i>
+        </div>
+        <div class="kpi-content">
+            <div class="kpi-label">Conversations</div>
+            <div class="kpi-value">450</div>
+            <div class="kpi-trend positive">
+                <i class="fas fa-arrow-up"></i>
+                <span>+12% cette semaine</span>
+            </div>
+        </div>
     </div>
-    <div class="card-content">
-        <div class="table-wrapper">
-            <table class="usage-summary">
-                <thead>
-                    <tr>
-                        <th>Widgets</th>
-                        <th>Utilisateurs</th>
-                        <th>Conversations</th>
-                        <th>Messages</th>
-                        <th>Messages/Utilisateur</th>
-                        <th>Conversations/Utilisateur</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td data-label="Widgets">10</td>
-                        <td data-label="Utilisateurs">150</td>
-                        <td data-label="Conversations">450</td>
-                        <td data-label="Messages">2000</td>
-                        <td data-label="Messages/Utilisateur">13</td>
-                        <td data-label="Conversations/Utilisateur">3</td>
-                    </tr>
-                </tbody>
-            </table>
+
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background: #ddd6fe;">
+            <i class="fas fa-users" style="color: #7c3aed;"></i>
+        </div>
+        <div class="kpi-content">
+            <div class="kpi-label">Utilisateurs</div>
+            <div class="kpi-value">150</div>
+            <div class="kpi-trend positive">
+                <i class="fas fa-arrow-up"></i>
+                <span>+8% ce mois</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background: #fce7f3;">
+            <i class="fas fa-paper-plane" style="color: #db2777;"></i>
+        </div>
+        <div class="kpi-content">
+            <div class="kpi-label">Messages</div>
+            <div class="kpi-value">2,000</div>
+            <div class="kpi-trend positive">
+                <i class="fas fa-arrow-up"></i>
+                <span>+15% ce mois</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-icon" style="background: #fef3c7;">
+            <i class="fas fa-clock" style="color: #f59e0b;"></i>
+        </div>
+        <div class="kpi-content">
+            <div class="kpi-label">Temps de réponse</div>
+            <div class="kpi-value">1.2s</div>
+            <div class="kpi-trend negative">
+                <i class="fas fa-arrow-down"></i>
+                <span>+0.3s vs hier</span>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="limits">
-    <h2>Indicateurs de performance</h2>
-    <ul>
-        <li>Taux de satisfaction des utilisateurs</li>
-        <li>Taux de recommandation réussi (moteur de recommandations)</li>
-        <li>Nombre de messages envoyés (emails et SMS)</li>
-        <li>Temps moyen de réponse</li>
-        <li>Taux d'utilisation des fonctionnalités multi-plateformes</li>
-    </ul>
+<!-- Section Graphiques et Stats -->
+<div class="dashboard-grid">
+    <!-- Graphique des conversations -->
+    <div class="card">
+        <div class="card-header">
+            <h2>
+                <i class="fas fa-chart-line"></i>
+                Activité des 7 derniers jours
+            </h2>
+        </div>
+        <div class="card-content">
+            <canvas id="activityChart" height="80"></canvas>
+        </div>
+    </div>
+
+    <!-- Statistiques détaillées -->
+    <div class="card">
+        <div class="card-header">
+            <h2>
+                <i class="fas fa-chart-bar"></i>
+                Statistiques détaillées
+            </h2>
+        </div>
+        <div class="card-content">
+            <div class="stat-row">
+                <span class="stat-label">Messages par utilisateur</span>
+                <span class="stat-value">13.3</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Conversations par utilisateur</span>
+                <span class="stat-value">3.0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Taux de satisfaction</span>
+                <span class="stat-value badge-success">92%</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Widgets actifs</span>
+                <span class="stat-value">10</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertes et Actions rapides -->
+<div class="alerts-actions-grid">
+    <!-- Alertes -->
+    <div class="card">
+        <div class="card-header">
+            <h2>
+                <i class="fas fa-bell"></i>
+                Alertes
+            </h2>
+        </div>
+        <div class="card-content">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong>Temps de réponse en hausse</strong>
+                    <p>Le temps moyen a augmenté de 30% aujourd'hui</p>
+                </div>
+            </div>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <strong>Nouveau record</strong>
+                    <p>5 nouveaux utilisateurs inscrits aujourd'hui</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions rapides -->
+    <div class="card">
+        <div class="card-header">
+            <h2>
+                <i class="fas fa-bolt"></i>
+                Actions rapides
+            </h2>
+        </div>
+        <div class="card-content">
+            <a href="{{ url_for('main.reponses') }}" class="action-item">
+                <i class="fas fa-cog"></i>
+                <div>
+                    <strong>Configurer les réponses</strong>
+                    <p>Personnalisez les messages du bot</p>
+                </div>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            <a href="{{ url_for('main.base_connaissances') }}" class="action-item">
+                <i class="fas fa-brain"></i>
+                <div>
+                    <strong>Base de connaissances</strong>
+                    <p>Enrichir les connaissances du bot</p>
+                </div>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            <a href="{{ url_for('main.config_api') }}" class="action-item">
+                <i class="fas fa-key"></i>
+                <div>
+                    <strong>Configuration API</strong>
+                    <p>Gérer vos clés d'API</p>
+                </div>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+    </div>
 </div>
 
 <!-- Conteneur où le chatbot React sera injecté (masqué par défaut) -->
@@ -70,6 +198,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
     window.MODEL_CONFIG = {
         hasMistral: {{ use_mistral|tojson|safe }},
@@ -80,4 +209,57 @@
 {% if main_js %}
     <script src="{{ url_for('static', filename=main_js) }}"></script>
 {% endif %}
+
+<!-- Graphique Chart.js -->
+<script>
+    // Graphique d'activité
+    const ctx = document.getElementById('activityChart');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+            datasets: [
+                {
+                    label: 'Conversations',
+                    data: [45, 52, 48, 65, 70, 58, 62],
+                    borderColor: '#0284c7',
+                    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Messages',
+                    data: [180, 210, 195, 260, 285, 240, 255],
+                    borderColor: '#db2777',
+                    backgroundColor: 'rgba(219, 39, 119, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#f3f4f6'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}
