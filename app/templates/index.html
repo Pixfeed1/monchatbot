@@ -162,22 +162,18 @@
 
             // Mise à jour des tendances
             const requestsTrend = document.getElementById('requestsTrend');
-            if (metrics.trend_direction === 'up') {
-                requestsTrend.className = 'kpi-trend positive';
-                requestsTrend.innerHTML = '<i data-lucide="trending-up"></i><span>+' + metrics.trend_percentage + '% cette semaine</span>';
-            } else if (metrics.trend_direction === 'down') {
-                requestsTrend.className = 'kpi-trend negative';
-                requestsTrend.innerHTML = '<i data-lucide="trending-down"></i><span>' + metrics.trend_percentage + '% cette semaine</span>';
-            } else {
-                requestsTrend.className = 'kpi-trend neutral';
-                requestsTrend.innerHTML = '<i data-lucide="minus"></i><span>Stable</span>';
+            if (requestsTrend) {
+                if (metrics.trend_direction === 'up') {
+                    requestsTrend.className = 'kpi-trend positive';
+                    requestsTrend.innerHTML = '<i data-lucide="trending-up"></i><span>+' + metrics.trend_percentage + '% cette semaine</span>';
+                } else if (metrics.trend_direction === 'down') {
+                    requestsTrend.className = 'kpi-trend negative';
+                    requestsTrend.innerHTML = '<i data-lucide="trending-down"></i><span>' + metrics.trend_percentage + '% cette semaine</span>';
+                } else {
+                    requestsTrend.className = 'kpi-trend neutral';
+                    requestsTrend.innerHTML = '<i data-lucide="minus"></i><span>Stable</span>';
+                }
             }
-
-            // Mise à jour des stats détaillées
-            document.getElementById('totalTokens').textContent = metrics.total_tokens.toLocaleString();
-            document.getElementById('mostUsedProvider').textContent = metrics.most_used_provider;
-            document.getElementById('totalFaqs').textContent = metrics.total_faqs;
-            document.getElementById('requestsThisWeek').textContent = metrics.requests_this_week.toLocaleString();
 
             // Retirer les squelettes de chargement
             document.querySelectorAll('.skeleton').forEach(el => el.classList.remove('skeleton'));
@@ -209,14 +205,15 @@
             `;
 
             // Remplir avec des valeurs par défaut
-            document.getElementById('totalRequests').textContent = '0';
-            document.getElementById('activeUsers').textContent = '0';
-            document.getElementById('successRate').textContent = '0%';
-            document.getElementById('avgResponseTime').textContent = '0s';
-            document.getElementById('totalTokens').textContent = '0';
-            document.getElementById('mostUsedProvider').textContent = 'Aucun';
-            document.getElementById('totalFaqs').textContent = '0';
-            document.getElementById('requestsThisWeek').textContent = '0';
+            const totalRequests = document.getElementById('totalRequests');
+            const activeUsers = document.getElementById('activeUsers');
+            const successRate = document.getElementById('successRate');
+            const avgResponseTime = document.getElementById('avgResponseTime');
+
+            if (totalRequests) totalRequests.textContent = '0';
+            if (activeUsers) activeUsers.textContent = '0';
+            if (successRate) successRate.textContent = '0%';
+            if (avgResponseTime) avgResponseTime.textContent = '0s';
 
             // Retirer les squelettes
             document.querySelectorAll('.skeleton').forEach(el => el.classList.remove('skeleton'));

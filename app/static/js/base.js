@@ -184,7 +184,8 @@ function showSimpleMode() {
     if (modeHint) modeHint.textContent = 'Fonctions essentielles';
     if (toggleBtn) {
         toggleBtn.title = 'Passer en mode avancé';
-        toggleBtn.querySelector('i').className = 'fas fa-rocket';
+        const icon = toggleBtn.querySelector('i');
+        if (icon) icon.className = 'fas fa-rocket';
     }
 }
 
@@ -210,6 +211,7 @@ function showAdvancedMode() {
     if (modeHint) modeHint.textContent = 'Toutes les fonctions';
     if (toggleBtn) {
         toggleBtn.title = 'Passer en mode simple';
-        toggleBtn.querySelector('i').className = 'fas fa-sliders-h';
+        const icon = toggleBtn.querySelector('i');
+        if (icon) icon.className = 'fas fa-sliders-h';
     }
 }
