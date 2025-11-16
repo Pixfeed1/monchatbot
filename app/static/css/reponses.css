@@ -68,12 +68,8 @@
    Layout principal
    =============================== */
 
-.responses-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: var(--space-6);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
+/* Note: Le contenu est maintenant directement dans .main-content de base.html */
+/* Ajustements pour intégration directe dans main-content */
 
 /* ===============================
    En-tête avec assistant
@@ -82,6 +78,7 @@
 .responses-header {
     text-align: center;
     margin-bottom: var(--space-10);
+    margin-top: calc(var(--space-4) * -1); /* Compenser le padding de main-content */
 }
 
 .responses-header h1 {
@@ -1287,10 +1284,6 @@
    =============================== */
 
 @media (max-width: 1024px) {
-    .responses-container {
-        padding: var(--space-4);
-    }
-    
     .wizard-navigation {
         grid-template-columns: 1fr;
         gap: var(--space-3);
@@ -1350,4 +1343,14 @@
 }
 
 @media (max-width: 480px) {
-    .responses-
+    .responses-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .nav-btn span {
+        font-size: 1rem;
+    }
+
+    .nav-btn small {
+        font-size: 0.75rem;
+    }
