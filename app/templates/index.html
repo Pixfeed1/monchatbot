@@ -84,119 +84,44 @@
     </div>
 </div>
 
-<!-- Section Graphiques et Stats -->
-<div class="dashboard-grid">
-    <!-- Graphique d'activité -->
-    <div class="card">
-        <div class="card-header">
-            <h2>
-                <i data-lucide="trending-up"></i>
-                Activité des 7 derniers jours
-            </h2>
-        </div>
-        <div class="card-content">
-            <canvas id="activityChart" height="80"></canvas>
-        </div>
+<!-- Graphique d'activité -->
+<section class="dashboard-section">
+    <h2 class="section-title">
+        <i data-lucide="trending-up"></i>
+        Activité des 7 derniers jours
+    </h2>
+    <div class="chart-container">
+        <canvas id="activityChart" height="80"></canvas>
     </div>
+</section>
 
-    <!-- Statistiques détaillées -->
-    <div class="card">
-        <div class="card-header">
-            <h2>
-                <i data-lucide="bar-chart-3"></i>
-                Statistiques Détaillées
-            </h2>
-        </div>
-        <div class="card-content">
-            <div class="stat-row">
-                <span class="stat-label">
-                    <i data-lucide="database"></i>
-                    Tokens Consommés
-                </span>
-                <span class="stat-value" id="totalTokens">--</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">
-                    <i data-lucide="server"></i>
-                    Provider Principal
-                </span>
-                <span class="stat-value" id="mostUsedProvider">--</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">
-                    <i data-lucide="help-circle"></i>
-                    Base de Connaissances
-                </span>
-                <span class="stat-value"><span id="totalFaqs">--</span> FAQs</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">
-                    <i data-lucide="calendar"></i>
-                    Requêtes cette semaine
-                </span>
-                <span class="stat-value" id="requestsThisWeek">--</span>
-            </div>
-        </div>
+<!-- Actions rapides -->
+<section class="dashboard-section">
+    <h2 class="section-title">
+        <i data-lucide="zap"></i>
+        Actions Rapides
+    </h2>
+    <div class="actions-grid">
+        <a href="{{ url_for('main.reponses') }}" class="action-card">
+            <i data-lucide="settings"></i>
+            <h3>Configurer les réponses</h3>
+            <p>Personnalisez les messages du bot</p>
+        </a>
+        <a href="{{ url_for('main.base_connaissances') }}" class="action-card">
+            <i data-lucide="brain"></i>
+            <h3>Base de connaissances</h3>
+            <p>Enrichir les connaissances du bot</p>
+        </a>
+        <a href="{{ url_for('main.config_api') }}" class="action-card">
+            <i data-lucide="key"></i>
+            <h3>Configuration API</h3>
+            <p>Gérer vos clés d'API</p>
+        </a>
     </div>
-</div>
+</section>
 
-<!-- Alertes et Actions rapides -->
-<div class="alerts-actions-grid">
-    <!-- Alertes Intelligentes -->
-    <div class="card">
-        <div class="card-header">
-            <h2>
-                <i data-lucide="bell"></i>
-                Alertes Système
-            </h2>
-        </div>
-        <div class="card-content" id="alertsContainer">
-            <div class="alert alert-info">
-                <i data-lucide="info"></i>
-                <div>
-                    <strong>Système opérationnel</strong>
-                    <p>Toutes les métriques se chargent depuis la base de données</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Actions rapides -->
-    <div class="card">
-        <div class="card-header">
-            <h2>
-                <i data-lucide="zap"></i>
-                Actions Rapides
-            </h2>
-        </div>
-        <div class="card-content">
-            <a href="{{ url_for('main.reponses') }}" class="action-item">
-                <i data-lucide="settings"></i>
-                <div>
-                    <strong>Configurer les réponses</strong>
-                    <p>Personnalisez les messages du bot</p>
-                </div>
-                <i data-lucide="chevron-right"></i>
-            </a>
-            <a href="{{ url_for('main.base_connaissances') }}" class="action-item">
-                <i data-lucide="brain"></i>
-                <div>
-                    <strong>Base de connaissances</strong>
-                    <p>Enrichir les connaissances du bot</p>
-                </div>
-                <i data-lucide="chevron-right"></i>
-            </a>
-            <a href="{{ url_for('main.config_api') }}" class="action-item">
-                <i data-lucide="key"></i>
-                <div>
-                    <strong>Configuration API</strong>
-                    <p>Gérer vos clés d'API</p>
-                </div>
-                <i data-lucide="chevron-right"></i>
-            </a>
-        </div>
-    </div>
-</div>
+<!-- Alertes (si nécessaires) -->
+<div id="alertsContainer"></div>
 
 <!-- Conteneur du chatbot React -->
 <div id="react-chat-root" style="display: none;"></div>

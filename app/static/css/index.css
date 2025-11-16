@@ -200,152 +200,107 @@
     }
 }
 
-/* DASHBOARD GRID - Style Semrush */
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 24px;
-    margin-bottom: 32px;
+/* SECTIONS - Clean & Simple */
+.dashboard-section {
+    margin-bottom: 48px;
 }
 
-/* CARD - Style Semrush */
-.card {
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: #0d6efd;
+    font-size: 22px;
+}
+
+/* GRAPHIQUE - Sans encart */
+.chart-container {
     background: white;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     border: 1px solid #f1f5f9;
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.card:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    border-color: #e0f2fe;
-}
-
-.card-header {
-    padding: 24px;
-    border-bottom: 1px solid #f1f5f9;
-    background: linear-gradient(180deg, #fafbfc 0%, #ffffff 100%);
-}
-
-.card-header h2 {
-    font-size: 16px;
-    color: #0f172a;
-    font-weight: 700;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    letter-spacing: -0.2px;
-}
-
-.card-header h2 i {
-    color: #0d6efd;
-    font-size: 20px;
-}
-
-.card-content {
-    padding: 24px;
-}
-
-/* STATISTIQUES DÉTAILLÉES - Style Semrush */
-.stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 18px 0;
-    border-bottom: 1px solid #f1f5f9;
-    transition: background 0.2s;
-}
-
-.stat-row:hover {
-    background: #fafbfc;
-    margin: 0 -24px;
-    padding-left: 24px;
-    padding-right: 24px;
-}
-
-.stat-row:last-child {
-    border-bottom: none;
-}
-
-.stat-label {
-    font-size: 13px;
-    color: #64748b;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.stat-label i {
-    color: #0d6efd;
-    font-size: 18px;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.stat-value {
-    font-size: 18px;
-    font-weight: 700;
-    color: #0f172a;
-    letter-spacing: -0.3px;
-}
-
-.badge-success {
-    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-    color: #047857;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 700;
-    box-shadow: 0 2px 4px rgba(5, 150, 105, 0.15);
-}
-
-/* ALERTES ET ACTIONS - Style Semrush */
-.alerts-actions-grid {
+/* ACTIONS GRID - Simple */
+.actions-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 32px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
 }
 
-/* ALERTES - Style Semrush */
+.action-card {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+    display: block;
+}
+
+.action-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.08);
+    transform: translateY(-2px);
+}
+
+.action-card i {
+    color: #0d6efd;
+    font-size: 32px;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.action-card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 8px 0;
+}
+
+.action-card p {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ALERTES - Simple */
+#alertsContainer {
+    margin-bottom: 48px;
+}
+
 .alert {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 4px solid;
+    margin-bottom: 16px;
     display: flex;
     align-items: flex-start;
-    gap: 14px;
-    padding: 18px;
-    border-radius: 12px;
-    margin-bottom: 14px;
-    border: 1px solid;
-    transition: all 0.2s;
-}
-
-.alert:last-child {
-    margin-bottom: 0;
-}
-
-.alert:hover {
-    transform: translateX(2px);
+    gap: 12px;
 }
 
 .alert i {
-    font-size: 22px;
-    margin-top: 2px;
+    font-size: 20px;
     flex-shrink: 0;
+    margin-top: 2px;
 }
 
 .alert strong {
     display: block;
     font-size: 14px;
     font-weight: 700;
-    margin-bottom: 6px;
-    letter-spacing: -0.2px;
+    margin-bottom: 4px;
 }
 
 .alert p {
@@ -355,174 +310,35 @@
 }
 
 .alert-warning {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    border-left: 4px solid #f59e0b;
-    border-color: #fbbf24;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+    border-color: #f59e0b;
+    background: #fef3c7;
 }
 
 .alert-warning i {
-    color: #d97706;
-}
-
-.alert-warning p {
-    color: #92400e;
+    color: #f59e0b;
 }
 
 .alert-success {
-    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-    border-left: 4px solid #059669;
     border-color: #10b981;
-    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.1);
+    background: #d1fae5;
 }
 
 .alert-success i {
-    color: #047857;
-}
-
-.alert-success p {
-    color: #065f46;
+    color: #10b981;
 }
 
 .alert-info {
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    border-left: 4px solid #0284c7;
-    border-color: #3b82f6;
-    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1);
+    border-color: #0d6efd;
+    background: #dbeafe;
 }
 
 .alert-info i {
-    color: #0369a1;
-}
-
-.alert-info p {
-    color: #075985;
-}
-
-/* BOUTONS */
-.primary-btn {
-    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
-    transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.primary-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
-}
-
-/* ACTIONS RAPIDES - Style Semrush */
-.action-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 18px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-    border: 1px solid #e2e8f0;
-    text-decoration: none;
-    color: inherit;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-}
-
-.action-item:last-child {
-    margin-bottom: 0;
-}
-
-.action-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: #0d6efd;
-    border-radius: 12px 0 0 12px;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.action-item:hover {
-    background: linear-gradient(135deg, #f1f5f9 0%, #f8fafc 100%);
-    border-color: #0d6efd;
-    transform: translateX(6px);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.12);
-}
-
-.action-item:hover::before {
-    opacity: 1;
-}
-
-.action-item > i:first-child {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
     color: #0d6efd;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.1);
-    transition: transform 0.3s;
-}
-
-.action-item:hover > i:first-child {
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
-}
-
-.action-item > div {
-    flex: 1;
-}
-
-.action-item strong {
-    display: block;
-    font-size: 14px;
-    font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 4px;
-    letter-spacing: -0.2px;
-}
-
-.action-item p {
-    margin: 0;
-    font-size: 12px;
-    color: #64748b;
-    line-height: 1.5;
-}
-
-.action-item > i:last-child {
-    color: #cbd5e1;
-    font-size: 16px;
-    transition: all 0.3s;
-}
-
-.action-item:hover > i:last-child {
-    color: #0d6efd;
-    transform: translateX(4px);
 }
 
 /* MEDIA QUERIES */
-@media (max-width: 1190px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .alerts-actions-grid {
+@media (max-width: 768px) {
+    .actions-grid {
         grid-template-columns: 1fr;
     }
 }
