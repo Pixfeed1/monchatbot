@@ -3,82 +3,76 @@
 {% block title %}Tableau de Bord LeoBot{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}?v=2025">
 {% endblock %}
 
 {% block content %}
-<!-- Bannière avec CTA -->
+<!-- Bannière principale -->
 <div class="banner">
     <div class="banner-content">
-        <h1>Bienvenue sur votre tableau de bord LeoBot</h1>
-        <p>Démarrez une conversation et échangez avec votre assistant virtuel.</p>
-
-        <button id="toggleChatBtn">
-            <i class="fas fa-comments"></i>
+        <h1>Tableau de Bord LeoBot</h1>
+        <p>Suivez les performances de votre assistant IA en temps réel</p>
+        <button id="toggleChatBtn" class="primary-btn">
+            <i data-lucide="message-circle"></i>
             Démarrer une Conversation
         </button>
     </div>
-    <picture>
-        <source srcset="{{ url_for('static', filename='images/banners/banner-small.png') }}" media="(max-width: 480px)">
-        <source srcset="{{ url_for('static', filename='images/banners/banner-medium.png') }}" media="(max-width: 768px)">
-        <img src="{{ url_for('static', filename='images/banners/banner.png') }}" alt="Banner" class="banner-image">
-    </picture>
 </div>
 
 <!-- KPIs Principaux -->
-<div class="kpi-grid">
-    <div class="kpi-card">
+<div class="kpi-grid" id="kpiGrid">
+    <div class="kpi-card skeleton">
         <div class="kpi-icon" style="background: #e0f2fe;">
-            <i class="fas fa-comments" style="color: #0284c7;"></i>
+            <i data-lucide="activity" style="color: #0284c7;"></i>
         </div>
         <div class="kpi-content">
-            <div class="kpi-label">Conversations</div>
-            <div class="kpi-value">450</div>
-            <div class="kpi-trend positive">
-                <i class="fas fa-arrow-up"></i>
-                <span>+12% cette semaine</span>
+            <div class="kpi-label">Requêtes API</div>
+            <div class="kpi-value" id="totalRequests">--</div>
+            <div class="kpi-trend" id="requestsTrend">
+                <i data-lucide="trending-up"></i>
+                <span>Chargement...</span>
             </div>
         </div>
     </div>
 
-    <div class="kpi-card">
+    <div class="kpi-card skeleton">
         <div class="kpi-icon" style="background: #ddd6fe;">
-            <i class="fas fa-users" style="color: #7c3aed;"></i>
+            <i data-lucide="users" style="color: #7c3aed;"></i>
         </div>
         <div class="kpi-content">
-            <div class="kpi-label">Utilisateurs</div>
-            <div class="kpi-value">150</div>
-            <div class="kpi-trend positive">
-                <i class="fas fa-arrow-up"></i>
-                <span>+8% ce mois</span>
+            <div class="kpi-label">Utilisateurs Actifs</div>
+            <div class="kpi-value" id="activeUsers">--</div>
+            <div class="kpi-trend neutral">
+                <i data-lucide="minus"></i>
+                <span>Total</span>
             </div>
         </div>
     </div>
 
-    <div class="kpi-card">
+    <div class="kpi-card skeleton">
         <div class="kpi-icon" style="background: #fce7f3;">
-            <i class="fas fa-paper-plane" style="color: #db2777;"></i>
+            <i data-lucide="zap" style="color: #db2777;"></i>
         </div>
         <div class="kpi-content">
-            <div class="kpi-label">Messages</div>
-            <div class="kpi-value">2,000</div>
+            <div class="kpi-label">Taux de Succès</div>
+            <div class="kpi-value" id="successRate">--</div>
             <div class="kpi-trend positive">
-                <i class="fas fa-arrow-up"></i>
-                <span>+15% ce mois</span>
+                <i data-lucide="check-circle"></i>
+                <span id="successRateLabel">Performance</span>
             </div>
         </div>
     </div>
 
-    <div class="kpi-card">
+    <div class="kpi-card skeleton">
         <div class="kpi-icon" style="background: #fef3c7;">
-            <i class="fas fa-clock" style="color: #f59e0b;"></i>
+            <i data-lucide="clock" style="color: #f59e0b;"></i>
         </div>
         <div class="kpi-content">
-            <div class="kpi-label">Temps de réponse</div>
-            <div class="kpi-value">1.2s</div>
-            <div class="kpi-trend negative">
-                <i class="fas fa-arrow-down"></i>
-                <span>+0.3s vs hier</span>
+            <div class="kpi-label">Temps de Réponse</div>
+            <div class="kpi-value" id="avgResponseTime">--</div>
+            <div class="kpi-trend" id="responseTimeTrend">
+                <i data-lucide="gauge"></i>
+                <span>Moyenne</span>
             </div>
         </div>
     </div>
@@ -86,11 +80,11 @@
 
 <!-- Section Graphiques et Stats -->
 <div class="dashboard-grid">
-    <!-- Graphique des conversations -->
+    <!-- Graphique d'activité -->
     <div class="card">
         <div class="card-header">
             <h2>
-                <i class="fas fa-chart-line"></i>
+                <i data-lucide="trending-up"></i>
                 Activité des 7 derniers jours
             </h2>
         </div>
@@ -103,26 +97,38 @@
     <div class="card">
         <div class="card-header">
             <h2>
-                <i class="fas fa-chart-bar"></i>
-                Statistiques détaillées
+                <i data-lucide="bar-chart-3"></i>
+                Statistiques Détaillées
             </h2>
         </div>
         <div class="card-content">
             <div class="stat-row">
-                <span class="stat-label">Messages par utilisateur</span>
-                <span class="stat-value">13.3</span>
+                <span class="stat-label">
+                    <i data-lucide="database"></i>
+                    Tokens Consommés
+                </span>
+                <span class="stat-value" id="totalTokens">--</span>
             </div>
             <div class="stat-row">
-                <span class="stat-label">Conversations par utilisateur</span>
-                <span class="stat-value">3.0</span>
+                <span class="stat-label">
+                    <i data-lucide="server"></i>
+                    Provider Principal
+                </span>
+                <span class="stat-value" id="mostUsedProvider">--</span>
             </div>
             <div class="stat-row">
-                <span class="stat-label">Taux de satisfaction</span>
-                <span class="stat-value badge-success">92%</span>
+                <span class="stat-label">
+                    <i data-lucide="help-circle"></i>
+                    Base de Connaissances
+                </span>
+                <span class="stat-value"><span id="totalFaqs">--</span> FAQs</span>
             </div>
             <div class="stat-row">
-                <span class="stat-label">Widgets actifs</span>
-                <span class="stat-value">10</span>
+                <span class="stat-label">
+                    <i data-lucide="calendar"></i>
+                    Requêtes cette semaine
+                </span>
+                <span class="stat-value" id="requestsThisWeek">--</span>
             </div>
         </div>
     </div>
@@ -130,27 +136,20 @@
 
 <!-- Alertes et Actions rapides -->
 <div class="alerts-actions-grid">
-    <!-- Alertes -->
+    <!-- Alertes Intelligentes -->
     <div class="card">
         <div class="card-header">
             <h2>
-                <i class="fas fa-bell"></i>
-                Alertes
+                <i data-lucide="bell"></i>
+                Alertes Système
             </h2>
         </div>
-        <div class="card-content">
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i>
+        <div class="card-content" id="alertsContainer">
+            <div class="alert alert-info">
+                <i data-lucide="info"></i>
                 <div>
-                    <strong>Temps de réponse en hausse</strong>
-                    <p>Le temps moyen a augmenté de 30% aujourd'hui</p>
-                </div>
-            </div>
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i>
-                <div>
-                    <strong>Nouveau record</strong>
-                    <p>5 nouveaux utilisateurs inscrits aujourd'hui</p>
+                    <strong>Système opérationnel</strong>
+                    <p>Toutes les métriques se chargent depuis la base de données</p>
                 </div>
             </div>
         </div>
@@ -160,40 +159,40 @@
     <div class="card">
         <div class="card-header">
             <h2>
-                <i class="fas fa-bolt"></i>
-                Actions rapides
+                <i data-lucide="zap"></i>
+                Actions Rapides
             </h2>
         </div>
         <div class="card-content">
             <a href="{{ url_for('main.reponses') }}" class="action-item">
-                <i class="fas fa-cog"></i>
+                <i data-lucide="settings"></i>
                 <div>
                     <strong>Configurer les réponses</strong>
                     <p>Personnalisez les messages du bot</p>
                 </div>
-                <i class="fas fa-chevron-right"></i>
+                <i data-lucide="chevron-right"></i>
             </a>
             <a href="{{ url_for('main.base_connaissances') }}" class="action-item">
-                <i class="fas fa-brain"></i>
+                <i data-lucide="brain"></i>
                 <div>
                     <strong>Base de connaissances</strong>
                     <p>Enrichir les connaissances du bot</p>
                 </div>
-                <i class="fas fa-chevron-right"></i>
+                <i data-lucide="chevron-right"></i>
             </a>
             <a href="{{ url_for('main.config_api') }}" class="action-item">
-                <i class="fas fa-key"></i>
+                <i data-lucide="key"></i>
                 <div>
                     <strong>Configuration API</strong>
                     <p>Gérer vos clés d'API</p>
                 </div>
-                <i class="fas fa-chevron-right"></i>
+                <i data-lucide="chevron-right"></i>
             </a>
         </div>
     </div>
 </div>
 
-<!-- Conteneur où le chatbot React sera injecté (masqué par défaut) -->
+<!-- Conteneur du chatbot React -->
 <div id="react-chat-root" style="display: none;"></div>
 {% endblock %}
 
@@ -205,61 +204,236 @@
         hasGPT: {{ openai_key|default(false)|tojson|safe }}
     };
 </script>
-<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+<script src="{{ url_for('static', filename='js/index.js') }}?v=2025"></script>
 {% if main_js %}
     <script src="{{ url_for('static', filename=main_js) }}"></script>
 {% endif %}
 
-<!-- Graphique Chart.js -->
+<!-- Script de chargement des métriques RÉELLES -->
 <script>
-    // Graphique d'activité
-    const ctx = document.getElementById('activityChart');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-            datasets: [
-                {
-                    label: 'Conversations',
-                    data: [45, 52, 48, 65, 70, 58, 62],
+    let activityChart = null;
+
+    // Fonction pour charger les vraies métriques depuis l'API
+    async function loadDashboardMetrics() {
+        try {
+            const response = await fetch('/api/dashboard/metrics');
+            if (!response.ok) {
+                throw new Error('Erreur de chargement des métriques');
+            }
+
+            const metrics = await response.json();
+
+            // Mise à jour des KPIs
+            document.getElementById('totalRequests').textContent = metrics.total_requests.toLocaleString();
+            document.getElementById('activeUsers').textContent = metrics.active_users;
+            document.getElementById('successRate').textContent = metrics.success_rate + '%';
+            document.getElementById('avgResponseTime').textContent = metrics.avg_response_time + 's';
+
+            // Mise à jour des tendances
+            const requestsTrend = document.getElementById('requestsTrend');
+            if (metrics.trend_direction === 'up') {
+                requestsTrend.className = 'kpi-trend positive';
+                requestsTrend.innerHTML = '<i data-lucide="trending-up"></i><span>+' + metrics.trend_percentage + '% cette semaine</span>';
+            } else if (metrics.trend_direction === 'down') {
+                requestsTrend.className = 'kpi-trend negative';
+                requestsTrend.innerHTML = '<i data-lucide="trending-down"></i><span>' + metrics.trend_percentage + '% cette semaine</span>';
+            } else {
+                requestsTrend.className = 'kpi-trend neutral';
+                requestsTrend.innerHTML = '<i data-lucide="minus"></i><span>Stable</span>';
+            }
+
+            // Mise à jour des stats détaillées
+            document.getElementById('totalTokens').textContent = metrics.total_tokens.toLocaleString();
+            document.getElementById('mostUsedProvider').textContent = metrics.most_used_provider;
+            document.getElementById('totalFaqs').textContent = metrics.total_faqs;
+            document.getElementById('requestsThisWeek').textContent = metrics.requests_this_week.toLocaleString();
+
+            // Retirer les squelettes de chargement
+            document.querySelectorAll('.skeleton').forEach(el => el.classList.remove('skeleton'));
+
+            // Mise à jour du graphique
+            updateActivityChart(metrics.activity_by_day);
+
+            // Mise à jour des alertes intelligentes
+            updateAlerts(metrics);
+
+            // Réinitialiser les icônes Lucide
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+        } catch (error) {
+            console.error('Erreur lors du chargement des métriques:', error);
+
+            // Afficher un message d'erreur
+            const alertsContainer = document.getElementById('alertsContainer');
+            alertsContainer.innerHTML = `
+                <div class="alert alert-warning">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        <strong>Erreur de chargement</strong>
+                        <p>Impossible de charger les métriques. Veuillez rafraîchir la page.</p>
+                    </div>
+                </div>
+            `;
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+    }
+
+    // Fonction pour mettre à jour le graphique d'activité
+    function updateActivityChart(activityData) {
+        const ctx = document.getElementById('activityChart');
+
+        if (activityChart) {
+            activityChart.destroy();
+        }
+
+        const labels = activityData.map(d => d.label);
+        const data = activityData.map(d => d.count);
+
+        activityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Requêtes API',
+                    data: data,
                     borderColor: '#0284c7',
                     backgroundColor: 'rgba(2, 132, 199, 0.1)',
                     tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: 'Messages',
-                    data: [180, 210, 195, 260, 285, 240, 255],
-                    borderColor: '#db2777',
-                    backgroundColor: 'rgba(219, 39, 119, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top'
-                }
+                    fill: true,
+                    pointBackgroundColor: '#0284c7',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: '#f3f4f6'
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: {
+                            size: 14
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        displayColors: false
                     }
                 },
-                x: {
-                    grid: {
-                        display: false
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#f3f4f6'
+                        },
+                        ticks: {
+                            precision: 0
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
                     }
                 }
             }
+        });
+    }
+
+    // Fonction pour mettre à jour les alertes intelligentes
+    function updateAlerts(metrics) {
+        const alertsContainer = document.getElementById('alertsContainer');
+        let alerts = [];
+
+        // Alerte si taux de succès faible
+        if (metrics.success_rate < 90 && metrics.total_requests > 0) {
+            alerts.push(`
+                <div class="alert alert-warning">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        <strong>Taux de succès à surveiller</strong>
+                        <p>Le taux de succès est de ${metrics.success_rate}%. Vérifiez les configurations API.</p>
+                    </div>
+                </div>
+            `);
         }
+
+        // Alerte si temps de réponse élevé
+        if (metrics.avg_response_time > 3.0 && metrics.total_requests > 0) {
+            alerts.push(`
+                <div class="alert alert-warning">
+                    <i data-lucide="clock"></i>
+                    <div>
+                        <strong>Temps de réponse élevé</strong>
+                        <p>Le temps moyen de réponse est de ${metrics.avg_response_time}s</p>
+                    </div>
+                </div>
+            `);
+        }
+
+        // Alerte si croissance importante
+        if (metrics.trend_percentage > 50) {
+            alerts.push(`
+                <div class="alert alert-success">
+                    <i data-lucide="trending-up"></i>
+                    <div>
+                        <strong>Croissance importante</strong>
+                        <p>+${metrics.trend_percentage}% de requêtes cette semaine</p>
+                    </div>
+                </div>
+            `);
+        }
+
+        // Alerte si aucune donnée
+        if (metrics.total_requests === 0) {
+            alerts.push(`
+                <div class="alert alert-info">
+                    <i data-lucide="info"></i>
+                    <div>
+                        <strong>Aucune activité détectée</strong>
+                        <p>Commencez à utiliser le chatbot pour voir les statistiques</p>
+                    </div>
+                </div>
+            `);
+        }
+
+        // Si aucune alerte, afficher un message de succès
+        if (alerts.length === 0) {
+            alerts.push(`
+                <div class="alert alert-success">
+                    <i data-lucide="check-circle"></i>
+                    <div>
+                        <strong>Tout fonctionne parfaitement</strong>
+                        <p>Toutes les métriques sont dans les normes</p>
+                    </div>
+                </div>
+            `);
+        }
+
+        alertsContainer.innerHTML = alerts.join('');
+
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    // Charger les métriques au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDashboardMetrics();
+
+        // Rafraîchir les métriques toutes les 30 secondes
+        setInterval(loadDashboardMetrics, 30000);
     });
 </script>
 {% endblock %}

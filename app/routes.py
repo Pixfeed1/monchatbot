@@ -26,7 +26,8 @@ from .models import (
     BotCompetences, BotResponses,
     ConversationFlow, FlowNode, NodeConnection, FlowVariable,
     ActionTrigger, EmailTemplate, CalendarConfig,
-    TicketConfig, FormRedirection, DefaultMessage
+    TicketConfig, FormRedirection, DefaultMessage,
+    APIUsageLog
 )
 from . import db
 from .config import Config
@@ -95,6 +96,109 @@ def home():
         api_mode="user_keys",  # Mode clés utilisateur
         user_keys_mode=True  # Flag pour les clés utilisateur
     )
+
+
+@main_bp.route("/api/dashboard/metrics")
+@login_required
+def dashboard_metrics():
+    """API qui renvoie les vraies métriques du dashboard depuis la base de données."""
+    try:
+        from sqlalchemy import func
+
+        # Calcul de la période (7 derniers jours)
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        today = datetime.utcnow()
+
+        # 1. Nombre total de requêtes API
+        total_requests = APIUsageLog.query.count()
+
+        # 2. Nombre de requêtes cette semaine
+        requests_this_week = APIUsageLog.query.filter(
+            APIUsageLog.created_at >= seven_days_ago
+        ).count()
+
+        # 3. Temps de réponse moyen (en secondes)
+        avg_response_time = db.session.query(
+            func.avg(APIUsageLog.request_duration)
+        ).scalar() or 0.0
+
+        # 4. Taux de succès (pourcentage)
+        total_with_status = APIUsageLog.query.count()
+        if total_with_status > 0:
+            success_count = APIUsageLog.query.filter(APIUsageLog.success == True).count()
+            success_rate = (success_count / total_with_status) * 100
+        else:
+            success_rate = 0.0
+
+        # 5. Tokens utilisés (total)
+        total_tokens = db.session.query(
+            func.sum(APIUsageLog.tokens_used)
+        ).scalar() or 0
+
+        # 6. Nombre d'utilisateurs actifs
+        active_users = User.query.filter(User.is_active == True).count()
+
+        # 7. Nombre total de FAQs dans la base de connaissances
+        total_faqs = FAQ.query.count()
+
+        # 8. Provider le plus utilisé
+        provider_stats = db.session.query(
+            APIUsageLog.provider,
+            func.count(APIUsageLog.id).label('count')
+        ).group_by(APIUsageLog.provider).order_by(text('count DESC')).first()
+
+        most_used_provider = provider_stats[0] if provider_stats else "Aucun"
+
+        # 9. Activité des 7 derniers jours (pour le graphique)
+        activity_by_day = []
+        for i in range(6, -1, -1):  # De il y a 6 jours à aujourd'hui
+            day = today - timedelta(days=i)
+            day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+
+            count = APIUsageLog.query.filter(
+                APIUsageLog.created_at >= day_start,
+                APIUsageLog.created_at < day_end
+            ).count()
+
+            activity_by_day.append({
+                'date': day.strftime('%Y-%m-%d'),
+                'label': day.strftime('%a'),  # Lun, Mar, Mer...
+                'count': count
+            })
+
+        # 10. Tendance de la semaine (comparaison avec la semaine précédente)
+        two_weeks_ago = datetime.utcnow() - timedelta(days=14)
+        requests_last_week = APIUsageLog.query.filter(
+            APIUsageLog.created_at >= two_weeks_ago,
+            APIUsageLog.created_at < seven_days_ago
+        ).count()
+
+        if requests_last_week > 0:
+            trend_percentage = ((requests_this_week - requests_last_week) / requests_last_week) * 100
+        else:
+            trend_percentage = 100.0 if requests_this_week > 0 else 0.0
+
+        # Construction de la réponse
+        metrics = {
+            'total_requests': total_requests,
+            'requests_this_week': requests_this_week,
+            'avg_response_time': round(avg_response_time, 2),
+            'success_rate': round(success_rate, 1),
+            'total_tokens': total_tokens,
+            'active_users': active_users,
+            'total_faqs': total_faqs,
+            'most_used_provider': most_used_provider,
+            'activity_by_day': activity_by_day,
+            'trend_percentage': round(trend_percentage, 1),
+            'trend_direction': 'up' if trend_percentage > 0 else 'down' if trend_percentage < 0 else 'stable'
+        }
+
+        return jsonify(metrics)
+
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des métriques: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @main_bp.route("/login", methods=["GET", "POST"])
