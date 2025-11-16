@@ -199,14 +199,38 @@
             // Afficher un message d'erreur
             const alertsContainer = document.getElementById('alertsContainer');
             alertsContainer.innerHTML = `
-                <div class="alert alert-warning">
-                    <i data-lucide="alert-triangle"></i>
+                <div class="alert alert-info">
+                    <i data-lucide="info"></i>
                     <div>
-                        <strong>Erreur de chargement</strong>
-                        <p>Impossible de charger les métriques. Veuillez rafraîchir la page.</p>
+                        <strong>Aucune donnée disponible</strong>
+                        <p>Les métriques s'afficheront lorsque vous commencerez à utiliser le chatbot. Si vous voyez ce message après utilisation, vérifiez que les migrations de base de données sont à jour avec : flask db upgrade</p>
                     </div>
                 </div>
             `;
+
+            // Remplir avec des valeurs par défaut
+            document.getElementById('totalRequests').textContent = '0';
+            document.getElementById('activeUsers').textContent = '0';
+            document.getElementById('successRate').textContent = '0%';
+            document.getElementById('avgResponseTime').textContent = '0s';
+            document.getElementById('totalTokens').textContent = '0';
+            document.getElementById('mostUsedProvider').textContent = 'Aucun';
+            document.getElementById('totalFaqs').textContent = '0';
+            document.getElementById('requestsThisWeek').textContent = '0';
+
+            // Retirer les squelettes
+            document.querySelectorAll('.skeleton').forEach(el => el.classList.remove('skeleton'));
+
+            // Créer un graphique vide
+            updateActivityChart([
+                {label: 'Lun', count: 0},
+                {label: 'Mar', count: 0},
+                {label: 'Mer', count: 0},
+                {label: 'Jeu', count: 0},
+                {label: 'Ven', count: 0},
+                {label: 'Sam', count: 0},
+                {label: 'Dim', count: 0}
+            ]);
 
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
