@@ -7,16 +7,22 @@
 {% endblock %}
 
 {% block content %}
-<!-- Bannière principale -->
+<!-- Bannière avec CTA -->
 <div class="banner">
     <div class="banner-content">
-        <h1>Tableau de Bord LeoBot</h1>
-        <p>Suivez les performances de votre assistant IA en temps réel</p>
-        <button id="toggleChatBtn" class="primary-btn">
+        <h1>Bienvenue sur votre tableau de bord LeoBot</h1>
+        <p>Démarrez une conversation et échangez avec votre assistant virtuel.</p>
+
+        <button id="toggleChatBtn">
             <i data-lucide="message-circle"></i>
             Démarrer une Conversation
         </button>
     </div>
+    <picture>
+        <source srcset="{{ url_for('static', filename='images/banners/banner-small.png') }}" media="(max-width: 480px)">
+        <source srcset="{{ url_for('static', filename='images/banners/banner-medium.png') }}" media="(max-width: 768px)">
+        <img src="{{ url_for('static', filename='images/banners/banner.png') }}" alt="Banner" class="banner-image">
+    </picture>
 </div>
 
 <!-- KPIs Principaux -->
