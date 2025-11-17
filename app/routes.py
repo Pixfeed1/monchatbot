@@ -35,6 +35,11 @@ from .config import Config
 # Import du context builder
 from .context_builder import ContextBuilder
 
+# Import du decision engine pour orchestrer flux/réponses/API
+from .decision_engine import decision_engine
+from .response_manager import response_manager
+from .flow_executor import flow_executor
+
 # Configuration du logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -718,7 +723,54 @@ def chatbot():
                 "error": True,
                 "auth_required": True
             }), 401
-        
+
+        # ===== NOUVEAU: DECISION ENGINE =====
+        # Essayer d'abord les flux de conversation et les réponses configurées
+        logger.info("🧠 Decision Engine: Recherche d'une réponse depuis flux/configuration...")
+
+        try:
+            # 1. Vérifier les flux actifs
+            if flow_executor.has_active_flows():
+                flow_id = flow_executor.find_matching_flow(user_message, current_user.id)
+                if flow_id:
+                    flow_result = flow_executor.execute_flow(flow_id, user_message, current_user.id)
+                    if flow_result and flow_result.get('content'):
+                        logger.info(f"✅ Réponse trouvée via FLUX: {flow_result['flow_name']}")
+                        return jsonify({
+                            "message": flow_result['content'],
+                            "mode": "flow",
+                            "metadata": {
+                                "source": "conversation_flow",
+                                "flow_id": flow_id,
+                                "flow_name": flow_result['flow_name'],
+                                "execution_path": flow_result.get('execution_path', []),
+                                "processing_time": time.time() - start_time
+                            }
+                        })
+
+            # 2. Vérifier les réponses configurées
+            if response_manager.has_configured_responses():
+                configured_result = response_manager.find_matching_response(user_message, current_user.id)
+                if configured_result and configured_result.get('content'):
+                    logger.info(f"✅ Réponse trouvée via CONFIG: {configured_result.get('type', 'unknown')}")
+                    return jsonify({
+                        "message": configured_result['content'],
+                        "mode": "configured",
+                        "metadata": {
+                            "source": configured_result.get('source', 'unknown'),
+                            "type": configured_result.get('type', 'unknown'),
+                            "confidence": configured_result.get('confidence', 0),
+                            "processing_time": time.time() - start_time
+                        }
+                    })
+
+        except Exception as e:
+            logger.error(f"Erreur Decision Engine: {e}", exc_info=True)
+            # Continuer vers l'API en cas d'erreur
+
+        logger.info("ℹ️ Aucune réponse depuis flux/config, utilisation de l'API...")
+        # ===== FIN DECISION ENGINE =====
+
         # Récupérer la configuration API de l'utilisateur
         user_config = get_user_api_config()
         if not user_config:
@@ -2353,6 +2405,87 @@ def delete_connection(connection_id):
    except Exception as e:
        db.session.rollback()
        return jsonify({'error': str(e)}), 500
+
+
+#######################################
+# ROUTES DE STATISTIQUES ET TESTS - DECISION ENGINE
+#######################################
+
+@main_bp.route('/api/decision/stats', methods=['GET'])
+@login_required
+def decision_stats():
+   """Récupère les statistiques d'utilisation du Decision Engine"""
+   try:
+       stats = decision_engine.get_statistics()
+
+       return jsonify({
+           'success': True,
+           'statistics': stats,
+           'capabilities': {
+               'has_active_flows': flow_executor.has_active_flows(),
+               'has_configured_responses': response_manager.has_configured_responses(),
+               'decision_engine_ready': decision_engine.is_ready()
+           }
+       })
+   except Exception as e:
+       logger.error(f"Erreur decision_stats: {e}")
+       return jsonify({'success': False, 'error': str(e)}), 500
+
+@main_bp.route('/api/decision/test', methods=['POST'])
+@login_required
+def decision_test():
+   """Teste le Decision Engine avec un message"""
+   try:
+       data = request.get_json()
+       test_message = data.get('message', '')
+
+       if not test_message:
+           return jsonify({'success': False, 'error': 'Message requis'}), 400
+
+       # Tester les flux
+       flow_result = None
+       if flow_executor.has_active_flows():
+           flow_id = flow_executor.find_matching_flow(test_message, current_user.id)
+           if flow_id:
+               flow_result = flow_executor.execute_flow(flow_id, test_message, current_user.id)
+
+       # Tester les réponses configurées
+       config_result = None
+       if response_manager.has_configured_responses():
+           config_result = response_manager.find_matching_response(test_message, current_user.id)
+
+       return jsonify({
+           'success': True,
+           'test_message': test_message,
+           'results': {
+               'flow': {
+                   'found': flow_result is not None,
+                   'data': flow_result if flow_result else None
+               },
+               'configured': {
+                   'found': config_result is not None,
+                   'data': config_result if config_result else None
+               }
+           },
+           'recommendation': 'flow' if flow_result else ('configured' if config_result else 'api')
+       })
+   except Exception as e:
+       logger.error(f"Erreur decision_test: {e}", exc_info=True)
+       return jsonify({'success': False, 'error': str(e)}), 500
+
+@main_bp.route('/api/decision/reset-stats', methods=['POST'])
+@login_required
+def reset_decision_stats():
+   """Réinitialise les statistiques du Decision Engine"""
+   try:
+       decision_engine.reset_statistics()
+       return jsonify({
+           'success': True,
+           'message': 'Statistiques réinitialisées'
+       })
+   except Exception as e:
+       logger.error(f"Erreur reset_decision_stats: {e}")
+       return jsonify({'success': False, 'error': str(e)}), 500
 
 
 #######################################
