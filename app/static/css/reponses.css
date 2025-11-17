@@ -137,6 +137,8 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    width: auto;
+    max-width: fit-content;
 }
 
 .save-btn:hover {
