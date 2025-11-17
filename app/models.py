@@ -161,8 +161,11 @@ class Document(db.Model):
     title = db.Column(db.String(200), nullable=False)
     filename = db.Column(db.String(255), nullable=False)
     file_type = db.Column(db.String(50))
+    file_size = db.Column(db.Integer, default=0)  # Taille en bytes
     category_id = db.Column(db.Integer, db.ForeignKey('knowledge_category.id'), nullable=False)
     content = db.Column(db.Text)  # Contenu extrait du document
+    summary = db.Column(db.Text)  # Résumé du document
+    status = db.Column(db.String(20), default='processing')  # processing, processed, error
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -186,6 +189,55 @@ class ResponseRule(db.Model):
     @condition_rules.setter
     def condition_rules(self, value):
         self.conditions = json.dumps(value)
+
+
+class VocabularyTerm(db.Model):
+    """Termes de vocabulaire métier"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    definition = db.Column(db.Text, nullable=False)
+    synonyms = db.Column(db.Text)  # Stocké au format JSON
+    category = db.Column(db.String(100), default='general')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @property
+    def synonym_list(self):
+        return json.loads(self.synonyms) if self.synonyms else []
+
+    @synonym_list.setter
+    def synonym_list(self, value):
+        self.synonyms = json.dumps(value)
+
+
+class AdvancedRule(db.Model):
+    """Règles avancées pour la base de connaissances"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    rule_type = db.Column(db.String(50), nullable=False)  # conditional, context, priority
+    description = db.Column(db.Text)
+    conditions = db.Column(db.Text)  # Stocké au format JSON
+    actions = db.Column(db.Text)  # Stocké au format JSON
+    is_active = db.Column(db.Boolean, default=True)
+    priority = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @property
+    def condition_list(self):
+        return json.loads(self.conditions) if self.conditions else []
+
+    @condition_list.setter
+    def condition_list(self, value):
+        self.conditions = json.dumps(value)
+
+    @property
+    def action_list(self):
+        return json.loads(self.actions) if self.actions else []
+
+    @action_list.setter
+    def action_list(self, value):
+        self.actions = json.dumps(value)
 
 
 class BotCompetences(db.Model):

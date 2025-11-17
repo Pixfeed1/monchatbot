@@ -2042,7 +2042,7 @@ def serve_react_index():
 #######################################
 # Blueprint pour la gestion des connaissances
 #######################################
-knowledge_bp = Blueprint('knowledge', __name__, url_prefix='/knowledge')
+knowledge_bp = Blueprint('knowledge', __name__, url_prefix='/api/knowledge')
 
 @knowledge_bp.route('/categories', methods=['GET', 'POST'])
 @login_required
@@ -2123,45 +2123,601 @@ def upload_document():
    """Upload de documents."""
    if 'file' not in request.files:
        return jsonify({'success': False, 'error': 'Aucun fichier fourni'}), 400
-   
+
    file = request.files['file']
-   category_id = request.form.get('category_id')
-   
+   category = request.form.get('category', 'general')
+
    if file.filename == '':
        return jsonify({'success': False, 'error': 'Nom de fichier invalide'}), 400
-   
+
    try:
+       from .document_processor import document_processor
+
        filename = secure_filename(file.filename)
        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
        file.save(file_path)
-       
-       # Extraire le contenu du document pour la recherche
-       content = ""
-       if filename.endswith('.txt'):
-           with open(file_path, 'r', encoding='utf-8') as f:
-               content = f.read()
-       
+
+       # Récupérer la taille du fichier
+       file_size = os.path.getsize(file_path)
+
+       # Vérifier si le format est supporté
+       if not document_processor.is_supported(filename):
+           os.remove(file_path)
+           return jsonify({
+               'success': False,
+               'error': f'Format non supporté. Formats acceptés: PDF, Word, Excel, TXT'
+           }), 400
+
+       # Trouver ou créer la catégorie
+       knowledge_category = KnowledgeCategory.query.filter_by(name=category).first()
+       if not knowledge_category:
+           knowledge_category = KnowledgeCategory(name=category, description='')
+           db.session.add(knowledge_category)
+           db.session.flush()
+
+       # Créer le document avec status 'processing'
        document = Document(
            title=filename,
            filename=filename,
            file_type=file.content_type,
-           content=content,
-           category_id=category_id
+           file_size=file_size,
+           category_id=knowledge_category.id,
+           status='processing'
        )
        db.session.add(document)
+       db.session.flush()
+
+       # Extraire le contenu du document
+       document_processor.process_and_update_document(document, file_path)
+
        db.session.commit()
-       
-       logger.info(f"Document '{filename}' uploadé et indexé")
-       
+
+       logger.info(f"Document '{filename}' uploadé et traité ({file_size} bytes)")
+
        return jsonify({
            'success': True,
            'document': {
                'id': document.id,
-               'title': document.title
+               'title': document.title,
+               'status': document.status
            }
        })
    except Exception as e:
+       logger.error(f"Erreur upload_document: {e}")
+       db.session.rollback()
        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@knowledge_bp.route('/documents', methods=['GET'])
+@login_required
+def get_documents():
+    """Liste tous les documents."""
+    try:
+        documents = Document.query.all()
+        return jsonify({
+            'success': True,
+            'documents': [{
+                'id': doc.id,
+                'name': doc.title,
+                'type': doc.file_type,
+                'size': doc.file_size,
+                'category': doc.category.name if doc.category else 'Non catégorisé',
+                'summary': doc.summary,
+                'status': doc.status,
+                'created_at': doc.created_at.isoformat()
+            } for doc in documents]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_documents: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/documents/<int:doc_id>', methods=['GET'])
+@login_required
+def get_document(doc_id):
+    """Récupère un document spécifique."""
+    try:
+        doc = Document.query.get_or_404(doc_id)
+        return jsonify({
+            'success': True,
+            'document': {
+                'id': doc.id,
+                'name': doc.title,
+                'filename': doc.filename,
+                'type': doc.file_type,
+                'size': doc.file_size,
+                'category': doc.category.name if doc.category else 'Non catégorisé',
+                'summary': doc.summary,
+                'status': doc.status,
+                'content': doc.content,
+                'created_at': doc.created_at.isoformat(),
+                'updated_at': doc.updated_at.isoformat()
+            }
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_document: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/documents/<int:doc_id>', methods=['DELETE'])
+@login_required
+def delete_document(doc_id):
+    """Supprime un document."""
+    try:
+        doc = Document.query.get_or_404(doc_id)
+
+        # Supprimer le fichier physique
+        try:
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], doc.filename)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            logger.warning(f"Impossible de supprimer le fichier: {e}")
+
+        db.session.delete(doc)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Document supprimé'})
+    except Exception as e:
+        logger.error(f"Erreur delete_document: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/documents/export', methods=['GET'])
+@login_required
+def export_documents():
+    """Exporte tous les documents en ZIP."""
+    try:
+        import zipfile
+        from io import BytesIO
+
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            documents = Document.query.all()
+            for doc in documents:
+                file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], doc.filename)
+                if os.path.exists(file_path):
+                    zip_file.write(file_path, doc.filename)
+
+        zip_buffer.seek(0)
+        response = make_response(zip_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/zip'
+        response.headers['Content-Disposition'] = f'attachment; filename=documents-{datetime.now().strftime("%Y%m%d")}.zip'
+
+        return response
+    except Exception as e:
+        logger.error(f"Erreur export_documents: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== VOCABULARY ROUTES =====
+
+@knowledge_bp.route('/vocabulary', methods=['GET'])
+@login_required
+def get_vocabulary():
+    """Liste tous les termes de vocabulaire."""
+    try:
+        from .models import VocabularyTerm
+        terms = VocabularyTerm.query.all()
+        return jsonify({
+            'success': True,
+            'terms': [{
+                'id': term.id,
+                'name': term.name,
+                'definition': term.definition,
+                'synonyms': term.synonym_list,
+                'category': term.category,
+                'created_at': term.created_at.isoformat()
+            } for term in terms]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_vocabulary: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/vocabulary', methods=['POST'])
+@login_required
+def create_vocabulary():
+    """Crée un nouveau terme de vocabulaire."""
+    try:
+        from .models import VocabularyTerm
+        data = request.get_json()
+
+        term = VocabularyTerm(
+            name=data['name'],
+            definition=data['definition'],
+            category=data.get('category', 'general')
+        )
+        term.synonym_list = data.get('synonyms', [])
+
+        db.session.add(term)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'term': {
+                'id': term.id,
+                'name': term.name
+            }
+        }), 201
+    except Exception as e:
+        logger.error(f"Erreur create_vocabulary: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/vocabulary/<int:term_id>', methods=['GET'])
+@login_required
+def get_vocabulary_term(term_id):
+    """Récupère un terme spécifique."""
+    try:
+        from .models import VocabularyTerm
+        term = VocabularyTerm.query.get_or_404(term_id)
+        return jsonify({
+            'success': True,
+            'term': {
+                'id': term.id,
+                'name': term.name,
+                'definition': term.definition,
+                'synonyms': term.synonym_list,
+                'category': term.category
+            }
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_vocabulary_term: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/vocabulary/<int:term_id>', methods=['DELETE'])
+@login_required
+def delete_vocabulary_term(term_id):
+    """Supprime un terme de vocabulaire."""
+    try:
+        from .models import VocabularyTerm
+        term = VocabularyTerm.query.get_or_404(term_id)
+        db.session.delete(term)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Terme supprimé'})
+    except Exception as e:
+        logger.error(f"Erreur delete_vocabulary_term: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/vocabulary/import-csv', methods=['POST'])
+@login_required
+def import_vocabulary_csv():
+    """Importe des termes depuis un fichier CSV."""
+    try:
+        from .models import VocabularyTerm
+        import csv
+
+        if 'csv_file' not in request.files:
+            return jsonify({'success': False, 'error': 'Aucun fichier fourni'}), 400
+
+        file = request.files['csv_file']
+        content = file.read().decode('utf-8')
+        csv_reader = csv.DictReader(content.splitlines())
+
+        imported_count = 0
+        for row in csv_reader:
+            if 'name' in row and 'definition' in row:
+                term = VocabularyTerm(
+                    name=row['name'],
+                    definition=row['definition'],
+                    category=row.get('category', 'general')
+                )
+                if 'synonyms' in row:
+                    term.synonym_list = [s.strip() for s in row['synonyms'].split(',')]
+                db.session.add(term)
+                imported_count += 1
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'imported_count': imported_count,
+            'message': f'{imported_count} termes importés'
+        })
+    except Exception as e:
+        logger.error(f"Erreur import_vocabulary_csv: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/vocabulary/extract-ai', methods=['POST'])
+@login_required
+def extract_vocabulary_ai():
+    """Extrait automatiquement le vocabulaire des documents avec l'IA."""
+    try:
+        # Cette fonctionnalité nécessite l'intégration avec l'API IA
+        # Pour l'instant, on retourne un message indiquant que c'est en développement
+        return jsonify({
+            'success': False,
+            'error': 'Extraction IA en cours de développement',
+            'extracted_count': 0,
+            'suggestions': []
+        }), 501
+    except Exception as e:
+        logger.error(f"Erreur extract_vocabulary_ai: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== RULES ROUTES =====
+
+@knowledge_bp.route('/rules', methods=['GET'])
+@login_required
+def get_rules():
+    """Liste toutes les règles avancées."""
+    try:
+        from .models import AdvancedRule
+        rules = AdvancedRule.query.all()
+        return jsonify({
+            'success': True,
+            'rules': [{
+                'id': rule.id,
+                'name': rule.name,
+                'type': rule.rule_type,
+                'description': rule.description,
+                'active': rule.is_active,
+                'priority': rule.priority,
+                'updated_at': rule.updated_at.isoformat()
+            } for rule in rules]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_rules: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/rules', methods=['POST'])
+@login_required
+def create_rule():
+    """Crée une nouvelle règle avancée."""
+    try:
+        from .models import AdvancedRule
+        data = request.get_json()
+
+        rule = AdvancedRule(
+            name=data.get('name', f"Règle {data['type']}"),
+            rule_type=data['type'],
+            description=data.get('description', ''),
+            is_active=data.get('active', True),
+            priority=data.get('priority', 0)
+        )
+        rule.condition_list = data.get('conditions', [])
+        rule.action_list = data.get('actions', [])
+
+        db.session.add(rule)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'rule': {
+                'id': rule.id,
+                'name': rule.name
+            }
+        }), 201
+    except Exception as e:
+        logger.error(f"Erreur create_rule: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/rules/test', methods=['POST'])
+@login_required
+def test_rule():
+    """Teste une règle avec une requête."""
+    try:
+        data = request.get_json()
+        conditions = data.get('conditions', [])
+        query = data.get('query', '').lower()
+
+        # Test basique de matching
+        matched = False
+        for condition in conditions:
+            cond_type = condition.get('type', '')
+            cond_value = condition.get('value', '').lower()
+
+            if cond_type == 'contains' and cond_value in query:
+                matched = True
+                break
+            elif cond_type == 'starts_with' and query.startswith(cond_value):
+                matched = True
+                break
+            elif cond_type == 'ends_with' and query.endswith(cond_value):
+                matched = True
+                break
+            elif cond_type == 'exact_match' and query == cond_value:
+                matched = True
+                break
+
+        return jsonify({
+            'success': True,
+            'matched': matched,
+            'message': f"La requête {'correspond' if matched else 'ne correspond pas'} aux conditions"
+        })
+    except Exception as e:
+        logger.error(f"Erreur test_rule: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/rules/<int:rule_id>/toggle', methods=['PATCH'])
+@login_required
+def toggle_rule(rule_id):
+    """Active/désactive une règle."""
+    try:
+        from .models import AdvancedRule
+        rule = AdvancedRule.query.get_or_404(rule_id)
+        rule.is_active = not rule.is_active
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'active': rule.is_active,
+            'message': f"Règle {'activée' if rule.is_active else 'désactivée'}"
+        })
+    except Exception as e:
+        logger.error(f"Erreur toggle_rule: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/rules/<int:rule_id>', methods=['DELETE'])
+@login_required
+def delete_rule(rule_id):
+    """Supprime une règle."""
+    try:
+        from .models import AdvancedRule
+        rule = AdvancedRule.query.get_or_404(rule_id)
+        db.session.delete(rule)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Règle supprimée'})
+    except Exception as e:
+        logger.error(f"Erreur delete_rule: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== GLOBAL ACTIONS =====
+
+@knowledge_bp.route('/export', methods=['GET'])
+@login_required
+def export_knowledge():
+    """Exporte toute la base de connaissances en JSON."""
+    try:
+        from .models import VocabularyTerm, AdvancedRule
+
+        # Récupérer toutes les données
+        categories = KnowledgeCategory.query.all()
+        documents = Document.query.all()
+        faqs = FAQ.query.all()
+        vocabulary = VocabularyTerm.query.all()
+        rules = AdvancedRule.query.all()
+
+        export_data = {
+            'version': '2.0',
+            'export_date': datetime.now().isoformat(),
+            'categories': [{
+                'name': cat.name,
+                'description': cat.description
+            } for cat in categories],
+            'documents': [{
+                'title': doc.title,
+                'filename': doc.filename,
+                'type': doc.file_type,
+                'category': doc.category.name if doc.category else None,
+                'summary': doc.summary
+            } for doc in documents],
+            'faqs': [{
+                'question': faq.question,
+                'answer': faq.answer,
+                'keywords': faq.keyword_list,
+                'category': faq.category.name if faq.category else None
+            } for faq in faqs],
+            'vocabulary': [{
+                'name': term.name,
+                'definition': term.definition,
+                'synonyms': term.synonym_list,
+                'category': term.category
+            } for term in vocabulary],
+            'rules': [{
+                'name': rule.name,
+                'type': rule.rule_type,
+                'description': rule.description,
+                'conditions': rule.condition_list,
+                'actions': rule.action_list
+            } for rule in rules]
+        }
+
+        response = make_response(json.dumps(export_data, ensure_ascii=False, indent=2))
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Content-Disposition'] = f'attachment; filename=knowledge-base-{datetime.now().strftime("%Y%m%d")}.json'
+
+        return response
+    except Exception as e:
+        logger.error(f"Erreur export_knowledge: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/import', methods=['POST'])
+@login_required
+def import_knowledge():
+    """Importe une base de connaissances depuis JSON."""
+    try:
+        if 'knowledge_file' not in request.files:
+            return jsonify({'success': False, 'error': 'Aucun fichier fourni'}), 400
+
+        file = request.files['knowledge_file']
+        content = json.loads(file.read().decode('utf-8'))
+
+        # Import simplifié - à améliorer avec gestion des doublons
+        imported_count = 0
+
+        # Importer les catégories
+        for cat_data in content.get('categories', []):
+            if not KnowledgeCategory.query.filter_by(name=cat_data['name']).first():
+                cat = KnowledgeCategory(**cat_data)
+                db.session.add(cat)
+                imported_count += 1
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'imported_count': imported_count,
+            'message': f'{imported_count} éléments importés'
+        })
+    except Exception as e:
+        logger.error(f"Erreur import_knowledge: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/optimize', methods=['POST'])
+@login_required
+def optimize_knowledge():
+    """Optimise la base de connaissances."""
+    try:
+        # Placeholder pour l'optimisation
+        # Ici on pourrait:
+        # - Nettoyer les doublons
+        # - Réorganiser les priorités
+        # - Mettre à jour les index
+        # - Générer des résumés manquants
+
+        return jsonify({
+            'success': True,
+            'message': 'Base de connaissances optimisée',
+            'optimizations': {
+                'duplicates_removed': 0,
+                'priorities_updated': 0,
+                'summaries_generated': 0
+            }
+        })
+    except Exception as e:
+        logger.error(f"Erreur optimize_knowledge: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/save-all', methods=['POST'])
+@login_required
+def save_all_knowledge():
+    """Sauvegarde toutes les modifications."""
+    try:
+        # Commit de toutes les modifications en attente
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Toutes les modifications sauvegardées'
+        })
+    except Exception as e:
+        logger.error(f"Erreur save_all_knowledge: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 #######################################

@@ -7,8 +7,12 @@ import logging
 from typing import Optional, Dict, Any
 from .response_manager import response_manager
 from .flow_executor import flow_executor
+from .knowledge_integrator import KnowledgeIntegrator
 
 logger = logging.getLogger(__name__)
+
+# Instance globale de KnowledgeIntegrator
+knowledge_integrator = KnowledgeIntegrator()
 
 
 class DecisionEngine:
@@ -186,6 +190,7 @@ class DecisionEngine:
     ) -> Optional[Dict]:
         """
         Tente d'obtenir une réponse via l'API IA
+        Enrichit le contexte avec les connaissances pertinentes
 
         Args:
             user_message: Message utilisateur
@@ -201,10 +206,27 @@ class DecisionEngine:
                 logger.warning("API Manager non disponible")
                 return None
 
+            # NOUVEAU: Enrichir le contexte avec la base de connaissances
+            knowledge_results = knowledge_integrator.search_knowledge(user_message, max_results=3)
+
+            # Ajouter les connaissances au contexte si pertinentes
+            if knowledge_results.get('has_knowledge'):
+                if context is None:
+                    context = {}
+
+                context['knowledge'] = {
+                    'faqs': knowledge_results['faqs'],
+                    'documents': knowledge_results['documents'],
+                    'rules': knowledge_results['rules'],
+                    'relevance_score': knowledge_results['relevance_score']
+                }
+
+                logger.info(f"✨ Connaissances enrichies: score {knowledge_results['relevance_score']}")
+
             # Récupérer la configuration du comportement
             behavior_config = self.response_manager.get_behavior_config(user_id)
 
-            # Appeler l'API
+            # Appeler l'API avec le contexte enrichi
             # NOTE: Cette méthode dépend de l'implémentation exacte de l'api_manager
             # Je suppose qu'elle a une méthode pour générer une réponse
             response = await api_manager.generate_response(
@@ -217,7 +239,8 @@ class DecisionEngine:
             if response:
                 return {
                     'response': response,
-                    'provider': getattr(api_manager, 'current_provider', 'unknown')
+                    'provider': getattr(api_manager, 'current_provider', 'unknown'),
+                    'knowledge_used': knowledge_results.get('has_knowledge', False)
                 }
 
             return None
