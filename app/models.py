@@ -142,20 +142,20 @@ class IntegrationLog(db.Model):
     integration_id = db.Column(db.Integer, db.ForeignKey('integration.id'), nullable=False)
     log_type = db.Column(db.String(50), nullable=False)  # info, warning, error, sync, message_sent, message_received
     message = db.Column(db.Text, nullable=False)
-    metadata = db.Column(db.Text)  # JSON - Données supplémentaires
+    integration_metadata = db.Column(db.Text)  # JSON - Données supplémentaires
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     @property
     def metadata_dict(self):
         """Retourne les metadata sous forme de dict"""
         import json
-        return json.loads(self.metadata) if self.metadata else {}
+        return json.loads(self.integration_metadata) if self.integration_metadata else {}
 
     @metadata_dict.setter
     def metadata_dict(self, value):
         """Définit les metadata depuis un dict"""
         import json
-        self.metadata = json.dumps(value) if value else None
+        self.integration_metadata = json.dumps(value) if value else None
 
     def __repr__(self):
         return f'<IntegrationLog {self.log_type}: {self.message[:50]}>'
