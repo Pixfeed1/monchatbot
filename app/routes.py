@@ -27,7 +27,8 @@ from .models import (
     ConversationFlow, FlowNode, NodeConnection, FlowVariable,
     ActionTrigger, EmailTemplate, CalendarConfig,
     TicketConfig, FormRedirection, DefaultMessage,
-    APIUsageLog
+    APIUsageLog,
+    Integration, IntegrationLog, ChannelConfig
 )
 from . import db
 from .config import Config
