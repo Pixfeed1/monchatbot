@@ -31,6 +31,9 @@ class ResponsesWizard {
         this.initializeTemplates();
         this.setupAutoSave();
         this.updateSaveStatus('saved');
+
+        // Afficher le modal d'onboarding si première visite
+        this.checkAndShowOnboarding();
     }
 
     /**
@@ -1038,6 +1041,69 @@ class ResponsesWizard {
                 const exampleType = btn.dataset.example;
                 this.loadExample(exampleType);
             });
+        });
+    }
+
+    /**
+     * Vérification et affichage du modal d'onboarding (première visite)
+     */
+    checkAndShowOnboarding() {
+        // Vérifier si c'est la première visite
+        const hasSeenOnboarding = localStorage.getItem('responses_onboarding_seen');
+
+        if (!hasSeenOnboarding) {
+            // Attendre un petit délai pour que la page soit bien chargée
+            setTimeout(() => {
+                this.showOnboardingModal();
+            }, 500);
+        }
+    }
+
+    /**
+     * Affichage du modal d'onboarding
+     */
+    showOnboardingModal() {
+        const modal = document.getElementById('onboardingModal');
+        if (!modal) return;
+
+        modal.style.display = 'flex';
+
+        // Écouteurs pour fermer le modal
+        const closeBtn = document.getElementById('onboardingClose');
+        const startBtn = document.getElementById('startButton');
+        const dontShowAgain = document.getElementById('dontShowAgain');
+
+        const closeModal = () => {
+            // Vérifier si l'utilisateur ne veut plus voir le message
+            if (dontShowAgain && dontShowAgain.checked) {
+                localStorage.setItem('responses_onboarding_seen', 'true');
+            }
+
+            modal.style.display = 'none';
+        };
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeModal);
+        }
+
+        if (startBtn) {
+            startBtn.addEventListener('click', () => {
+                // Marquer comme vu
+                localStorage.setItem('responses_onboarding_seen', 'true');
+                closeModal();
+                // Optionnel : faire défiler jusqu'aux exemples
+                const examples = document.querySelector('.quick-examples');
+                if (examples) {
+                    examples.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        }
+
+        // Fermer en cliquant en dehors du modal
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
         });
     }
 

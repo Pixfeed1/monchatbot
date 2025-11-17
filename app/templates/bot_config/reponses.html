@@ -509,6 +509,69 @@
 </div>
 
 <!-- Modales -->
+<!-- Modal d'onboarding (première visite) -->
+<div class="modal onboarding-modal" id="onboardingModal">
+    <div class="modal-content onboarding-content">
+        <div class="modal-header onboarding-header">
+            <h2><i class="fas fa-rocket"></i> Bienvenue dans la Configuration des Réponses !</h2>
+            <button class="modal-close" id="onboardingClose">&times;</button>
+        </div>
+        <div class="modal-body onboarding-body">
+            <div class="onboarding-intro">
+                <p class="intro-text">Configurez votre bot en <strong>3 étapes simples</strong> :</p>
+            </div>
+
+            <div class="onboarding-steps">
+                <div class="onboarding-step">
+                    <div class="step-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3>1. Messages de Base</h3>
+                        <p>Créez les réponses essentielles : bonjour, au revoir, merci...</p>
+                    </div>
+                </div>
+
+                <div class="onboarding-step">
+                    <div class="step-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3>2. Réponses pour Votre Activité</h3>
+                        <p>Ajoutez des réponses aux questions fréquentes de vos clients</p>
+                    </div>
+                </div>
+
+                <div class="onboarding-step">
+                    <div class="step-icon">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3>3. Gestion des Erreurs</h3>
+                        <p>Définissez ce que dit le bot en cas de problème</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="onboarding-tip">
+                <i class="fas fa-lightbulb"></i>
+                <p><strong>Conseil :</strong> Utilisez les exemples pré-configurés ci-dessous pour démarrer rapidement !</p>
+            </div>
+        </div>
+        <div class="modal-footer onboarding-footer">
+            <label class="dont-show-again">
+                <input type="checkbox" id="dontShowAgain">
+                <span>Ne plus afficher ce message</span>
+            </label>
+            <button class="btn-primary btn-start" id="startButton">
+                <i class="fas fa-arrow-right"></i>
+                Commencer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation -->
 <div class="modal" id="confirmModal">
     <div class="modal-content">
         <div class="modal-header">

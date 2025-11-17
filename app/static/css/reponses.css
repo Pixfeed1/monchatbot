@@ -1485,3 +1485,231 @@
         padding: 16px;
     }
 }
+
+/* ===============================
+   Modal d'onboarding
+   =============================== */
+
+.onboarding-modal {
+    z-index: 10000 !important;
+}
+
+.onboarding-content {
+    max-width: 700px;
+    width: 90%;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.onboarding-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+    border-bottom: none;
+}
+
+.onboarding-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.onboarding-header .modal-close {
+    color: white;
+    opacity: 0.9;
+    font-size: 2rem;
+    background: rgba(255, 255, 255, 0.2);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.onboarding-header .modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.onboarding-body {
+    padding: 40px 30px;
+}
+
+.onboarding-intro {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.intro-text {
+    font-size: 1.2rem;
+    color: #334155;
+}
+
+.onboarding-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.onboarding-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 12px;
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+}
+
+.onboarding-step:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.onboarding-step .step-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.4rem;
+}
+
+.onboarding-step .step-content h3 {
+    margin: 0 0 8px 0;
+    color: #1e293b;
+    font-size: 1.1rem;
+}
+
+.onboarding-step .step-content p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.onboarding-tip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: #fef3c7;
+    border-radius: 8px;
+    border-left: 4px solid #f59e0b;
+}
+
+.onboarding-tip i {
+    font-size: 1.5rem;
+    color: #d97706;
+}
+
+.onboarding-tip p {
+    margin: 0;
+    color: #92400e;
+}
+
+.onboarding-footer {
+    padding: 24px 30px;
+    background: #f8fafc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e2e8f0;
+}
+
+.dont-show-again {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.dont-show-again input[type="checkbox"] {
+    cursor: pointer;
+}
+
+.btn-start {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-start:active {
+    transform: translateY(0);
+}
+
+/* Animation d'entrée du modal */
+@keyframes onboardingFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.onboarding-modal .modal-content {
+    animation: onboardingFadeIn 0.3s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .onboarding-content {
+        width: 95%;
+    }
+
+    .onboarding-header {
+        padding: 20px;
+    }
+
+    .onboarding-header h2 {
+        font-size: 1.4rem;
+    }
+
+    .onboarding-body {
+        padding: 24px 20px;
+    }
+
+    .onboarding-step {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .onboarding-footer {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .btn-start {
+        width: 100%;
+        justify-content: center;
+    }
+}
