@@ -1335,14 +1335,33 @@ def save_responses_configuration():
        data = request.get_json()
        if not data:
            return jsonify({'error': 'Données manquantes'}), 400
-       
-       # Sauvegarder le message de bienvenue (avec sanitization)
+
+       # Récupérer ou créer les objets nécessaires
+       settings = Settings.query.first()
+       if not settings:
+           settings = Settings()
+           db.session.add(settings)
+
+       config = BotResponses.query.first()
+       if not config:
+           config = BotResponses()
+           db.session.add(config)
+
+       # NOUVELLES CLÉS SIMPLES (de la page simplifiée)
+       if 'welcome_message' in data:
+           settings.bot_welcome = data['welcome_message']
+
+       if 'goodbye_message' in data:
+           config.goodbye_message = data['goodbye_message']
+
+       if 'fallback_message' in data:
+           config.fallback_message = data['fallback_message']
+
+       if 'communication_style' in data:
+           config.communication_style = data['communication_style']
+
+       # ANCIENNES CLÉS (compatibilité avec ancienne interface complexe)
        if 'welcomeMessage' in data:
-           settings = Settings.query.first()
-           if not settings:
-               settings = Settings()
-               db.session.add(settings)
-           # Échapper les caractères HTML pour éviter XSS
            settings.bot_welcome = html.escape(data['welcomeMessage']) if data['welcomeMessage'] else ''
        
        # Sauvegarder les réponses personnalisées
