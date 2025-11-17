@@ -4724,6 +4724,314 @@ def skip_onboarding():
         }), 500
 
 
+###############################################
+# ROUTES - CANAUX DE COMMUNICATION (INTEGRATIONS)
+###############################################
+
+@main_bp.route('/bot-config/integrations')
+@login_required
+def integrations_page():
+    """Page de gestion des canaux de communication"""
+    return render_template('bot_config/integrations.html')
+
+
+@main_bp.route('/integrations/list', methods=['GET'])
+@login_required
+def get_integrations():
+    """Récupère la liste des intégrations"""
+    try:
+        integrations = Integration.query.all()
+
+        integrations_data = []
+        for integration in integrations:
+            integrations_data.append({
+                'id': integration.id,
+                'channel_type': integration.channel_type,
+                'name': integration.name,
+                'is_active': integration.is_active,
+                'status': integration.status,
+                'config': integration.config_dict,
+                'last_sync': integration.last_sync.isoformat() if integration.last_sync else None,
+                'error_message': integration.error_message
+            })
+
+        return jsonify({
+            'success': True,
+            'integrations': integrations_data
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_integrations: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/integrations/create', methods=['POST'])
+@login_required
+def create_integration():
+    """Crée une nouvelle intégration"""
+    try:
+        data = request.get_json()
+
+        channel_type = data.get('channel_type')
+        name = data.get('name')
+        is_active = data.get('is_active', False)
+        config = data.get('config', {})
+
+        if not channel_type or not name:
+            return jsonify({
+                'success': False,
+                'error': 'Champ requis manquant'
+            }), 400
+
+        # Vérifier si l'intégration existe déjà
+        existing = Integration.query.filter_by(channel_type=channel_type).first()
+        if existing:
+            return jsonify({
+                'success': False,
+                'error': 'Une intégration existe déjà pour ce canal'
+            }), 400
+
+        # Créer l'intégration
+        integration = Integration(
+            channel_type=channel_type,
+            name=name,
+            is_active=is_active
+        )
+        integration.config_dict = config
+
+        db.session.add(integration)
+        db.session.flush()
+
+        # Créer la configuration du canal
+        channel_config = ChannelConfig(
+            integration_id=integration.id,
+            auto_reply_enabled=True
+        )
+        db.session.add(channel_config)
+
+        # Créer un log
+        log = IntegrationLog(
+            integration_id=integration.id,
+            log_type='info',
+            message=f'Intégration {name} créée'
+        )
+        db.session.add(log)
+
+        db.session.commit()
+
+        logger.info(f"Intégration créée: {channel_type}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Intégration créée avec succès',
+            'integration': {
+                'id': integration.id,
+                'channel_type': integration.channel_type,
+                'name': integration.name,
+                'is_active': integration.is_active,
+                'status': integration.status
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur create_integration: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/integrations/<int:integration_id>/toggle', methods=['PATCH'])
+@login_required
+def toggle_integration(integration_id):
+    """Active/désactive une intégration"""
+    try:
+        integration = Integration.query.get_or_404(integration_id)
+        data = request.get_json()
+
+        is_active = data.get('is_active')
+        if is_active is None:
+            return jsonify({
+                'success': False,
+                'error': 'Paramètre is_active manquant'
+            }), 400
+
+        integration.is_active = is_active
+        integration.status = 'connected' if is_active else 'disconnected'
+
+        # Créer un log
+        log = IntegrationLog(
+            integration_id=integration.id,
+            log_type='info',
+            message=f'Intégration {"activée" if is_active else "désactivée"}'
+        )
+        db.session.add(log)
+
+        db.session.commit()
+
+        logger.info(f"Intégration {integration_id} {'activée' if is_active else 'désactivée'}")
+
+        return jsonify({
+            'success': True,
+            'message': f'Intégration {"activée" if is_active else "désactivée"}'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur toggle_integration: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/integrations/<int:integration_id>/config', methods=['PUT'])
+@login_required
+def update_integration_config(integration_id):
+    """Met à jour la configuration d'une intégration"""
+    try:
+        integration = Integration.query.get_or_404(integration_id)
+        data = request.get_json()
+
+        config = data.get('config', {})
+        integration.config_dict = config
+        integration.updated_at = datetime.utcnow()
+
+        # Créer un log
+        log = IntegrationLog(
+            integration_id=integration.id,
+            log_type='info',
+            message='Configuration mise à jour'
+        )
+        db.session.add(log)
+
+        db.session.commit()
+
+        logger.info(f"Configuration mise à jour pour l'intégration {integration_id}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration mise à jour avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur update_integration_config: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/integrations/<int:integration_id>', methods=['DELETE'])
+@login_required
+def delete_integration(integration_id):
+    """Supprime une intégration"""
+    try:
+        integration = Integration.query.get_or_404(integration_id)
+
+        channel_name = integration.name
+
+        db.session.delete(integration)
+        db.session.commit()
+
+        logger.info(f"Intégration {integration_id} supprimée")
+
+        return jsonify({
+            'success': True,
+            'message': f'{channel_name} supprimé avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur delete_integration: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/integrations/stats', methods=['GET'])
+@login_required
+def get_integrations_stats():
+    """Récupère les statistiques des intégrations"""
+    try:
+        # Compter les canaux actifs
+        total_channels = Integration.query.filter_by(
+            is_active=True,
+            status='connected'
+        ).count()
+
+        # Compter les messages
+        messages_sent = IntegrationLog.query.filter_by(
+            log_type='message_sent'
+        ).count()
+
+        messages_received = IntegrationLog.query.filter_by(
+            log_type='message_received'
+        ).count()
+
+        errors_count = IntegrationLog.query.filter_by(
+            log_type='error'
+        ).count()
+
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_channels': total_channels,
+                'messages_sent': messages_sent,
+                'messages_received': messages_received,
+                'errors_count': errors_count
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_integrations_stats: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/integrations/logs', methods=['GET'])
+@login_required
+def get_integration_logs():
+    """Récupère les logs des intégrations"""
+    try:
+        # Limiter aux 100 derniers logs
+        logs = IntegrationLog.query.order_by(
+            IntegrationLog.created_at.desc()
+        ).limit(100).all()
+
+        logs_data = []
+        for log in logs:
+            logs_data.append({
+                'id': log.id,
+                'log_type': log.log_type,
+                'message': log.message,
+                'created_at': log.created_at.isoformat(),
+                'channel_type': log.integration.channel_type if log.integration else 'unknown',
+                'channel_name': log.integration.name if log.integration else 'Unknown',
+                'metadata': log.metadata_dict
+            })
+
+        return jsonify({
+            'success': True,
+            'logs': logs_data
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_integration_logs: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
 # ========================
 # FIN DU FICHIER routes.py - VERSION COMPLÈTE MISE À JOUR
 # ========================

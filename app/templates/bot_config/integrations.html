@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Canaux de Communication{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/integrations.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="integrations-container">
+    <div class="page-header">
+        <h1>Canaux de Communication</h1>
+        <p class="subtitle">Connectez votre chatbot aux principales plateformes de messagerie</p>
+    </div>
+
+    <!-- Statistiques globales -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-plug"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="total-channels">0</h3>
+                <p>Canaux connectés</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="messages-sent">0</h3>
+                <p>Messages envoyés</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-inbox"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="messages-received">0</h3>
+                <p>Messages reçus</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="errors-count">0</h3>
+                <p>Erreurs</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grille de canaux -->
+    <div class="channels-section">
+        <h2>Canaux Disponibles</h2>
+        <div class="channels-grid">
+            <!-- WhatsApp -->
+            <div class="channel-card" data-channel="whatsapp">
+                <div class="channel-header">
+                    <div class="channel-icon whatsapp">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" data-channel-type="whatsapp">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="channel-content">
+                    <h3>WhatsApp Business</h3>
+                    <p class="channel-status">Non connecté</p>
+                    <button class="btn btn-primary btn-sm config-btn" data-channel="whatsapp">
+                        <i class="fas fa-cog"></i> Configurer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messenger -->
+            <div class="channel-card" data-channel="messenger">
+                <div class="channel-header">
+                    <div class="channel-icon messenger">
+                        <i class="fab fa-facebook-messenger"></i>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" data-channel-type="messenger">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="channel-content">
+                    <h3>Facebook Messenger</h3>
+                    <p class="channel-status">Non connecté</p>
+                    <button class="btn btn-primary btn-sm config-btn" data-channel="messenger">
+                        <i class="fas fa-cog"></i> Configurer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Instagram -->
+            <div class="channel-card" data-channel="instagram">
+                <div class="channel-header">
+                    <div class="channel-icon instagram">
+                        <i class="fab fa-instagram"></i>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" data-channel-type="instagram">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="channel-content">
+                    <h3>Instagram Direct</h3>
+                    <p class="channel-status">Non connecté</p>
+                    <button class="btn btn-primary btn-sm config-btn" data-channel="instagram">
+                        <i class="fas fa-cog"></i> Configurer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Telegram -->
+            <div class="channel-card" data-channel="telegram">
+                <div class="channel-header">
+                    <div class="channel-icon telegram">
+                        <i class="fab fa-telegram"></i>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" data-channel-type="telegram">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="channel-content">
+                    <h3>Telegram</h3>
+                    <p class="channel-status">Non connecté</p>
+                    <button class="btn btn-primary btn-sm config-btn" data-channel="telegram">
+                        <i class="fas fa-cog"></i> Configurer
+                    </button>
+                </div>
+            </div>
+
+            <!-- SMS -->
+            <div class="channel-card" data-channel="sms">
+                <div class="channel-header">
+                    <div class="channel-icon sms">
+                        <i class="fas fa-sms"></i>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" data-channel-type="sms">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="channel-content">
+                    <h3>SMS (Twilio)</h3>
+                    <p class="channel-status">Non connecté</p>
+                    <button class="btn btn-primary btn-sm config-btn" data-channel="sms">
+                        <i class="fas fa-cog"></i> Configurer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Email -->
+            <div class="channel-card" data-channel="email">
+                <div class="channel-header">
+                    <div class="channel-icon email">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" data-channel-type="email">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="channel-content">
+                    <h3>Email</h3>
+                    <p class="channel-status">Non connecté</p>
+                    <button class="btn btn-primary btn-sm config-btn" data-channel="email">
+                        <i class="fas fa-cog"></i> Configurer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Slack -->
+            <div class="channel-card" data-channel="slack">
+                <div class="channel-header">
+                    <div class="channel-icon slack">
+                        <i class="fab fa-slack"></i>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" data-channel-type="slack">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="channel-content">
+                    <h3>Slack</h3>
+                    <p class="channel-status">Non connecté</p>
+                    <button class="btn btn-primary btn-sm config-btn" data-channel="slack">
+                        <i class="fas fa-cog"></i> Configurer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Microsoft Teams -->
+            <div class="channel-card" data-channel="teams">
+                <div class="channel-header">
+                    <div class="channel-icon teams">
+                        <i class="fab fa-microsoft"></i>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" data-channel-type="teams">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="channel-content">
+                    <h3>Microsoft Teams</h3>
+                    <p class="channel-status">Non connecté</p>
+                    <button class="btn btn-primary btn-sm config-btn" data-channel="teams">
+                        <i class="fas fa-cog"></i> Configurer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Web Widget -->
+            <div class="channel-card" data-channel="web">
+                <div class="channel-header">
+                    <div class="channel-icon web">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" data-channel-type="web">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="channel-content">
+                    <h3>Widget Web</h3>
+                    <p class="channel-status">Non connecté</p>
+                    <button class="btn btn-primary btn-sm config-btn" data-channel="web">
+                        <i class="fas fa-cog"></i> Configurer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Logs -->
+    <div class="logs-section">
+        <div class="section-header">
+            <h2>Journaux d'Activité</h2>
+            <button class="btn btn-secondary btn-sm" id="refresh-logs-btn">
+                <i class="fas fa-sync-alt"></i> Actualiser
+            </button>
+        </div>
+        <div class="logs-container">
+            <div class="logs-filters">
+                <select class="form-control" id="log-type-filter">
+                    <option value="all">Tous les types</option>
+                    <option value="info">Info</option>
+                    <option value="warning">Avertissements</option>
+                    <option value="error">Erreurs</option>
+                    <option value="message_sent">Messages envoyés</option>
+                    <option value="message_received">Messages reçus</option>
+                </select>
+                <select class="form-control" id="log-channel-filter">
+                    <option value="all">Tous les canaux</option>
+                </select>
+            </div>
+            <div class="logs-list" id="logs-list">
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>Aucun journal disponible</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Configuration -->
+<div class="modal" id="configModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Configuration</h3>
+            <button class="modal-close" onclick="integrationsManager.hideConfigModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="modal-body">
+            <!-- Le contenu sera injecté dynamiquement par JS -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="integrationsManager.hideConfigModal()">Annuler</button>
+            <button class="btn btn-primary" id="save-config-btn">Enregistrer</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/integrations.js') }}"></script>
+{% endblock %}

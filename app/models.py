@@ -87,6 +87,133 @@ class FormRedirection(db.Model):
 
 
 ###############################################
+# Modèles Canaux de Communication (Integrations)
+###############################################
+
+class Integration(db.Model):
+    """Intégrations des canaux de communication"""
+    id = db.Column(db.Integer, primary_key=True)
+    channel_type = db.Column(db.String(50), nullable=False)  # whatsapp, messenger, instagram, telegram, sms, email, slack, teams, web
+    name = db.Column(db.String(100), nullable=False)
+    is_active = db.Column(db.Boolean, default=False)
+    credentials = db.Column(db.Text)  # JSON - API keys, tokens
+    config = db.Column(db.Text)  # JSON - Configuration spécifique
+    status = db.Column(db.String(20), default='disconnected')  # connected, disconnected, error, pending
+    last_sync = db.Column(db.DateTime, nullable=True)
+    error_message = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relations
+    logs = db.relationship('IntegrationLog', backref='integration', lazy='dynamic', cascade='all, delete-orphan')
+    channel_config = db.relationship('ChannelConfig', backref='integration', uselist=False, cascade='all, delete-orphan')
+
+    @property
+    def credentials_dict(self):
+        """Retourne les credentials sous forme de dict"""
+        import json
+        return json.loads(self.credentials) if self.credentials else {}
+
+    @credentials_dict.setter
+    def credentials_dict(self, value):
+        """Définit les credentials depuis un dict"""
+        import json
+        self.credentials = json.dumps(value) if value else None
+
+    @property
+    def config_dict(self):
+        """Retourne la config sous forme de dict"""
+        import json
+        return json.loads(self.config) if self.config else {}
+
+    @config_dict.setter
+    def config_dict(self, value):
+        """Définit la config depuis un dict"""
+        import json
+        self.config = json.dumps(value) if value else None
+
+    def __repr__(self):
+        return f'<Integration {self.channel_type}: {self.name}>'
+
+
+class IntegrationLog(db.Model):
+    """Journal des événements pour les intégrations"""
+    id = db.Column(db.Integer, primary_key=True)
+    integration_id = db.Column(db.Integer, db.ForeignKey('integration.id'), nullable=False)
+    log_type = db.Column(db.String(50), nullable=False)  # info, warning, error, sync, message_sent, message_received
+    message = db.Column(db.Text, nullable=False)
+    metadata = db.Column(db.Text)  # JSON - Données supplémentaires
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def metadata_dict(self):
+        """Retourne les metadata sous forme de dict"""
+        import json
+        return json.loads(self.metadata) if self.metadata else {}
+
+    @metadata_dict.setter
+    def metadata_dict(self, value):
+        """Définit les metadata depuis un dict"""
+        import json
+        self.metadata = json.dumps(value) if value else None
+
+    def __repr__(self):
+        return f'<IntegrationLog {self.log_type}: {self.message[:50]}>'
+
+
+class ChannelConfig(db.Model):
+    """Configuration avancée par canal"""
+    id = db.Column(db.Integer, primary_key=True)
+    integration_id = db.Column(db.Integer, db.ForeignKey('integration.id'), nullable=False, unique=True)
+    settings = db.Column(db.Text)  # JSON - Paramètres spécifiques au canal
+    webhooks = db.Column(db.Text)  # JSON - URLs de webhooks
+    auto_reply_enabled = db.Column(db.Boolean, default=True)
+    business_hours = db.Column(db.Text)  # JSON - Horaires d'ouverture
+    rate_limit = db.Column(db.Integer, default=100)  # Messages par heure
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @property
+    def settings_dict(self):
+        """Retourne les settings sous forme de dict"""
+        import json
+        return json.loads(self.settings) if self.settings else {}
+
+    @settings_dict.setter
+    def settings_dict(self, value):
+        """Définit les settings depuis un dict"""
+        import json
+        self.settings = json.dumps(value) if value else None
+
+    @property
+    def webhooks_dict(self):
+        """Retourne les webhooks sous forme de dict"""
+        import json
+        return json.loads(self.webhooks) if self.webhooks else {}
+
+    @webhooks_dict.setter
+    def webhooks_dict(self, value):
+        """Définit les webhooks depuis un dict"""
+        import json
+        self.webhooks = json.dumps(value) if value else None
+
+    @property
+    def business_hours_dict(self):
+        """Retourne les business hours sous forme de dict"""
+        import json
+        return json.loads(self.business_hours) if self.business_hours else {}
+
+    @business_hours_dict.setter
+    def business_hours_dict(self, value):
+        """Définit les business hours depuis un dict"""
+        import json
+        self.business_hours = json.dumps(value) if value else None
+
+    def __repr__(self):
+        return f'<ChannelConfig for Integration {self.integration_id}>'
+
+
+###############################################
 # Modèles généraux avec support API utilisateur
 ###############################################
 
