@@ -244,7 +244,13 @@ class BotResponses(db.Model):
     
     # Vocabulaire personnalisé
     _vocabulary = db.Column('vocabulary', db.Text, default='{}')
-    
+
+    # Templates essentiels (stockés en JSON)
+    _essential_templates = db.Column('essential_templates', db.Text, default='{}')
+
+    # Configuration du comportement (stockée en JSON)
+    _behavior_config = db.Column('behavior_config', db.Text, default='{}')
+
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     @property
@@ -277,6 +283,34 @@ class BotResponses(db.Model):
                     self._vocabulary = json.dumps(value)
         except (TypeError, json.JSONDecodeError) as e:
             self._vocabulary = '{}'
+
+    @property
+    def essential_templates(self):
+        try:
+            return json.loads(self._essential_templates) if self._essential_templates else {}
+        except (TypeError, json.JSONDecodeError):
+            return {}
+
+    @essential_templates.setter
+    def essential_templates(self, value):
+        try:
+            self._essential_templates = json.dumps(value) if value else '{}'
+        except (TypeError, json.JSONDecodeError):
+            self._essential_templates = '{}'
+
+    @property
+    def behavior_config(self):
+        try:
+            return json.loads(self._behavior_config) if self._behavior_config else {}
+        except (TypeError, json.JSONDecodeError):
+            return {}
+
+    @behavior_config.setter
+    def behavior_config(self, value):
+        try:
+            self._behavior_config = json.dumps(value) if value else '{}'
+        except (TypeError, json.JSONDecodeError):
+            self._behavior_config = '{}'
 
 
 ###############################################

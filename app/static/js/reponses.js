@@ -12,7 +12,8 @@ class ResponsesWizard {
         this.customResponses = [];
         this.vocabularyTerms = [];
         this.errorMessages = [];
-        
+        this.eventListeners = [];  // Pour suivre les event listeners
+
         this.init();
     }
 
@@ -256,7 +257,7 @@ class ResponsesWizard {
             
         } catch (error) {
             responseElement.textContent = 'Erreur lors du test';
-            console.error('Erreur test rapide:', error);
+            this.showNotification('Erreur lors du test rapide', 'error');
         }
     }
 
@@ -807,11 +808,10 @@ class ResponsesWizard {
                 this.showNotification('Configuration sauvegardée avec succès !', 'success');
             }
         } catch (error) {
-            console.error('Erreur lors de la sauvegarde:', error);
             this.updateSaveStatus('error');
-            
+
             if (!silent) {
-                this.showNotification('Erreur lors de la sauvegarde', 'error');
+                this.showNotification(`Erreur lors de la sauvegarde: ${error.message}`, 'error');
             }
         }
     }
@@ -927,8 +927,8 @@ class ResponsesWizard {
      */
     async sendConfigurationToServer(configuration) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        
-        const response = await fetch('/api/responses/configuration', {
+
+        const response = await fetch('/responses/api/configuration', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -968,8 +968,7 @@ class ResponsesWizard {
             
             this.showNotification('Configuration réinitialisée', 'info');
         } catch (error) {
-            console.error('Erreur lors de la réinitialisation:', error);
-            this.showNotification('Erreur lors de la réinitialisation', 'error');
+            this.showNotification(`Erreur lors de la réinitialisation: ${error.message}`, 'error');
         }
     }
 
@@ -1032,13 +1031,13 @@ class ResponsesWizard {
      */
     async loadExistingData() {
         try {
-            const response = await fetch('/api/responses/configuration');
+            const response = await fetch('/responses/api/configuration');
             if (response.ok) {
                 const data = await response.json();
                 this.applyConfiguration(data);
             }
         } catch (error) {
-            console.error('Erreur lors du chargement des données:', error);
+            this.showNotification('Erreur lors du chargement des données', 'error');
         }
     }
 
@@ -1229,6 +1228,29 @@ class ResponsesWizard {
             closeBtn.addEventListener('click', handleCancel);
         });
     }
+
+    /**
+     * Nettoyage des ressources et event listeners
+     * Appelé avant de quitter la page pour éviter les fuites mémoire
+     */
+    destroy() {
+        // Arrêter l'auto-save
+        if (this.autoSaveTimeout) {
+            clearTimeout(this.autoSaveTimeout);
+            this.autoSaveTimeout = null;
+        }
+
+        // Nettoyer les données
+        this.templates.clear();
+        this.customResponses = [];
+        this.vocabularyTerms = [];
+        this.errorMessages = [];
+
+        // Note: Nettoyage complet des event listeners nécessiterait une refonte
+        // de tous les addEventListener pour stocker les références.
+        // Pour l'instant, les listeners seront nettoyés par le navigateur
+        // lors du rechargement de la page.
+    }
 }
 
 /**
@@ -1377,6 +1399,18 @@ if (!document.getElementById('notification-styles')) {
 document.addEventListener('DOMContentLoaded', () => {
     if (document.querySelector('.responses-container')) {
         window.responsesWizard = new ResponsesWizard();
+    }
+});
+
+// Nettoyage avant de quitter la page
+window.addEventListener('beforeunload', (e) => {
+    if (window.responsesWizard) {
+        // Sauvegarder silencieusement si des changements sont en attente
+        if (window.responsesWizard.unsavedChanges) {
+            window.responsesWizard.saveAllConfiguration(true);
+        }
+        // Nettoyer les ressources
+        window.responsesWizard.destroy();
     }
 });
 

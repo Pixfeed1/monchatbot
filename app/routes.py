@@ -6,7 +6,7 @@ import json
 import uuid
 import time
 import base64
-import asyncio
+import html
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from flask import (
@@ -1199,29 +1199,13 @@ def get_responses_configuration():
        configuration = {
            # Message de bienvenue
            'welcomeMessage': settings.bot_welcome if settings else '',
-           
-           # Templates essentiels (simulés - à implémenter selon vos besoins)
-           'essentialTemplates': {
-               'greeting': {
-                   'active': True,
-                   'style': 'formal',
-                   'customMessage': ''
-               },
-               'goodbye': {
-                   'active': True,
-                   'style': 'polite',
-                   'customMessage': ''
-               },
-               'thanks': {
-                   'active': True,
-                   'style': 'simple',
-                   'customMessage': ''
-               },
-               'unclear': {
-                   'active': True,
-                   'style': 'helpful',
-                   'customMessage': ''
-               }
+
+           # Templates essentiels (depuis la base de données)
+           'essentialTemplates': config.essential_templates if config and config.essential_templates else {
+               'greeting': {'active': True, 'style': 'formal', 'customMessage': ''},
+               'goodbye': {'active': True, 'style': 'polite', 'customMessage': ''},
+               'thanks': {'active': True, 'style': 'simple', 'customMessage': ''},
+               'unclear': {'active': True, 'style': 'helpful', 'customMessage': ''}
            },
            
            # Réponses personnalisées (depuis DefaultMessage)
@@ -1245,27 +1229,27 @@ def get_responses_configuration():
                for idx, (term, definition) in enumerate(config.vocabulary.items())
            ] if config and config.vocabulary else [],
            
-           # Messages d'erreur (simulés)
+           # Messages d'erreur (depuis la base de données)
            'errorMessages': [
                {
                    'title': 'Dépassement du temps de réponse',
                    'code': 'TIMEOUT',
-                   'content': 'Je prends un peu plus de temps que prévu pour traiter votre demande. Pouvez-vous patienter quelques instants ou reformuler votre question ?'
+                   'content': config.technical_error if config and config.technical_error else 'Je prends un peu plus de temps que prévu pour traiter votre demande. Pouvez-vous patienter quelques instants ou reformuler votre question ?'
                },
                {
                    'title': 'Erreur technique',
                    'code': 'SYSTEM_ERROR',
-                   'content': 'Je rencontre un petit problème technique. Pouvez-vous réessayer dans quelques minutes ? Si le problème persiste, contactez notre support.'
+                   'content': config.service_unavailable if config and config.service_unavailable else 'Je rencontre un petit problème technique. Pouvez-vous réessayer dans quelques minutes ? Si le problème persiste, contactez notre support.'
                },
                {
                    'title': 'Limite atteinte',
                    'code': 'RATE_LIMIT',
-                   'content': 'Vous avez fait beaucoup de demandes récemment. Merci de patienter quelques minutes avant de continuer.'
+                   'content': config.invalid_data if config and config.invalid_data else 'Vous avez fait beaucoup de demandes récemment. Merci de patienter quelques minutes avant de continuer.'
                }
            ],
-           
-           # Configuration du comportement
-           'behaviorConfig': {
+
+           # Configuration du comportement (depuis la base de données)
+           'behaviorConfig': config.behavior_config if config and config.behavior_config else {
                'correspondance_flexible': True,
                'réponses_contextuelles': True,
                'mode_strict': False
@@ -1291,26 +1275,31 @@ def save_responses_configuration():
        if not data:
            return jsonify({'error': 'Données manquantes'}), 400
        
-       # Sauvegarder le message de bienvenue
+       # Sauvegarder le message de bienvenue (avec sanitization)
        if 'welcomeMessage' in data:
            settings = Settings.query.first()
            if not settings:
                settings = Settings()
                db.session.add(settings)
-           settings.bot_welcome = data['welcomeMessage']
+           # Échapper les caractères HTML pour éviter XSS
+           settings.bot_welcome = html.escape(data['welcomeMessage']) if data['welcomeMessage'] else ''
        
        # Sauvegarder les réponses personnalisées
        if 'customResponses' in data:
            # Supprimer les anciens messages par défaut
            DefaultMessage.query.delete()
            
-           # Créer les nouveaux
+           # Créer les nouveaux (avec sanitization)
            for response_data in data['customResponses']:
                if response_data.get('keywords') and response_data.get('content'):
+                   # Échapper le contenu pour éviter XSS
+                   sanitized_content = html.escape(response_data['content'])
+                   sanitized_keywords = [html.escape(k) for k in response_data['keywords']]
+
                    message = DefaultMessage(
-                       title=f"Réponse: {response_data['keywords'][0] if response_data['keywords'] else 'Custom'}",
-                       content=response_data['content'],
-                       triggers=','.join(response_data['keywords'])
+                       title=f"Réponse: {sanitized_keywords[0] if sanitized_keywords else 'Custom'}",
+                       content=sanitized_content,
+                       triggers=','.join(sanitized_keywords)
                    )
                    db.session.add(message)
        
@@ -1320,16 +1309,54 @@ def save_responses_configuration():
            if not config:
                config = BotResponses()
                db.session.add(config)
-           
+
            vocabulary_dict = {}
            for vocab_item in data['vocabulary']:
                if vocab_item.get('term') and vocab_item.get('definition'):
-                   vocabulary_dict[vocab_item['term']] = vocab_item['definition']
-           
+                   # Échapper pour éviter XSS
+                   sanitized_term = html.escape(vocab_item['term'])
+                   sanitized_def = html.escape(vocab_item['definition'])
+                   vocabulary_dict[sanitized_term] = sanitized_def
+
            config.vocabulary = vocabulary_dict
-       
-       # Sauvegarder les messages d'erreur (si nécessaire, créer une table dédiée)
-       # Pour l'instant, on les ignore car ils sont simulés
+
+       # Sauvegarder les templates essentiels
+       if 'essentialTemplates' in data:
+           if not config:
+               config = BotResponses.query.first()
+           if not config:
+               config = BotResponses()
+               db.session.add(config)
+
+           config.essential_templates = data['essentialTemplates']
+
+       # Sauvegarder les messages d'erreur
+       if 'errorMessages' in data:
+           if not config:
+               config = BotResponses.query.first()
+           if not config:
+               config = BotResponses()
+               db.session.add(config)
+
+           for error_msg in data['errorMessages']:
+               code = error_msg.get('code')
+               content = html.escape(error_msg.get('content', ''))  # Sanitize
+               if code == 'TIMEOUT':
+                   config.technical_error = content
+               elif code == 'SYSTEM_ERROR':
+                   config.service_unavailable = content
+               elif code == 'RATE_LIMIT':
+                   config.invalid_data = content
+
+       # Sauvegarder la configuration du comportement
+       if 'behaviorConfig' in data:
+           if not config:
+               config = BotResponses.query.first()
+           if not config:
+               config = BotResponses()
+               db.session.add(config)
+
+           config.behavior_config = data['behaviorConfig']
        
        db.session.commit()
        
