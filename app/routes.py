@@ -1177,67 +1177,75 @@ responses_bp = Blueprint('responses', __name__, url_prefix='/responses')
 @login_required
 def responses_wizard():
    """Nouvelle interface de configuration des réponses."""
-   # Section demandée via paramètre GET
-   section = request.args.get('section', 'essentials')
-   
-   # Charger la configuration existante
-   config = BotResponses.query.first()
-   settings = Settings.query.first()
-   
-   if not config:
-       config = BotResponses()
-       db.session.add(config)
-       db.session.commit()
+   try:
+       # Section demandée via paramètre GET
+       section = request.args.get('section', 'essentials')
 
-   if not settings:
-       settings = Settings()
-       db.session.add(settings)
-       db.session.commit()
+       # Charger la configuration existante
+       config = BotResponses.query.first()
+       settings = Settings.query.first()
 
-   # Récupérer les messages par défaut existants
-   default_messages = DefaultMessage.query.all()
-   
-   # Récupérer le vocabulaire métier
-   vocabulary_terms = []
-   if config.vocabulary:
-       for idx, (term, definition) in enumerate(config.vocabulary.items()):
-           vocabulary_terms.append({
-               'id': idx + 1,
-               'term': term,
-               'definition': definition
-           })
-   
-   # Récupérer les messages d'erreur (simulés pour l'exemple)
-   error_messages = [
-       {
-           'id': 1,
-           'title': 'Dépassement du temps de réponse',
-           'code': 'TIMEOUT',
-           'content': 'Je prends un peu plus de temps que prévu pour traiter votre demande. Pouvez-vous patienter quelques instants ou reformuler votre question ?'
-       },
-       {
-           'id': 2,
-           'title': 'Erreur technique',
-           'code': 'SYSTEM_ERROR',
-           'content': 'Je rencontre un petit problème technique. Pouvez-vous réessayer dans quelques minutes ? Si le problème persiste, contactez notre support.'
-       },
-       {
-           'id': 3,
-           'title': 'Limite atteinte',
-           'code': 'RATE_LIMIT',
-           'content': 'Vous avez fait beaucoup de demandes récemment. Merci de patienter quelques minutes avant de continuer.'
-       }
-   ]
+       if not config:
+           config = BotResponses()
+           db.session.add(config)
+           db.session.commit()
 
-   return render_template(
-       'bot_config/reponses.html',
-       config=config,
-       settings=settings,
-       vocabulary_terms=vocabulary_terms,
-       default_messages=default_messages,
-       error_messages=error_messages,
-       current_section=section
-   )
+       if not settings:
+           settings = Settings()
+           db.session.add(settings)
+           db.session.commit()
+
+       # Récupérer les messages par défaut existants
+       default_messages = DefaultMessage.query.all()
+
+       # Récupérer le vocabulaire métier
+       vocabulary_terms = []
+       try:
+           if config.vocabulary and isinstance(config.vocabulary, dict):
+               for idx, (term, definition) in enumerate(config.vocabulary.items()):
+                   vocabulary_terms.append({
+                       'id': idx + 1,
+                       'term': term,
+                       'definition': definition
+                   })
+       except Exception as e:
+           logger.error(f"Erreur lors du chargement du vocabulaire: {e}")
+           vocabulary_terms = []
+
+       # Récupérer les messages d'erreur (simulés pour l'exemple)
+       error_messages = [
+           {
+               'id': 1,
+               'title': 'Dépassement du temps de réponse',
+               'code': 'TIMEOUT',
+               'content': 'Je prends un peu plus de temps que prévu pour traiter votre demande. Pouvez-vous patienter quelques instants ou reformuler votre question ?'
+           },
+           {
+               'id': 2,
+               'title': 'Erreur technique',
+               'code': 'SYSTEM_ERROR',
+               'content': 'Je rencontre un petit problème technique. Pouvez-vous réessayer dans quelques minutes ? Si le problème persiste, contactez notre support.'
+           },
+           {
+               'id': 3,
+               'title': 'Limite atteinte',
+               'code': 'RATE_LIMIT',
+               'content': 'Vous avez fait beaucoup de demandes récemment. Merci de patienter quelques minutes avant de continuer.'
+           }
+       ]
+
+       return render_template(
+           'bot_config/reponses.html',
+           config=config,
+           settings=settings,
+           vocabulary_terms=vocabulary_terms,
+           default_messages=default_messages,
+           error_messages=error_messages,
+           current_section=section
+       )
+   except Exception as e:
+       logger.error(f"Erreur dans responses_wizard: {e}", exc_info=True)
+       return f"Erreur: {str(e)}", 500
 
 @responses_bp.route('/api/configuration', methods=['GET'])
 @login_required
