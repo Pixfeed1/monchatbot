@@ -12,7 +12,7 @@
 <div class="knowledge-container">
     <!-- En-tête avec assistant -->
     <div class="knowledge-header">
-        <h1><i class="fas fa-brain"></i> Base de Connaissances</h1>
+        <h1><i data-lucide="brain"></i> Base de Connaissances</h1>
         <p class="subtitle">Importez des documents et configurez des règles avancées pour enrichir votre bot</p>
         
         <!-- Indicateur de progression -->
@@ -31,7 +31,7 @@
     <!-- État de traitement -->
     <div class="save-status" id="processingStatus">
         <div class="status-indicator">
-            <i class="fas fa-check-circle"></i>
+            <i data-lucide="check-circle"></i>
             <span>Tous les documents sont traités</span>
         </div>
     </div>
@@ -39,12 +39,12 @@
     <!-- Navigation simplifiée -->
     <div class="wizard-navigation">
         <button class="nav-btn active" data-section="documents">
-            <i class="fas fa-file-alt"></i>
+            <i data-lucide="file-text"></i>
             <span>Documents</span>
             <small>Importez vos fichiers</small>
         </button>
         <button class="nav-btn" data-section="rules">
-            <i class="fas fa-cogs"></i>
+            <i data-lucide="settings"></i>
             <span>Règles Avancées</span>
             <small>Logique complexe</small>
         </button>
@@ -61,7 +61,7 @@
         <div class="upload-section">
             <div class="upload-zone" id="uploadZone">
                 <div class="upload-icon">
-                    <i class="fas fa-cloud-upload-alt"></i>
+                    <i data-lucide="cloud-upload"></i>
                 </div>
                 <h3>Glissez-déposez vos fichiers ici</h3>
                 <p>ou cliquez pour sélectionner</p>
@@ -86,34 +86,34 @@
         <!-- Assistant de catégorisation -->
         <div class="creation-assistant">
             <div class="assistant-header">
-                <i class="fas fa-magic"></i>
+                <i data-lucide="wand-2"></i>
                 <h3>Assistant de Catégorisation</h3>
             </div>
             <div class="assistant-content">
                 <p>Organisez vos documents par catégories pour une meilleure recherche</p>
                 <div class="scenarios-grid">
                     <button class="scenario-btn" data-category="general">
-                        <i class="fas fa-folder"></i>
+                        <i data-lucide="folder"></i>
                         <span>Général</span>
                     </button>
                     <button class="scenario-btn" data-category="produits">
-                        <i class="fas fa-box"></i>
+                        <i data-lucide="package"></i>
                         <span>Produits/Services</span>
                     </button>
                     <button class="scenario-btn" data-category="procedures">
-                        <i class="fas fa-list-ol"></i>
+                        <i data-lucide="list-ordered"></i>
                         <span>Procédures</span>
                     </button>
                     <button class="scenario-btn" data-category="support">
-                        <i class="fas fa-life-ring"></i>
+                        <i data-lucide="life-buoy"></i>
                         <span>Support</span>
                     </button>
                     <button class="scenario-btn" data-category="legal">
-                        <i class="fas fa-gavel"></i>
+                        <i data-lucide="scale"></i>
                         <span>Légal</span>
                     </button>
                     <button class="scenario-btn" data-category="custom">
-                        <i class="fas fa-plus"></i>
+                        <i data-lucide="plus"></i>
                         <span>Personnalisé</span>
                     </button>
                 </div>
@@ -141,11 +141,11 @@
             <h3>Documents Importés</h3>
             <div class="list-actions" style="margin-bottom: 1rem;">
                 <button class="btn-secondary" id="refreshDocs">
-                    <i class="fas fa-sync-alt"></i>
+                    <i data-lucide="refresh-cw"></i>
                     Actualiser
                 </button>
                 <button class="btn-secondary" id="exportDocs">
-                    <i class="fas fa-download"></i>
+                    <i data-lucide="download"></i>
                     Exporter
                 </button>
             </div>
@@ -153,7 +153,7 @@
             <div class="responses-list" id="documentsGrid">
                 <!-- Les documents seront chargés dynamiquement -->
                 <div class="empty-state">
-                    <i class="fas fa-file-plus"></i>
+                    <i data-lucide="file-plus"></i>
                     <p>Aucun document importé</p>
                     <small>Commencez par importer vos premiers fichiers ci-dessus</small>
                 </div>
@@ -172,10 +172,10 @@
         <div class="templates-grid">
             <div class="template-card" data-type="conditional">
                 <div class="template-header">
-                    <i class="fas fa-code-branch template-icon"></i>
+                    <i data-lucide="git-branch" class="template-icon"></i>
                     <h3>Règles Conditionnelles</h3>
                     <button class="toggle-template active">
-                        <i class="fas fa-toggle-on"></i>
+                        <i data-lucide="toggle-right"></i>
                     </button>
                 </div>
                 <div class="template-content">
@@ -190,10 +190,10 @@
             
             <div class="template-card" data-type="context">
                 <div class="template-header">
-                    <i class="fas fa-comments template-icon"></i>
+                    <i data-lucide="message-circle" class="template-icon"></i>
                     <h3>Règles Contextuelles</h3>
                     <button class="toggle-template active">
-                        <i class="fas fa-toggle-on"></i>
+                        <i data-lucide="toggle-right"></i>
                     </button>
                 </div>
                 <div class="template-content">
@@ -208,10 +208,10 @@
             
             <div class="template-card" data-type="priority">
                 <div class="template-header">
-                    <i class="fas fa-sort-numeric-up template-icon"></i>
+                    <i data-lucide="arrow-up-0-1" class="template-icon"></i>
                     <h3>Règles de Priorité</h3>
                     <button class="toggle-template active">
-                        <i class="fas fa-toggle-on"></i>
+                        <i data-lucide="toggle-right"></i>
                     </button>
                 </div>
                 <div class="template-content">
@@ -228,10 +228,10 @@
         <!-- Éditeur de règles -->
         <div class="creation-assistant" id="ruleEditor" style="display: none;">
             <div class="assistant-header">
-                <i class="fas fa-cogs"></i>
+                <i data-lucide="settings"></i>
                 <h3>Éditeur de Règles</h3>
                 <button class="close-editor" id="closeRuleEditor">
-                    <i class="fas fa-times"></i>
+                    <i data-lucide="x"></i>
                 </button>
             </div>
             
@@ -243,7 +243,7 @@
                             <!-- Les conditions seront ajoutées dynamiquement -->
                         </div>
                         <button class="scenario-btn" onclick="knowledgeManager.addCondition()">
-                            <i class="fas fa-plus"></i>
+                            <i data-lucide="plus"></i>
                             <span>Ajouter une condition</span>
                         </button>
                     </div>
@@ -267,11 +267,11 @@
                 
                 <div class="form-actions">
                     <button class="btn-secondary" id="testRule">
-                        <i class="fas fa-play"></i>
+                        <i data-lucide="play"></i>
                         Tester la règle
                     </button>
                     <button class="btn-primary" id="saveRule">
-                        <i class="fas fa-save"></i>
+                        <i data-lucide="save"></i>
                         Enregistrer
                     </button>
                 </div>
@@ -296,7 +296,7 @@
             
             <div class="responses-list" id="rulesList">
                 <div class="empty-state">
-                    <i class="fas fa-cogs"></i>
+                    <i data-lucide="settings"></i>
                     <p>Aucune règle configurée</p>
                     <small>Créez vos premières règles avancées ci-dessus</small>
                 </div>
@@ -308,21 +308,21 @@
     <div class="global-actions">
         <div class="actions-left">
             <button class="btn-secondary" id="exportKnowledge">
-                <i class="fas fa-download"></i>
+                <i data-lucide="download"></i>
                 Exporter tout
             </button>
             <button class="btn-secondary" id="importKnowledge">
-                <i class="fas fa-upload"></i>
+                <i data-lucide="upload"></i>
                 Importer configuration
             </button>
         </div>
         <div class="actions-right">
             <button class="btn-primary" id="optimizeKnowledge">
-                <i class="fas fa-magic"></i>
+                <i data-lucide="wand-2"></i>
                 Optimiser la base
             </button>
             <button class="btn-primary" id="saveAllKnowledge">
-                <i class="fas fa-save"></i>
+                <i data-lucide="save"></i>
                 Tout Sauvegarder
             </button>
         </div>

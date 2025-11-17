@@ -15,21 +15,21 @@
     <div class="toolbar">
         <div class="toolbar-left">
             <button class="btn btn-primary" id="newFlowBtn">
-                <i class="fas fa-plus"></i> Nouveau Flux
+                <i data-lucide="plus"></i> Nouveau Flux
             </button>
             <button class="btn btn-secondary" id="saveFlowBtn">
-                <i class="fas fa-save"></i> Enregistrer
+                <i data-lucide="save"></i> Enregistrer
             </button>
             <button class="btn btn-secondary" id="testFlowBtn">
-                <i class="fas fa-play"></i> Tester
+                <i data-lucide="play"></i> Tester
             </button>
         </div>
         <div class="toolbar-right">
             <button class="btn btn-outline-secondary" id="importFlowBtn">
-                <i class="fas fa-file-import"></i> Importer
+                <i data-lucide="file-down"></i> Importer
             </button>
             <button class="btn btn-outline-secondary" id="exportFlowBtn">
-                <i class="fas fa-file-export"></i> Exporter
+                <i data-lucide="file-up"></i> Exporter
             </button>
         </div>
     </div>
@@ -53,10 +53,10 @@
                 <input type="text" class="flow-name" placeholder="Nom du flux">
                 <div class="editor-actions">
                     <button class="btn btn-primary" id="saveFlowBtn">
-                        <i class="fas fa-save"></i> Enregistrer
+                        <i data-lucide="save"></i> Enregistrer
                     </button>
                     <button class="btn btn-secondary" id="testFlowBtn">
-                        <i class="fas fa-play"></i> Tester
+                        <i data-lucide="play"></i> Tester
                     </button>
                 </div>
             </div>
@@ -67,23 +67,23 @@
                 <div class="node-palette">
                     <h4>Éléments</h4>
                     <div class="node-item" draggable="true" data-type="message">
-                        <i class="fas fa-comment"></i>
+                        <i data-lucide="message-circle"></i>
                         <span>Message</span>
                     </div>
                     <div class="node-item" draggable="true" data-type="condition">
-                        <i class="fas fa-code-branch"></i>
+                        <i data-lucide="git-branch"></i>
                         <span>Condition</span>
                     </div>
                     <div class="node-item" draggable="true" data-type="input">
-                        <i class="fas fa-keyboard"></i>
+                        <i data-lucide="type"></i>
                         <span>Saisie</span>
                     </div>
                     <div class="node-item" draggable="true" data-type="action">
-                        <i class="fas fa-bolt"></i>
+                        <i data-lucide="zap"></i>
                         <span>Action</span>
                     </div>
                     <div class="node-item" draggable="true" data-type="api">
-                        <i class="fas fa-plug"></i>
+                        <i data-lucide="plug"></i>
                         <span>API</span>
                     </div>
                 </div>
@@ -114,7 +114,7 @@
             <div class="modal-header">
                 <h3>Test du Flux</h3>
                 <button class="modal-close" onclick="document.getElementById('testModal').classList.remove('active')">
-                    <i class="fas fa-times"></i>
+                    <i data-lucide="x"></i>
                 </button>
             </div>
             <div class="modal-body">
@@ -124,7 +124,7 @@
                 <div class="test-input">
                     <input type="text" class="form-control" placeholder="Entrez votre message...">
                     <button class="btn btn-primary">
-                        <i class="fas fa-paper-plane"></i> Envoyer
+                        <i data-lucide="send"></i> Envoyer
                     </button>
                 </div>
             </div>
