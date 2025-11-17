@@ -2,32 +2,32 @@
 .actions-container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 20px;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
 }
 
 /* Sélecteur de type d'action */
 .action-type-selector {
     display: flex;
-    gap: 15px;
-    padding: 15px;
-    background: transparent;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
     overflow-x: auto;
 }
 
 .type-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-sm);
     padding: 10px 20px;
     border: none;
-    border-radius: 6px;
-    background: rgba(248, 250, 252, 0.3);
-    color: #64748b;
+    border-radius: var(--border-radius);
+    background: var(--gray-50);
+    color: var(--text-muted);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--transition-normal);
     white-space: nowrap;
 }
 
@@ -36,21 +36,21 @@
 }
 
 .type-btn:hover {
-    background: #e2e8f0;
-    color: #334155;
+    background: var(--gray-100);
+    color: var(--text-primary);
 }
 
 .type-btn.active {
-    background: #0d6efd;
+    background: var(--primary-color);
     color: white;
 }
 
 /* Zone de configuration */
 .config-area {
-    background: transparent;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: var(--spacing-lg);
 }
 
 .config-section {
@@ -64,27 +64,28 @@
 
 /* Cartes de déclencheur */
 .trigger-card {
-    background: rgba(248, 250, 252, 0.3);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-    border: 1px solid #e2e8f0;
+    background: var(--white);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
 }
 
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: var(--spacing-md);
 }
 
 .card-header h4 {
     margin: 0;
-    color: #334155;
+    color: var(--text-primary);
     font-size: 1.1em;
 }
 
-/* Switch toggle */
+/* Switch toggle - Utilise common.css .toggle */
 .switch {
     position: relative;
     display: inline-block;
@@ -105,8 +106,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
+    background-color: var(--gray-300);
+    transition: var(--transition-normal);
     border-radius: 24px;
 }
 
@@ -117,13 +118,13 @@
     width: 16px;
     left: 4px;
     bottom: 4px;
-    background-color: transparent;
-    transition: .4s;
+    background-color: var(--white);
+    transition: var(--transition-normal);
     border-radius: 50%;
 }
 
 input:checked + .slider {
-    background-color: #0d6efd;
+    background-color: var(--primary-color);
 }
 
 input:checked + .slider:before {
@@ -134,69 +135,37 @@ input:checked + .slider:before {
 .add-trigger-btn,
 .add-redirection-btn {
     width: 100%;
-    padding: 15px;
-    background: rgba(248, 250, 252, 0.3);
-    border: 2px dashed #e2e8f0;
-    border-radius: 8px;
-    color: #64748b;
+    padding: var(--spacing-md);
+    background: var(--gray-50);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    color: var(--text-muted);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--transition-normal);
+    font-size: 0.95rem;
 }
 
 .add-trigger-btn:hover,
 .add-redirection-btn:hover {
-    background: #e2e8f0;
-    border-color: #cbd5e1;
-    color: #334155;
+    background: var(--gray-100);
+    border-color: var(--gray-400);
+    color: var(--text-primary);
 }
 
-/* Formulaires */
+/* Formulaires - Utilise common.css */
 .settings-form {
     max-width: 600px;
     margin: 0 auto;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: #334155;
-    font-weight: 500;
-}
-
-/* Modals */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-}
-
-.modal-content {
-    position: relative;
-    background: transparent;
-    max-width: 500px;
-    margin: 50px auto;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Actions globales */
 .global-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #e2e8f0;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
 }
 
 /* Animations */
@@ -211,6 +180,47 @@ input:checked + .slider:before {
     }
 }
 
+/* Triggers section */
+.triggers-section h3,
+.calendar-settings h3,
+.ticket-settings h3,
+.form-redirections h3 {
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+    font-size: 1.3rem;
+}
+
+.trigger-list,
+.redirection-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Styles spécifiques pour chaque type d'action */
+#email-config .trigger-card { border-left: 4px solid var(--primary-color); }
+#sms-config .trigger-card { border-left: 4px solid var(--success-color); }
+#calendar-config .trigger-card { border-left: 4px solid var(--warning-color); }
+#tickets-config .trigger-card { border-left: 4px solid var(--danger-color); }
+#forms-config .trigger-card { border-left: 4px solid #8b5cf6; }
+
+/* Priority mapping */
+.priority-mapping {
+    margin-top: var(--spacing-lg);
+}
+
+.priority-mapping h4 {
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+    font-size: 1.1rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .action-type-selector {
@@ -219,13 +229,13 @@ input:checked + .slider:before {
     }
 
     .type-btn {
-        flex: 1 1 calc(50% - 15px);
+        flex: 1 1 calc(50% - var(--spacing-md));
         justify-content: center;
     }
 
     .card-header {
         flex-direction: column;
-        gap: 10px;
+        gap: var(--spacing-sm);
         text-align: center;
     }
 
@@ -243,15 +253,7 @@ input:checked + .slider:before {
         flex: 1 1 100%;
     }
 
-    .modal-content {
-        margin: 20px;
-        width: auto;
+    .actions-container {
+        padding: var(--spacing-md);
     }
 }
-
-/* Styles spécifiques pour chaque type d'action */
-#email-config .trigger-card { border-left: 4px solid #0d6efd; }
-#sms-config .trigger-card { border-left: 4px solid #10b981; }
-#calendar-config .trigger-card { border-left: 4px solid #f59e0b; }
-#tickets-config .trigger-card { border-left: 4px solid #ef4444; }
-#forms-config .trigger-card { border-left: 4px solid #8b5cf6; }

@@ -1,23 +1,29 @@
 class ActionsManager {
     constructor() {
+        this.csrfToken = this.getCsrfToken();
+        this.currentSection = 'email';
         this.initializeElements();
         this.setupEventListeners();
-        this.currentSection = 'email';
         this.loadInitialData();
+    }
+
+    getCsrfToken() {
+        const token = document.querySelector('meta[name="csrf-token"]');
+        return token ? token.getAttribute('content') : '';
     }
 
     initializeElements() {
         // Sélecteurs de type d'action
         this.typeButtons = document.querySelectorAll('.type-btn');
         this.configSections = document.querySelectorAll('.config-section');
-        
+
         // Boutons globaux
         this.saveBtn = document.getElementById('saveBtn');
         this.testBtn = document.getElementById('testBtn');
-        
+
         // Modals
         this.triggerModal = document.getElementById('triggerModal');
-        
+
         // Boutons d'ajout
         this.addTriggerBtn = document.querySelector('.add-trigger-btn');
         this.addRedirectionBtn = document.querySelector('.add-redirection-btn');
@@ -30,10 +36,14 @@ class ActionsManager {
         });
 
         // Gestion des sauvegardes
-        this.saveBtn.addEventListener('click', () => this.saveConfiguration());
+        if (this.saveBtn) {
+            this.saveBtn.addEventListener('click', () => this.saveConfiguration());
+        }
 
         // Gestion des tests
-        this.testBtn.addEventListener('click', () => this.testConfiguration());
+        if (this.testBtn) {
+            this.testBtn.addEventListener('click', () => this.testConfiguration());
+        }
 
         // Gestion des ajouts
         if (this.addTriggerBtn) {
@@ -53,14 +63,34 @@ class ActionsManager {
     async loadInitialData() {
         try {
             // Charger les déclencheurs
-            const triggersResponse = await fetch('/actions/triggers');
-            const triggers = await triggersResponse.json();
-            this.renderTriggers(triggers);
+            const triggersResponse = await fetch('/actions/triggers', {
+                headers: {
+                    'X-CSRF-Token': this.csrfToken
+                }
+            });
+
+            if (!triggersResponse.ok) {
+                throw new Error('Erreur chargement triggers');
+            }
+
+            const triggersData = await triggersResponse.json();
+            if (triggersData.success) {
+                this.renderTriggers(triggersData.triggers);
+            }
 
             // Charger les templates d'email
-            const templatesResponse = await fetch('/actions/email/templates');
-            const templates = await templatesResponse.json();
-            this.updateTemplateOptions(templates);
+            const templatesResponse = await fetch('/actions/email/templates', {
+                headers: {
+                    'X-CSRF-Token': this.csrfToken
+                }
+            });
+
+            if (templatesResponse.ok) {
+                const templatesData = await templatesResponse.json();
+                if (templatesData.success) {
+                    this.updateTemplateOptions(templatesData.templates);
+                }
+            }
 
             // Charger les configurations
             await this.loadConfigurations();
@@ -71,20 +101,134 @@ class ActionsManager {
     }
 
     async loadConfigurations() {
-        // Charger la configuration du calendrier
-        const calendarResponse = await fetch('/actions/calendar/config');
-        const calendarConfig = await calendarResponse.json();
-        this.updateCalendarConfig(calendarConfig);
+        try {
+            // Charger la configuration du calendrier
+            const calendarResponse = await fetch('/actions/calendar/config', {
+                headers: {
+                    'X-CSRF-Token': this.csrfToken
+                }
+            });
 
-        // Charger la configuration des tickets
-        const ticketResponse = await fetch('/actions/tickets/config');
-        const ticketConfig = await ticketResponse.json();
-        this.updateTicketConfig(ticketConfig);
+            if (calendarResponse.ok) {
+                const calendarData = await calendarResponse.json();
+                if (calendarData.success) {
+                    this.updateCalendarConfig(calendarData.config);
+                }
+            }
+
+            // Charger la configuration des tickets
+            const ticketResponse = await fetch('/actions/tickets/config', {
+                headers: {
+                    'X-CSRF-Token': this.csrfToken
+                }
+            });
+
+            if (ticketResponse.ok) {
+                const ticketData = await ticketResponse.json();
+                if (ticketData.success) {
+                    this.updateTicketConfig(ticketData.config);
+                }
+            }
+        } catch (error) {
+            console.error('Erreur loadConfigurations:', error);
+        }
+    }
+
+    renderTriggers(triggers) {
+        // Grouper par type
+        const emailTriggers = triggers.filter(t => t.type === 'email');
+        const smsTriggers = triggers.filter(t => t.type === 'sms');
+
+        // Rendre les triggers email
+        const emailList = document.querySelector('#email-config .trigger-list');
+        if (emailList && emailTriggers.length > 0) {
+            emailTriggers.forEach(trigger => {
+                this.addTriggerToList(emailList, trigger);
+            });
+        }
+
+        // Rendre les triggers SMS
+        const smsList = document.querySelector('#sms-config .trigger-list');
+        if (smsList && smsTriggers.length > 0) {
+            smsTriggers.forEach(trigger => {
+                this.addTriggerToList(smsList, trigger);
+            });
+        }
+    }
+
+    addTriggerToList(container, trigger) {
+        const card = document.createElement('div');
+        card.className = 'trigger-card';
+        card.dataset.triggerId = trigger.id;
+
+        card.innerHTML = `
+            <div class="card-header">
+                <h4>${trigger.name}</h4>
+                <label class="switch">
+                    <input type="checkbox" ${trigger.active ? 'checked' : ''} data-trigger-id="${trigger.id}">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="card-content">
+                <p><small>Type: ${trigger.type}</small></p>
+            </div>
+        `;
+
+        // Ajouter avant le bouton d'ajout
+        const addBtn = container.querySelector('.add-trigger-btn');
+        if (addBtn) {
+            container.insertBefore(card, addBtn);
+        } else {
+            container.appendChild(card);
+        }
+
+        // Ajouter listener pour le switch
+        const checkbox = card.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+            checkbox.addEventListener('change', (e) => this.handleTriggerStateChange(e));
+        }
+    }
+
+    updateTemplateOptions(templates) {
+        const selects = document.querySelectorAll('select[name="email_template"]');
+        selects.forEach(select => {
+            // Vider les options existantes sauf la première
+            select.innerHTML = '<option value="">Sélectionner un template</option>';
+
+            // Ajouter les templates
+            templates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = template.id;
+                option.textContent = template.name;
+                select.appendChild(option);
+            });
+        });
+    }
+
+    updateCalendarConfig(config) {
+        const serviceSelect = document.querySelector('select[name="calendar_service"]');
+        const durationSelect = document.querySelector('select[name="default_duration"]');
+
+        if (serviceSelect && config.service_type) {
+            serviceSelect.value = config.service_type;
+        }
+
+        if (durationSelect && config.default_duration) {
+            durationSelect.value = config.default_duration;
+        }
+    }
+
+    updateTicketConfig(config) {
+        const serviceSelect = document.querySelector('select[name="ticket_service"]');
+
+        if (serviceSelect && config.service_type) {
+            serviceSelect.value = config.service_type;
+        }
     }
 
     switchSection(type) {
         this.currentSection = type;
-        
+
         // Mettre à jour les boutons
         this.typeButtons.forEach(button => {
             button.classList.toggle('active', button.dataset.type === type);
@@ -99,29 +243,47 @@ class ActionsManager {
     async saveConfiguration() {
         try {
             let configData;
+            let url;
+
             switch (this.currentSection) {
                 case 'email':
                     configData = this.getEmailConfig();
-                    await this.saveEmailConfig(configData);
+                    url = '/actions/email/config';
                     break;
                 case 'sms':
                     configData = this.getSMSConfig();
-                    await this.saveSMSConfig(configData);
+                    url = '/actions/sms/config';
                     break;
                 case 'calendar':
                     configData = this.getCalendarConfig();
-                    await this.saveCalendarConfig(configData);
+                    url = '/actions/calendar/config';
                     break;
                 case 'tickets':
                     configData = this.getTicketConfig();
-                    await this.saveTicketConfig(configData);
+                    url = '/actions/tickets/config';
                     break;
                 case 'forms':
                     configData = this.getFormsConfig();
-                    await this.saveFormsConfig(configData);
+                    url = '/actions/forms/config';
                     break;
             }
-            this.showSuccess('Configuration sauvegardée avec succès');
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': this.csrfToken
+                },
+                body: JSON.stringify(configData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess(result.message || 'Configuration sauvegardée avec succès');
+            } else {
+                this.showError(result.error || 'Erreur lors de la sauvegarde');
+            }
         } catch (error) {
             console.error('Erreur lors de la sauvegarde:', error);
             this.showError('Erreur lors de la sauvegarde');
@@ -134,6 +296,7 @@ class ActionsManager {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRF-Token': this.csrfToken
                 },
                 body: JSON.stringify({
                     type: this.currentSection,
@@ -142,8 +305,9 @@ class ActionsManager {
             });
 
             const result = await response.json();
+
             if (result.success) {
-                this.showSuccess('Test effectué avec succès');
+                this.showSuccess(result.message || 'Test effectué avec succès');
             } else {
                 this.showError(result.error || 'Erreur lors du test');
             }
@@ -153,43 +317,70 @@ class ActionsManager {
         }
     }
 
-    showTriggerModal() {
-        const modalContent = `
-            <form id="triggerForm">
-                <div class="form-group">
-                    <label>Nom du déclencheur</label>
-                    <input type="text" class="form-control" name="trigger_name" required>
-                </div>
-                <div class="form-group">
-                    <label>Conditions</label>
-                    <textarea class="form-control" name="conditions"></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="actionsManager.hideTriggerModal()">Annuler</button>
-                    <button type="submit" class="btn btn-primary">Ajouter</button>
-                </div>
-            </form>
-        `;
-        
-        this.triggerModal.querySelector('.modal-content').innerHTML = modalContent;
-        this.triggerModal.style.display = 'block';
+    getEmailConfig() {
+        const triggers = [];
+        const triggerCards = document.querySelectorAll('#email-config .trigger-card');
+
+        triggerCards.forEach(card => {
+            const triggerId = card.dataset.triggerId;
+            const checkbox = card.querySelector('input[type="checkbox"]');
+
+            if (triggerId) {
+                triggers.push({
+                    id: parseInt(triggerId),
+                    active: checkbox ? checkbox.checked : false
+                });
+            }
+        });
+
+        return { triggers };
     }
 
-    hideTriggerModal() {
-        this.triggerModal.style.display = 'none';
+    getSMSConfig() {
+        const triggers = [];
+        const triggerCards = document.querySelectorAll('#sms-config .trigger-card');
+
+        triggerCards.forEach(card => {
+            const triggerId = card.dataset.triggerId;
+            const checkbox = card.querySelector('input[type="checkbox"]');
+
+            if (triggerId) {
+                triggers.push({
+                    id: parseInt(triggerId),
+                    active: checkbox ? checkbox.checked : false
+                });
+            }
+        });
+
+        return { triggers };
     }
 
-    // Méthodes utilitaires
-    showSuccess(message) {
-        // Implémenter l'affichage des messages de succès
+    getCalendarConfig() {
+        const serviceSelect = document.querySelector('select[name="calendar_service"]');
+        const durationSelect = document.querySelector('select[name="default_duration"]');
+
+        return {
+            service_type: serviceSelect ? serviceSelect.value : 'google',
+            default_duration: durationSelect ? parseInt(durationSelect.value) : 30
+        };
     }
 
-    showError(message) {
-        // Implémenter l'affichage des erreurs
+    getTicketConfig() {
+        const serviceSelect = document.querySelector('select[name="ticket_service"]');
+
+        return {
+            service_type: serviceSelect ? serviceSelect.value : 'internal',
+            priority_mapping: {}
+        };
+    }
+
+    getFormsConfig() {
+        return {
+            redirections: []
+        };
     }
 
     getCurrentConfig() {
-        // Récupérer la configuration actuelle selon la section
         switch (this.currentSection) {
             case 'email':
                 return this.getEmailConfig();
@@ -205,7 +396,186 @@ class ActionsManager {
                 return {};
         }
     }
+
+    async handleTriggerStateChange(event) {
+        const checkbox = event.target;
+        const triggerId = checkbox.dataset.triggerId;
+
+        if (!triggerId) return;
+
+        try {
+            // Mettre à jour immédiatement l'UI
+            checkbox.disabled = true;
+
+            // Sauvegarder la modification
+            await this.saveConfiguration();
+
+            checkbox.disabled = false;
+        } catch (error) {
+            console.error('Erreur handleTriggerStateChange:', error);
+            // Revenir à l'état précédent
+            checkbox.checked = !checkbox.checked;
+            checkbox.disabled = false;
+        }
+    }
+
+    showTriggerModal() {
+        if (!this.triggerModal) return;
+
+        const modalContent = `
+            <h3>Nouveau Déclencheur</h3>
+            <form id="triggerForm">
+                <div class="form-group">
+                    <label class="form-label">Nom du déclencheur</label>
+                    <input type="text" class="form-control" name="trigger_name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Conditions</label>
+                    <textarea class="form-control" name="conditions" rows="3"></textarea>
+                </div>
+                <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="actionsManager.hideTriggerModal()">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                </div>
+            </form>
+        `;
+
+        this.triggerModal.querySelector('.modal-content').innerHTML = modalContent;
+        this.triggerModal.style.display = 'block';
+
+        // Ajouter listener pour le formulaire
+        const form = document.getElementById('triggerForm');
+        if (form) {
+            form.addEventListener('submit', (e) => this.handleTriggerFormSubmit(e));
+        }
+    }
+
+    async handleTriggerFormSubmit(event) {
+        event.preventDefault();
+
+        const form = event.target;
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('/actions/triggers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': this.csrfToken
+                },
+                body: JSON.stringify({
+                    name: formData.get('trigger_name'),
+                    type: this.currentSection,
+                    conditions: formData.get('conditions') || '',
+                    active: true
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess('Déclencheur créé avec succès');
+                this.hideTriggerModal();
+                await this.loadInitialData(); // Recharger
+            } else {
+                this.showError(result.error || 'Erreur lors de la création');
+            }
+        } catch (error) {
+            console.error('Erreur handleTriggerFormSubmit:', error);
+            this.showError('Erreur lors de la création du déclencheur');
+        }
+    }
+
+    hideTriggerModal() {
+        if (this.triggerModal) {
+            this.triggerModal.style.display = 'none';
+        }
+    }
+
+    showRedirectionModal() {
+        this.showInfo('Fonctionnalité de redirection en cours de développement');
+    }
+
+    // Méthodes de notification
+    showSuccess(message) {
+        this.showNotification(message, 'success');
+    }
+
+    showError(message) {
+        this.showNotification(message, 'error');
+    }
+
+    showInfo(message) {
+        this.showNotification(message, 'info');
+    }
+
+    showNotification(message, type = 'info') {
+        // Créer la notification
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            min-width: 300px;
+            padding: 15px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: slideInRight 0.3s ease-out;
+        `;
+
+        const icons = {
+            'success': '<i class="fas fa-check-circle"></i>',
+            'error': '<i class="fas fa-exclamation-circle"></i>',
+            'info': '<i class="fas fa-info-circle"></i>'
+        };
+
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                ${icons[type] || icons.info}
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Auto-suppression après 5 secondes
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease-out';
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 5000);
+    }
 }
+
+// Animations CSS
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', () => {

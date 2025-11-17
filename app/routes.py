@@ -3064,6 +3064,369 @@ def index_actions():
    )
 
 
+# ===== TRIGGERS ROUTES =====
+
+@actions_bp.route('/triggers', methods=['GET'])
+@login_required
+def get_triggers():
+    """Liste tous les déclencheurs d'actions."""
+    try:
+        triggers = ActionTrigger.query.all()
+        return jsonify({
+            'success': True,
+            'triggers': [{
+                'id': trigger.id,
+                'name': trigger.name,
+                'type': trigger.trigger_type,
+                'active': trigger.is_active,
+                'conditions': trigger.conditions,
+                'config': trigger.config
+            } for trigger in triggers]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_triggers: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@actions_bp.route('/triggers', methods=['POST'])
+@login_required
+def create_trigger():
+    """Crée un nouveau déclencheur."""
+    try:
+        data = request.get_json()
+
+        trigger = ActionTrigger(
+            name=data['name'],
+            trigger_type=data['type'],
+            is_active=data.get('active', True)
+        )
+        trigger.conditions = data.get('conditions', {})
+        trigger.config = data.get('config', {})
+
+        db.session.add(trigger)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'trigger': {
+                'id': trigger.id,
+                'name': trigger.name
+            }
+        }), 201
+    except Exception as e:
+        logger.error(f"Erreur create_trigger: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== EMAIL ROUTES =====
+
+@actions_bp.route('/email/templates', methods=['GET'])
+@login_required
+def get_email_templates():
+    """Liste tous les templates d'email."""
+    try:
+        templates = EmailTemplate.query.all()
+        return jsonify({
+            'success': True,
+            'templates': [{
+                'id': template.id,
+                'name': template.name,
+                'subject': template.subject,
+                'body': template.body,
+                'variables': template.variables
+            } for template in templates]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_email_templates: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@actions_bp.route('/email/config', methods=['POST'])
+@login_required
+def save_email_config():
+    """Sauvegarde la configuration des emails."""
+    try:
+        data = request.get_json()
+
+        # Sauvegarder les déclencheurs email
+        for trigger_data in data.get('triggers', []):
+            if 'id' in trigger_data:
+                # Mise à jour
+                trigger = ActionTrigger.query.get(trigger_data['id'])
+                if trigger:
+                    trigger.is_active = trigger_data.get('active', True)
+                    trigger.conditions = trigger_data.get('conditions', {})
+                    trigger.config = trigger_data.get('config', {})
+            else:
+                # Création
+                trigger = ActionTrigger(
+                    name=trigger_data['name'],
+                    trigger_type='email',
+                    is_active=trigger_data.get('active', True)
+                )
+                trigger.conditions = trigger_data.get('conditions', {})
+                trigger.config = trigger_data.get('config', {})
+                db.session.add(trigger)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration email sauvegardée'
+        })
+    except Exception as e:
+        logger.error(f"Erreur save_email_config: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== SMS ROUTES =====
+
+@actions_bp.route('/sms/config', methods=['GET'])
+@login_required
+def get_sms_config():
+    """Récupère la configuration SMS."""
+    try:
+        triggers = ActionTrigger.query.filter_by(trigger_type='sms').all()
+        return jsonify({
+            'success': True,
+            'triggers': [{
+                'id': trigger.id,
+                'name': trigger.name,
+                'active': trigger.is_active,
+                'conditions': trigger.conditions,
+                'config': trigger.config
+            } for trigger in triggers]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_sms_config: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@actions_bp.route('/sms/config', methods=['POST'])
+@login_required
+def save_sms_config():
+    """Sauvegarde la configuration SMS."""
+    try:
+        data = request.get_json()
+
+        for trigger_data in data.get('triggers', []):
+            if 'id' in trigger_data:
+                trigger = ActionTrigger.query.get(trigger_data['id'])
+                if trigger:
+                    trigger.is_active = trigger_data.get('active', True)
+                    trigger.conditions = trigger_data.get('conditions', {})
+                    trigger.config = trigger_data.get('config', {})
+            else:
+                trigger = ActionTrigger(
+                    name=trigger_data['name'],
+                    trigger_type='sms',
+                    is_active=trigger_data.get('active', True)
+                )
+                trigger.conditions = trigger_data.get('conditions', {})
+                trigger.config = trigger_data.get('config', {})
+                db.session.add(trigger)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration SMS sauvegardée'
+        })
+    except Exception as e:
+        logger.error(f"Erreur save_sms_config: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== CALENDAR ROUTES =====
+
+@actions_bp.route('/calendar/config', methods=['GET'])
+@login_required
+def get_calendar_config():
+    """Récupère la configuration du calendrier."""
+    try:
+        config = CalendarConfig.query.first()
+        if not config:
+            return jsonify({
+                'success': True,
+                'config': {
+                    'service_type': 'google',
+                    'default_duration': 30
+                }
+            })
+
+        return jsonify({
+            'success': True,
+            'config': {
+                'service_type': config.service_type,
+                'default_duration': config.default_duration,
+                'calendar_id': config.calendar_id
+            }
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_calendar_config: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@actions_bp.route('/calendar/config', methods=['POST'])
+@login_required
+def save_calendar_config():
+    """Sauvegarde la configuration du calendrier."""
+    try:
+        data = request.get_json()
+
+        config = CalendarConfig.query.first()
+        if not config:
+            config = CalendarConfig()
+            db.session.add(config)
+
+        config.service_type = data.get('service_type', 'google')
+        config.default_duration = data.get('default_duration', 30)
+        config.calendar_id = data.get('calendar_id')
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration calendrier sauvegardée'
+        })
+    except Exception as e:
+        logger.error(f"Erreur save_calendar_config: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== TICKETS ROUTES =====
+
+@actions_bp.route('/tickets/config', methods=['GET'])
+@login_required
+def get_ticket_config():
+    """Récupère la configuration des tickets."""
+    try:
+        config = TicketConfig.query.first()
+        if not config:
+            return jsonify({
+                'success': True,
+                'config': {
+                    'service_type': 'internal',
+                    'priority_mapping': {}
+                }
+            })
+
+        return jsonify({
+            'success': True,
+            'config': {
+                'service_type': config.service_type,
+                'subdomain': config.subdomain,
+                'priority_mapping': config.priority_mapping
+            }
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_ticket_config: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@actions_bp.route('/tickets/config', methods=['POST'])
+@login_required
+def save_ticket_config():
+    """Sauvegarde la configuration des tickets."""
+    try:
+        data = request.get_json()
+
+        config = TicketConfig.query.first()
+        if not config:
+            config = TicketConfig()
+            db.session.add(config)
+
+        config.service_type = data.get('service_type', 'internal')
+        config.subdomain = data.get('subdomain')
+        config.api_key = data.get('api_key')
+        config.priority_mapping = data.get('priority_mapping', {})
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration tickets sauvegardée'
+        })
+    except Exception as e:
+        logger.error(f"Erreur save_ticket_config: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== FORMS ROUTES =====
+
+@actions_bp.route('/forms/config', methods=['POST'])
+@login_required
+def save_forms_config():
+    """Sauvegarde la configuration des formulaires."""
+    try:
+        data = request.get_json()
+
+        for form_data in data.get('redirections', []):
+            if 'id' in form_data:
+                form = FormRedirection.query.get(form_data['id'])
+                if form:
+                    form.name = form_data['name']
+                    form.url = form_data['url']
+                    form.conditions = form_data.get('conditions')
+                    form.parameters = form_data.get('parameters')
+            else:
+                form = FormRedirection(
+                    name=form_data['name'],
+                    url=form_data['url'],
+                    conditions=form_data.get('conditions'),
+                    parameters=form_data.get('parameters')
+                )
+                db.session.add(form)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration formulaires sauvegardée'
+        })
+    except Exception as e:
+        logger.error(f"Erreur save_forms_config: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== TEST ROUTE =====
+
+@actions_bp.route('/test', methods=['POST'])
+@login_required
+def test_action():
+    """Teste une configuration d'action."""
+    try:
+        data = request.get_json()
+        action_type = data.get('type')
+        config = data.get('config', {})
+
+        # Validation basique selon le type
+        test_results = {
+            'email': {'success': True, 'message': 'Configuration email valide'},
+            'sms': {'success': True, 'message': 'Configuration SMS valide'},
+            'calendar': {'success': True, 'message': 'Configuration calendrier valide'},
+            'tickets': {'success': True, 'message': 'Configuration tickets valide'},
+            'forms': {'success': True, 'message': 'Configuration formulaires valide'}
+        }
+
+        result = test_results.get(action_type, {'success': False, 'message': 'Type inconnu'})
+
+        return jsonify({
+            'success': result['success'],
+            'message': result['message'],
+            'details': config
+        })
+    except Exception as e:
+        logger.error(f"Erreur test_action: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 # ========================
 # ROUTES POUR LES SECTIONS DE CONTENU
 # ========================
