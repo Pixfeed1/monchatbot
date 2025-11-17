@@ -3,593 +3,156 @@
 {% block title %}Configuration des Réponses{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/reponses.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="responses-container">
-<!-- En-tête avec assistant de configuration -->
-    <div class="responses-header">
-        <h1><i data-lucide="bot"></i> Configuration des Réponses du Bot</h1>
-        <p class="subtitle">Configurez les réponses automatiques en 3 étapes simples</p>
-        
-        <!-- Indicateur de progression -->
-        <div class="progress-indicator">
-            <div class="progress-step active" data-step="1">
-                <span class="step-number">1</span>
-                <span class="step-label">Messages de base</span>
-            </div>
-            <div class="progress-step" data-step="2">
-                <span class="step-number">2</span>
-                <span class="step-label">Réponses spécialisées</span>
-            </div>
-            <div class="progress-step" data-step="3">
-                <span class="step-number">3</span>
-                <span class="step-label">Situations d'erreur</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- État de sauvegarde -->
-    <div class="save-status" id="saveStatus">
-        <div class="status-indicator">
-            <i data-lucide="check-circle"></i>
-            <span>Toutes les modifications sont sauvegardées</span>
-        </div>
-    </div>
-
-    <!-- Exemples rapides -->
-    <div class="quick-examples">
-        <div class="examples-header">
-            <h3><i data-lucide="lightbulb"></i> Besoin d'aide pour démarrer ?</h3>
-            <p>Chargez un exemple pré-configuré en 1 clic :</p>
-        </div>
-        <div class="examples-buttons">
-            <button class="example-btn" data-example="professional">
-                <i data-lucide="briefcase"></i>
-                <span>Bot Professionnel</span>
-                <small>Formel et courtois</small>
-            </button>
-            <button class="example-btn" data-example="friendly">
-                <i data-lucide="smile"></i>
-                <span>Bot Amical</span>
-                <small>Décontracté et chaleureux</small>
-            </button>
-            <button class="example-btn" data-example="support">
-                <i data-lucide="headphones"></i>
-                <span>Service Client</span>
-                <small>Assisté et efficace</small>
-            </button>
-        </div>
-    </div>
-
-    <!-- Navigation simplifiée -->
-    <div class="wizard-navigation">
-        <button class="nav-btn active" data-section="essentials">
-            <i data-lucide="star"></i>
-            <span>Messages de Base</span>
-            <small>Bonjour, au revoir, merci...</small>
-        </button>
-        <button class="nav-btn" data-section="specialized">
-            <i data-lucide="wrench"></i>
-            <span>Réponses pour Votre Activité</span>
-            <small>Questions fréquentes de vos clients</small>
-        </button>
-        <button class="nav-btn" data-section="advanced">
-            <i data-lucide="settings"></i>
-            <span>Gestion des Erreurs</span>
-            <small>Quand le bot ne comprend pas</small>
-        </button>
-    </div>
-
-    <!-- Section Messages Essentiels -->
-    <div class="wizard-section active" id="essentials">
-        <div class="section-header">
-            <h2>Messages de Base</h2>
-            <p>Les réponses automatiques pour les situations courantes</p>
-        </div>
-
-        <!-- Message de bienvenue -->
-        <div class="essential-card welcome-card">
-            <div class="card-header">
-                <div class="card-icon">
-                    <i data-lucide="hand"></i>
-                </div>
-                <div class="card-title">
-                    <h3>
-                        Message de Bienvenue
-                        <span class="help-icon" title="C'est la première chose que vos visiteurs verront quand ils ouvrent le chat. Soyez accueillant !">ℹ️</span>
-                    </h3>
-                    <p>Premier message que voient vos visiteurs</p>
-                </div>
-                <div class="card-status">
-                    <span class="status-badge required">Obligatoire</span>
-                </div>
-            </div>
-            <div class="card-content">
-                <div class="message-preview">
-                    <div class="bot-bubble">
-                        <span id="welcomePreview">Bonjour ! Comment puis-je vous aider aujourd'hui ?</span>
-                    </div>
-                </div>
-                <div class="message-editor">
-                    <textarea class="smart-textarea" data-preview="welcomePreview" rows="3"
-                              placeholder="Écrivez votre message de bienvenue...">{{ settings.bot_welcome if settings.bot_welcome else 'Bonjour ! Comment puis-je vous aider aujourd\'hui ?' }}</textarea>
-                    <div class="editor-help">
-                        <small>💡 <strong>Astuce :</strong> Rendez-le personnel et chaleureux. Exemples : "Bienvenue ! Je suis là pour vous aider 😊" ou "Bonjour, que puis-je faire pour vous aujourd'hui ?"</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Templates de réponses essentielles -->
-        <div class="templates-grid">
-            <!-- Salutations -->
-            <div class="template-card" data-category="greeting">
-                <div class="template-header">
-                    <i data-lucide="message-circle" class="template-icon"></i>
-                    <h3>Salutations</h3>
-                    <button class="toggle-template active">
-                        <i data-lucide="toggle-right"></i>
-                    </button>
-                </div>
-                <div class="template-content">
-                    <div class="quick-setup">
-                        <p><strong>Déclenché par:</strong> bonjour, salut, hello, bonsoir</p>
-                        <div class="response-options">
-                            <label class="radio-option">
-                                <input type="radio" name="greeting-style" value="formal" checked>
-                                <span class="option-label">Formel</span>
-                                <span class="option-preview">"Bonjour, comment puis-je vous aider ?"</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="greeting-style" value="friendly">
-                                <span class="option-label">Amical</span>
-                                <span class="option-preview">"Salut ! Que puis-je faire pour toi ?"</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="greeting-style" value="custom">
-                                <span class="option-label">Personnalisé</span>
-                                <input type="text" class="custom-input" placeholder="Votre réponse personnalisée...">
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Au revoir -->
-            <div class="template-card" data-category="goodbye">
-                <div class="template-header">
-                    <i data-lucide="hand" class="template-icon"></i>
-                    <h3>Au revoir</h3>
-                    <button class="toggle-template active">
-                        <i data-lucide="toggle-right"></i>
-                    </button>
-                </div>
-                <div class="template-content">
-                    <div class="quick-setup">
-                        <p><strong>Déclenché par:</strong> au revoir, bye, à bientôt, merci</p>
-                        <div class="response-options">
-                            <label class="radio-option">
-                                <input type="radio" name="goodbye-style" value="polite" checked>
-                                <span class="option-label">Poli</span>
-                                <span class="option-preview">"Au revoir, bonne journée !"</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="goodbye-style" value="helpful">
-                                <span class="option-label">Serviable</span>
-                                <span class="option-preview">"N'hésitez pas à revenir si vous avez d'autres questions !"</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="goodbye-style" value="custom">
-                                <span class="option-label">Personnalisé</span>
-                                <input type="text" class="custom-input" placeholder="Votre message d'au revoir...">
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Remerciements -->
-            <div class="template-card" data-category="thanks">
-                <div class="template-header">
-                    <i data-lucide="heart" class="template-icon"></i>
-                    <h3>Remerciements</h3>
-                    <button class="toggle-template active">
-                        <i data-lucide="toggle-right"></i>
-                    </button>
-                </div>
-                <div class="template-content">
-                    <div class="quick-setup">
-                        <p><strong>Déclenché par:</strong> merci, thanks, super</p>
-                        <div class="response-options">
-                            <label class="radio-option">
-                                <input type="radio" name="thanks-style" value="simple" checked>
-                                <span class="option-label">Simple</span>
-                                <span class="option-preview">"De rien, ravi d'avoir pu vous aider !"</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="thanks-style" value="encouraging">
-                                <span class="option-label">Encourageant</span>
-                                <span class="option-preview">"Avec plaisir ! Je suis là si vous avez d'autres questions."</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Incompréhension -->
-            <div class="template-card" data-category="unclear">
-                <div class="template-header">
-                    <i data-lucide="help-circle" class="template-icon"></i>
-                    <h3>Question pas claire</h3>
-                    <button class="toggle-template active">
-                        <i data-lucide="toggle-right"></i>
-                    </button>
-                </div>
-                <div class="template-content">
-                    <div class="quick-setup">
-                        <p><strong>Utilisé quand:</strong> La question n'est pas comprise</p>
-                        <div class="response-options">
-                            <label class="radio-option">
-                                <input type="radio" name="unclear-style" value="helpful" checked>
-                                <span class="option-label">Bienveillant</span>
-                                <span class="option-preview">"Pourriez-vous reformuler votre question ? Je veux être sûr de bien vous aider."</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="unclear-style" value="guiding">
-                                <span class="option-label">Guidant</span>
-                                <span class="option-preview">"Je ne suis pas sûr de comprendre. Pouvez-vous me donner plus de détails ?"</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Testeur rapide -->
-        <div class="quick-tester">
-            <h3>
-                <i data-lucide="beaker"></i> Essayez Vos Réponses
-                <span class="help-icon" title="Tapez un message pour voir comment le bot répondrait. Parfait pour vérifier que vos réponses fonctionnent bien !">ℹ️</span>
-            </h3>
-            <div class="tester-input">
-                <input type="text" class="test-input" placeholder="Tapez 'bonjour' pour voir comment le bot répond...">
-                <button class="test-btn">Tester</button>
-            </div>
-            <div class="test-result">
-                <div class="bot-response">
-                    <i data-lucide="bot"></i>
-                    <span id="testResponse">Tapez un message pour voir la réponse</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Section Réponses Métier -->
-    <div class="wizard-section" id="specialized">
-        <div class="section-header">
-            <h2>Réponses pour Votre Activité</h2>
-            <p>Créez des réponses pour les questions fréquentes de vos clients</p>
-        </div>
-
-        <!-- Assistant de création -->
-        <div class="creation-assistant">
-            <div class="assistant-header">
-                <i data-lucide="wand-2"></i>
-                <h3>
-                    Créer une Nouvelle Réponse
-                    <span class="help-icon" title="Cliquez sur un bouton ci-dessous pour créer une réponse automatique. Le bot répondra quand vos clients poseront des questions sur ce sujet.">ℹ️</span>
-                </h3>
-            </div>
-            <div class="assistant-content">
-                <div class="scenario-selector">
-                    <h4>Choisissez un scénario courant :</h4>
-                    <div class="scenarios-grid">
-                        <button class="scenario-btn" data-scenario="services">
-                            <i data-lucide="briefcase"></i>
-                            <span>Présenter mes services</span>
-                        </button>
-                        <button class="scenario-btn" data-scenario="pricing">
-                            <i data-lucide="euro"></i>
-                            <span>Questions de tarifs</span>
-                        </button>
-                        <button class="scenario-btn" data-scenario="contact">
-                            <i data-lucide="phone"></i>
-                            <span>Informations de contact</span>
-                        </button>
-                        <button class="scenario-btn" data-scenario="hours">
-                            <i data-lucide="clock"></i>
-                            <span>Horaires d'ouverture</span>
-                        </button>
-                        <button class="scenario-btn" data-scenario="faq">
-                            <i data-lucide="help-circle"></i>
-                            <span>Question fréquente</span>
-                        </button>
-                        <button class="scenario-btn" data-scenario="custom">
-                            <i data-lucide="plus"></i>
-                            <span>Autre réponse</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Formulaire de création guidée -->
-                <div class="guided-form" id="guidedForm" style="display: none;">
-                    <div class="form-step">
-                        <label>Quels mots-clés déclenchent cette réponse ?</label>
-                        <div class="keywords-input">
-                            <input type="text" id="keywordsInput" placeholder="Ex: prix, tarif, coût">
-                            <div class="keywords-suggestions">
-                                <span class="suggestion-tag">prix</span>
-                                <span class="suggestion-tag">tarif</span>
-                                <span class="suggestion-tag">coût</span>
-                                <span class="suggestion-tag">combien</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-step">
-                        <label>Réponse à donner :</label>
-                        <textarea id="responseInput" rows="4" placeholder="Votre réponse..."></textarea>
-                        <div class="response-tips">
-                            <small>💡 Conseil: Soyez précis et utile. Proposez une action si possible.</small>
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn-secondary" id="cancelForm">Annuler</button>
-                        <button class="btn-primary" id="saveResponse">Ajouter cette réponse</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Liste des réponses métier créées -->
-        <div class="custom-responses" id="customResponses">
-            <h3>Vos Réponses Métier</h3>
-            <div class="responses-list" id="businessResponsesList">
-                <div class="empty-state">
-                    <i data-lucide="lightbulb"></i>
-                    <p>Aucune réponse personnalisée pour le moment</p>
-                    <small>Cliquez sur un bouton ci-dessus pour en créer une</small>
-                </div>
-            </div>
-        </div>
-
-        <!-- Vocabulaire métier -->
-        <div class="vocabulary-section">
-            <h3>
-                <i data-lucide="book-open"></i> Mots-Clés Importants
-                <span class="help-icon" title="Si votre métier utilise des mots particuliers (ex: 'devis', 'consultation'), ajoutez-les ici avec leur signification. Le bot les comprendra mieux !">ℹ️</span>
-            </h3>
-            <p>Apprenez au bot les mots spécifiques de votre activité</p>
-
-            <div class="vocabulary-quick-add">
-                <div class="vocab-input-group">
-                    <input type="text" id="termInput" placeholder="Mot important (ex: devis, rendez-vous...)">
-                    <input type="text" id="definitionInput" placeholder="Ce que ça veut dire ou mots similaires">
-                    <button class="add-vocab-btn">
-                        <i data-lucide="plus"></i>
-                        Ajouter
-                    </button>
-                </div>
-            </div>
-
-            <div class="vocabulary-list" id="vocabularyList">
-                <!-- Les termes ajoutés apparaîtront ici -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Section Configuration Avancée -->
-    <div class="wizard-section" id="advanced">
-        <div class="section-header">
-            <h2>Gestion des Erreurs</h2>
-            <p>Que doit dire le bot quand quelque chose ne va pas ?</p>
-        </div>
-
-        <!-- Messages d'erreur -->
-        <div class="error-management">
-            <h3>
-                <i data-lucide="alert-triangle"></i> Quand il y a un Problème
-                <span class="help-icon" title="Personne n'aime les erreurs ! Mais quand ça arrive, autant que le message soit sympa. Personnalisez ce que le bot dit quand il rencontre un problème technique.">ℹ️</span>
-            </h3>
-            <p>Personnalisez les messages en cas de problème</p>
-
-            <div class="error-templates">
-                <div class="error-card">
-                    <div class="error-header">
-                        <div class="error-icon">
-                            <i data-lucide="hourglass"></i>
-                        </div>
-                        <div class="error-info">
-                            <h4>Temps de réponse dépassé</h4>
-                            <span class="error-code">TIMEOUT</span>
-                        </div>
-                    </div>
-                    <div class="error-content">
-                        <textarea rows="3">Je prends un peu plus de temps que prévu pour traiter votre demande. Pouvez-vous patienter quelques instants ou reformuler votre question ?</textarea>
-                    </div>
-                </div>
-
-                <div class="error-card">
-                    <div class="error-header">
-                        <div class="error-icon">
-                            <i data-lucide="alert-circle"></i>
-                        </div>
-                        <div class="error-info">
-                            <h4>Erreur technique</h4>
-                            <span class="error-code">SYSTEM_ERROR</span>
-                        </div>
-                    </div>
-                    <div class="error-content">
-                        <textarea rows="3">Je rencontre un petit problème technique. Pouvez-vous réessayer dans quelques minutes ? Si le problème persiste, contactez notre support.</textarea>
-                    </div>
-                </div>
-
-                <div class="error-card">
-                    <div class="error-header">
-                        <div class="error-icon">
-                            <i data-lucide="ban"></i>
-                        </div>
-                        <div class="error-info">
-                            <h4>Limite atteinte</h4>
-                            <span class="error-code">RATE_LIMIT</span>
-                        </div>
-                    </div>
-                    <div class="error-content">
-                        <textarea rows="3">Vous avez fait beaucoup de demandes récemment. Merci de patienter quelques minutes avant de continuer.</textarea>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Configuration du comportement -->
-        <div class="behavior-config">
-            <h3>
-                <i data-lucide="sliders"></i> Comment le Bot Réagit
-                <span class="help-icon" title="Ajustez le comportement du bot : strict ou flexible ? Doit-il se souvenir de la conversation ? Configurez-le selon vos besoins.">ℹ️</span>
-            </h3>
-
-            <div class="config-options">
-                <div class="option-group">
-                    <label class="option-label">
-                        <input type="checkbox" checked>
-                        <span class="checkmark"></span>
-                        <div class="option-content">
-                            <strong>Comprendre les fautes de frappe</strong>
-                            <small>Le bot reconnaît les variations d'orthographe ("bonjur" → "bonjour"). Recommandé pour la plupart des cas ✅</small>
-                        </div>
-                    </label>
-                </div>
-
-                <div class="option-group">
-                    <label class="option-label">
-                        <input type="checkbox" checked>
-                        <span class="checkmark"></span>
-                        <div class="option-content">
-                            <strong>Se souvenir de la conversation</strong>
-                            <small>Le bot adapte ses réponses selon ce qui a été dit avant. Rend la conversation plus naturelle ✅</small>
-                        </div>
-                    </label>
-                </div>
-
-                <div class="option-group">
-                    <label class="option-label">
-                        <input type="checkbox">
-                        <span class="checkmark"></span>
-                        <div class="option-content">
-                            <strong>Être très strict</strong>
-                            <small>Ne répondre que si le message correspond exactement. Utile pour des réponses très spécifiques (ex: codes, références)</small>
-                        </div>
-                    </label>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Actions globales -->
-    <div class="global-actions">
-        <div class="actions-left">
-            <button class="btn-secondary" id="resetAll">
-                <i data-lucide="undo"></i>
-                Réinitialiser
-            </button>
-            <button class="btn-secondary" id="exportConfig">
-                <i data-lucide="download"></i>
-                Exporter
-            </button>
-        </div>
-        <div class="actions-right">
-            <button class="btn-primary" id="saveAll">
-                <i data-lucide="save"></i>
-                Tout Sauvegarder
-            </button>
-        </div>
+<!-- Bannière -->
+<div class="banner">
+    <div class="banner-content">
+        <h1>Configuration des Réponses</h1>
+        <p>Personnalisez les messages de votre bot en quelques clics</p>
     </div>
 </div>
 
-<!-- Modales -->
-<!-- Modal d'onboarding (première visite) -->
-<div class="modal onboarding-modal" id="onboardingModal">
-    <div class="modal-content onboarding-content">
-        <div class="modal-header onboarding-header">
-            <h2><i data-lucide="rocket"></i> Bienvenue dans la Configuration des Réponses !</h2>
-            <button class="modal-close" id="onboardingClose">&times;</button>
-        </div>
-        <div class="modal-body onboarding-body">
-            <div class="onboarding-intro">
-                <p class="intro-text">Configurez votre bot en <strong>3 étapes simples</strong> :</p>
-            </div>
+<!-- Messages Principaux -->
+<section class="config-section">
+    <h2 class="section-title">
+        <i data-lucide="message-circle"></i>
+        Messages Principaux
+    </h2>
 
-            <div class="onboarding-steps">
-                <div class="onboarding-step">
-                    <div class="step-icon">
-                        <i data-lucide="star"></i>
-                    </div>
-                    <div class="step-content">
-                        <h3>1. Messages de Base</h3>
-                        <p>Créez les réponses essentielles : bonjour, au revoir, merci...</p>
-                    </div>
-                </div>
+    <div class="config-card">
+        <h3>Message de Bienvenue</h3>
+        <p class="card-description">Premier message visible par vos visiteurs</p>
+        <textarea
+            class="message-input"
+            id="welcomeMessage"
+            rows="2"
+            placeholder="Bonjour ! Comment puis-je vous aider ?">{{ settings.bot_welcome if settings.bot_welcome else 'Bonjour ! Comment puis-je vous aider aujourd\'hui ?' }}</textarea>
+    </div>
 
-                <div class="onboarding-step">
-                    <div class="step-icon">
-                        <i data-lucide="wrench"></i>
-                    </div>
-                    <div class="step-content">
-                        <h3>2. Réponses pour Votre Activité</h3>
-                        <p>Ajoutez des réponses aux questions fréquentes de vos clients</p>
-                    </div>
-                </div>
+    <div class="config-card">
+        <h3>Message d'Au Revoir</h3>
+        <p class="card-description">Quand l'utilisateur dit au revoir</p>
+        <textarea
+            class="message-input"
+            id="goodbyeMessage"
+            rows="2"
+            placeholder="Au revoir ! N'hésitez pas à revenir.">{{ config.goodbye_message if config.goodbye_message else 'Au revoir ! N\'hésitez pas à revenir si vous avez besoin.' }}</textarea>
+    </div>
 
-                <div class="onboarding-step">
-                    <div class="step-icon">
-                        <i data-lucide="settings"></i>
-                    </div>
-                    <div class="step-content">
-                        <h3>3. Gestion des Erreurs</h3>
-                        <p>Définissez ce que dit le bot en cas de problème</p>
-                    </div>
-                </div>
-            </div>
+    <div class="config-card">
+        <h3>Message Par Défaut</h3>
+        <p class="card-description">Quand le bot ne comprend pas</p>
+        <textarea
+            class="message-input"
+            id="fallbackMessage"
+            rows="2"
+            placeholder="Je n'ai pas bien compris...">{{ config.fallback_message if config.fallback_message else 'Je ne suis pas sûr de comprendre. Pouvez-vous reformuler ?' }}</textarea>
+    </div>
+</section>
 
-            <div class="onboarding-tip">
-                <i data-lucide="lightbulb"></i>
-                <p><strong>Conseil :</strong> Utilisez les exemples pré-configurés ci-dessous pour démarrer rapidement !</p>
-            </div>
-        </div>
-        <div class="modal-footer onboarding-footer">
-            <label class="dont-show-again">
-                <input type="checkbox" id="dontShowAgain">
-                <span>Ne plus afficher ce message</span>
-            </label>
-            <button class="btn-primary btn-start" id="startButton">
-                <i data-lucide="arrow-right"></i>
-                Commencer
-            </button>
-        </div>
+<!-- Ton de Communication -->
+<section class="config-section">
+    <h2 class="section-title">
+        <i data-lucide="volume-2"></i>
+        Ton de Communication
+    </h2>
+
+    <div class="tone-options">
+        <label class="tone-card {{ 'active' if config.communication_style == 'professional' else '' }}">
+            <input type="radio" name="tone" value="professional" {{ 'checked' if config.communication_style == 'professional' else '' }}>
+            <i data-lucide="briefcase"></i>
+            <h3>Professionnel</h3>
+            <p>Formel et courtois</p>
+        </label>
+
+        <label class="tone-card {{ 'active' if config.communication_style == 'friendly' else '' }}">
+            <input type="radio" name="tone" value="friendly" {{ 'checked' if config.communication_style == 'friendly' else '' }}>
+            <i data-lucide="smile"></i>
+            <h3>Amical</h3>
+            <p>Décontracté et chaleureux</p>
+        </label>
+
+        <label class="tone-card {{ 'active' if config.communication_style == 'technical' else '' }}">
+            <input type="radio" name="tone" value="technical" {{ 'checked' if config.communication_style == 'technical' else '' }}>
+            <i data-lucide="cpu"></i>
+            <h3>Technique</h3>
+            <p>Précis et expert</p>
+        </label>
+    </div>
+</section>
+
+<!-- Bouton de sauvegarde -->
+<div class="save-container">
+    <button class="save-btn" id="saveBtn">
+        <i data-lucide="check"></i>
+        Enregistrer
+    </button>
+    <div class="save-status" id="saveStatus" style="display: none;">
+        <i data-lucide="check-circle"></i>
+        <span>Modifications enregistrées</span>
     </div>
 </div>
 
-<!-- Modal de confirmation -->
-<div class="modal" id="confirmModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Confirmation</h3>
-            <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p id="confirmMessage">Êtes-vous sûr de vouloir effectuer cette action ?</p>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-secondary" id="confirmCancel">Annuler</button>
-            <button class="btn-primary" id="confirmOk">Confirmer</button>
-        </div>
-    </div>
-</div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/reponses.js') }}"></script>
+<script>
+// Auto-save et gestion des modifications
+let saveTimeout;
+
+function autoSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        saveConfiguration();
+    }, 1000);
+}
+
+// Écouter les changements
+document.querySelectorAll('.message-input, input[name="tone"]').forEach(input => {
+    input.addEventListener('input', autoSave);
+    input.addEventListener('change', autoSave);
+});
+
+// Sauvegarder
+document.getElementById('saveBtn').addEventListener('click', saveConfiguration);
+
+function saveConfiguration() {
+    const data = {
+        welcome_message: document.getElementById('welcomeMessage').value,
+        goodbye_message: document.getElementById('goodbyeMessage').value,
+        fallback_message: document.getElementById('fallbackMessage').value,
+        communication_style: document.querySelector('input[name="tone"]:checked')?.value || 'professional'
+    };
+
+    fetch('/responses/api/configuration', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showSaveStatus();
+        }
+    })
+    .catch(error => console.error('Erreur:', error));
+}
+
+function showSaveStatus() {
+    const status = document.getElementById('saveStatus');
+    status.style.display = 'flex';
+    setTimeout(() => {
+        status.style.display = 'none';
+    }, 3000);
+}
+
+// Initialiser Lucide
+lucide.createIcons();
+</script>
 {% endblock %}
