@@ -1372,3 +1372,116 @@
     .nav-btn small {
         font-size: 0.75rem;
     }
+/* ===============================
+   Tooltips d'aide
+   =============================== */
+
+.help-icon {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 0.9em;
+    cursor: help;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.help-icon:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Style natif des tooltips navigateur amélioré */
+[title] {
+    position: relative;
+}
+
+/* ===============================
+   Exemples rapides
+   =============================== */
+
+.quick-examples {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.examples-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.examples-header h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.3rem;
+    color: white;
+}
+
+.examples-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 0.95rem;
+}
+
+.examples-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.example-btn {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    color: white;
+}
+
+.example-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.example-btn:active {
+    transform: translateY(0);
+}
+
+.example-btn i {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    opacity: 0.9;
+}
+
+.example-btn span {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.example-btn small {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    font-weight: normal;
+}
+
+@media (max-width: 768px) {
+    .examples-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-examples {
+        padding: 16px;
+    }
+}

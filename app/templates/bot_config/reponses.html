@@ -11,8 +11,8 @@
 <div class="responses-container">
 <!-- En-tête avec assistant de configuration -->
     <div class="responses-header">
-        <h1><i class="fas fa-robot"></i> Assistant de Configuration</h1>
-        <p class="subtitle">Configurez facilement les réponses automatiques de votre bot en quelques clics</p>
+        <h1><i class="fas fa-robot"></i> Configuration des Réponses du Bot</h1>
+        <p class="subtitle">Configurez les réponses automatiques en 3 étapes simples</p>
         
         <!-- Indicateur de progression -->
         <div class="progress-indicator">
@@ -39,30 +39,55 @@
         </div>
     </div>
 
+    <!-- Exemples rapides -->
+    <div class="quick-examples">
+        <div class="examples-header">
+            <h3><i class="fas fa-lightbulb"></i> Besoin d'aide pour démarrer ?</h3>
+            <p>Chargez un exemple pré-configuré en 1 clic :</p>
+        </div>
+        <div class="examples-buttons">
+            <button class="example-btn" data-example="professional">
+                <i class="fas fa-briefcase"></i>
+                <span>Bot Professionnel</span>
+                <small>Formel et courtois</small>
+            </button>
+            <button class="example-btn" data-example="friendly">
+                <i class="fas fa-smile"></i>
+                <span>Bot Amical</span>
+                <small>Décontracté et chaleureux</small>
+            </button>
+            <button class="example-btn" data-example="support">
+                <i class="fas fa-headset"></i>
+                <span>Service Client</span>
+                <small>Assisté et efficace</small>
+            </button>
+        </div>
+    </div>
+
     <!-- Navigation simplifiée -->
     <div class="wizard-navigation">
         <button class="nav-btn active" data-section="essentials">
             <i class="fas fa-star"></i>
-            <span>Messages Essentiels</span>
-            <small>Les réponses indispensables</small>
+            <span>Messages de Base</span>
+            <small>Bonjour, au revoir, merci...</small>
         </button>
         <button class="nav-btn" data-section="specialized">
             <i class="fas fa-tools"></i>
-            <span>Réponses Métier</span>
-            <small>Spécifiques à votre activité</small>
+            <span>Réponses pour Votre Activité</span>
+            <small>Questions fréquentes de vos clients</small>
         </button>
         <button class="nav-btn" data-section="advanced">
             <i class="fas fa-cog"></i>
-            <span>Configuration Avancée</span>
-            <small>Erreurs et cas particuliers</small>
+            <span>Gestion des Erreurs</span>
+            <small>Quand le bot ne comprend pas</small>
         </button>
     </div>
 
     <!-- Section Messages Essentiels -->
     <div class="wizard-section active" id="essentials">
         <div class="section-header">
-            <h2>Messages Essentiels</h2>
-            <p>Ces messages de base garantissent une expérience utilisateur fluide</p>
+            <h2>Messages de Base</h2>
+            <p>Les réponses automatiques pour les situations courantes</p>
         </div>
 
         <!-- Message de bienvenue -->
@@ -72,7 +97,10 @@
                     <i class="fas fa-hand-wave"></i>
                 </div>
                 <div class="card-title">
-                    <h3>Message de Bienvenue</h3>
+                    <h3>
+                        Message de Bienvenue
+                        <span class="help-icon" title="C'est la première chose que vos visiteurs verront quand ils ouvrent le chat. Soyez accueillant !">ℹ️</span>
+                    </h3>
                     <p>Premier message que voient vos visiteurs</p>
                 </div>
                 <div class="card-status">
@@ -86,10 +114,10 @@
                     </div>
                 </div>
                 <div class="message-editor">
-                    <textarea class="smart-textarea" data-preview="welcomePreview" rows="3" 
+                    <textarea class="smart-textarea" data-preview="welcomePreview" rows="3"
                               placeholder="Écrivez votre message de bienvenue...">{{ settings.bot_welcome if settings.bot_welcome else 'Bonjour ! Comment puis-je vous aider aujourd\'hui ?' }}</textarea>
                     <div class="editor-help">
-                        <small>💡 Personnalisez avec: <code>{bot_name}</code>, <code>{user_name}</code>, <code>{current_time}</code></small>
+                        <small>💡 <strong>Astuce :</strong> Rendez-le personnel et chaleureux. Exemples : "Bienvenue ! Je suis là pour vous aider 😊" ou "Bonjour, que puis-je faire pour vous aujourd'hui ?"</small>
                     </div>
                 </div>
             </div>
@@ -222,9 +250,12 @@
 
         <!-- Testeur rapide -->
         <div class="quick-tester">
-            <h3><i class="fas fa-flask"></i> Testeur Rapide</h3>
+            <h3>
+                <i class="fas fa-flask"></i> Essayez Vos Réponses
+                <span class="help-icon" title="Tapez un message pour voir comment le bot répondrait. Parfait pour vérifier que vos réponses fonctionnent bien !">ℹ️</span>
+            </h3>
             <div class="tester-input">
-                <input type="text" class="test-input" placeholder="Tapez 'bonjour' pour tester...">
+                <input type="text" class="test-input" placeholder="Tapez 'bonjour' pour voir comment le bot répond...">
                 <button class="test-btn">Tester</button>
             </div>
             <div class="test-result">
@@ -239,15 +270,18 @@
     <!-- Section Réponses Métier -->
     <div class="wizard-section" id="specialized">
         <div class="section-header">
-            <h2>Réponses Métier</h2>
-            <p>Configurez des réponses spécifiques à votre domaine d'activité</p>
+            <h2>Réponses pour Votre Activité</h2>
+            <p>Créez des réponses pour les questions fréquentes de vos clients</p>
         </div>
 
         <!-- Assistant de création -->
         <div class="creation-assistant">
             <div class="assistant-header">
                 <i class="fas fa-magic"></i>
-                <h3>Assistant de Création</h3>
+                <h3>
+                    Créer une Nouvelle Réponse
+                    <span class="help-icon" title="Cliquez sur un bouton ci-dessous pour créer une réponse automatique. Le bot répondra quand vos clients poseront des questions sur ce sujet.">ℹ️</span>
+                </h3>
             </div>
             <div class="assistant-content">
                 <div class="scenario-selector">
@@ -271,11 +305,11 @@
                         </button>
                         <button class="scenario-btn" data-scenario="faq">
                             <i class="fas fa-question"></i>
-                            <span>FAQ métier</span>
+                            <span>Question fréquente</span>
                         </button>
                         <button class="scenario-btn" data-scenario="custom">
                             <i class="fas fa-plus"></i>
-                            <span>Réponse personnalisée</span>
+                            <span>Autre réponse</span>
                         </button>
                     </div>
                 </div>
@@ -315,21 +349,24 @@
             <div class="responses-list" id="businessResponsesList">
                 <div class="empty-state">
                     <i class="fas fa-lightbulb"></i>
-                    <p>Aucune réponse métier configurée</p>
-                    <small>Utilisez l'assistant ci-dessus pour en créer facilement</small>
+                    <p>Aucune réponse personnalisée pour le moment</p>
+                    <small>Cliquez sur un bouton ci-dessus pour en créer une</small>
                 </div>
             </div>
         </div>
 
         <!-- Vocabulaire métier -->
         <div class="vocabulary-section">
-            <h3><i class="fas fa-book"></i> Vocabulaire Métier</h3>
-            <p>Définissez les termes techniques que votre bot doit connaître</p>
-            
+            <h3>
+                <i class="fas fa-book"></i> Mots-Clés Importants
+                <span class="help-icon" title="Si votre métier utilise des mots particuliers (ex: 'devis', 'consultation'), ajoutez-les ici avec leur signification. Le bot les comprendra mieux !">ℹ️</span>
+            </h3>
+            <p>Apprenez au bot les mots spécifiques de votre activité</p>
+
             <div class="vocabulary-quick-add">
                 <div class="vocab-input-group">
-                    <input type="text" id="termInput" placeholder="Terme technique (ex: consultation)">
-                    <input type="text" id="definitionInput" placeholder="Définition ou synonymes">
+                    <input type="text" id="termInput" placeholder="Mot important (ex: devis, rendez-vous...)">
+                    <input type="text" id="definitionInput" placeholder="Ce que ça veut dire ou mots similaires">
                     <button class="add-vocab-btn">
                         <i class="fas fa-plus"></i>
                         Ajouter
@@ -346,14 +383,17 @@
     <!-- Section Configuration Avancée -->
     <div class="wizard-section" id="advanced">
         <div class="section-header">
-            <h2>Configuration Avancée</h2>
-            <p>Gérez les situations d'erreur et les cas particuliers</p>
+            <h2>Gestion des Erreurs</h2>
+            <p>Que doit dire le bot quand quelque chose ne va pas ?</p>
         </div>
 
         <!-- Messages d'erreur -->
         <div class="error-management">
-            <h3><i class="fas fa-exclamation-triangle"></i> Messages d'Erreur</h3>
-            <p>Personnalisez les messages en cas de problème technique</p>
+            <h3>
+                <i class="fas fa-exclamation-triangle"></i> Quand il y a un Problème
+                <span class="help-icon" title="Personne n'aime les erreurs ! Mais quand ça arrive, autant que le message soit sympa. Personnalisez ce que le bot dit quand il rencontre un problème technique.">ℹ️</span>
+            </h3>
+            <p>Personnalisez les messages en cas de problème</p>
 
             <div class="error-templates">
                 <div class="error-card">
@@ -405,16 +445,19 @@
 
         <!-- Configuration du comportement -->
         <div class="behavior-config">
-            <h3><i class="fas fa-sliders-h"></i> Comportement du Bot</h3>
-            
+            <h3>
+                <i class="fas fa-sliders-h"></i> Comment le Bot Réagit
+                <span class="help-icon" title="Ajustez le comportement du bot : strict ou flexible ? Doit-il se souvenir de la conversation ? Configurez-le selon vos besoins.">ℹ️</span>
+            </h3>
+
             <div class="config-options">
                 <div class="option-group">
                     <label class="option-label">
                         <input type="checkbox" checked>
                         <span class="checkmark"></span>
                         <div class="option-content">
-                            <strong>Correspondance flexible</strong>
-                            <small>Le bot reconnaît les variations d'orthographe et de formulation</small>
+                            <strong>Comprendre les fautes de frappe</strong>
+                            <small>Le bot reconnaît les variations d'orthographe ("bonjur" → "bonjour"). Recommandé pour la plupart des cas ✅</small>
                         </div>
                     </label>
                 </div>
@@ -424,8 +467,8 @@
                         <input type="checkbox" checked>
                         <span class="checkmark"></span>
                         <div class="option-content">
-                            <strong>Réponses contextuelles</strong>
-                            <small>Le bot adapte ses réponses selon la conversation précédente</small>
+                            <strong>Se souvenir de la conversation</strong>
+                            <small>Le bot adapte ses réponses selon ce qui a été dit avant. Rend la conversation plus naturelle ✅</small>
                         </div>
                     </label>
                 </div>
@@ -435,8 +478,8 @@
                         <input type="checkbox">
                         <span class="checkmark"></span>
                         <div class="option-content">
-                            <strong>Mode strict</strong>
-                            <small>Correspondance exacte uniquement (pour réponses très spécifiques)</small>
+                            <strong>Être très strict</strong>
+                            <small>Ne répondre que si le message correspond exactement. Utile pour des réponses très spécifiques (ex: codes, références)</small>
                         </div>
                     </label>
                 </div>
