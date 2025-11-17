@@ -3,7 +3,7 @@
 {% block title %}Flux de Conversation{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/flux_conversation.css') }}">
 {% endblock %}
 
@@ -11,95 +11,127 @@
 <div class="flow-container">
     <h1>Configuration des Flux de Conversation</h1>
 
-    <!-- Barre d'outils -->
-    <div class="flow-toolbar">
-        <button class="btn btn-primary" id="newFlowBtn">
-            <i class="fas fa-plus"></i> Nouveau Flux
-        </button>
-        <button class="btn btn-secondary" id="importFlowBtn">
-            <i class="fas fa-file-import"></i> Importer
-        </button>
-        <button class="btn btn-secondary" id="exportFlowBtn">
-            <i class="fas fa-file-export"></i> Exporter
-        </button>
+    <!-- Barre d'outils avec classes communes -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <button class="btn btn-primary" id="newFlowBtn">
+                <i class="fas fa-plus"></i> Nouveau Flux
+            </button>
+            <button class="btn btn-secondary" id="saveFlowBtn">
+                <i class="fas fa-save"></i> Enregistrer
+            </button>
+            <button class="btn btn-secondary" id="testFlowBtn">
+                <i class="fas fa-play"></i> Tester
+            </button>
+        </div>
+        <div class="toolbar-right">
+            <button class="btn btn-outline-secondary" id="importFlowBtn">
+                <i class="fas fa-file-import"></i> Importer
+            </button>
+            <button class="btn btn-outline-secondary" id="exportFlowBtn">
+                <i class="fas fa-file-export"></i> Exporter
+            </button>
+        </div>
     </div>
 
     <!-- Zone principale -->
     <div class="flow-workspace">
-        <!-- Liste des flux -->
-        <div class="flow-list">
-            <div class="list-header">
+        <!-- Liste des flux (sidebar gauche) -->
+        <div class="flow-list sidebar">
+            <div class="sidebar-header list-header">
                 <h3>Mes Flux</h3>
-                <input type="text" placeholder="Rechercher un flux..." class="flow-search">
+                <input type="text" placeholder="Rechercher un flux..." class="flow-search form-control">
             </div>
-            <div class="flows">
-                <!-- Les flux seront injectés ici -->
+            <div class="sidebar-content flows">
+                <!-- Les flux seront injectés ici par JavaScript -->
             </div>
         </div>
 
-        <!-- Éditeur de flux -->
-        <div class="flow-editor">
-            <div class="editor-header">
+        <!-- Éditeur de flux (zone centrale) -->
+        <div class="flow-editor card">
+            <div class="card-header editor-header">
                 <input type="text" class="flow-name" placeholder="Nom du flux">
                 <div class="editor-actions">
-                    <button class="btn btn-primary" id="saveFlowBtn">Enregistrer</button>
-                    <button class="btn btn-secondary" id="testFlowBtn">Tester</button>
+                    <button class="btn btn-primary" id="saveFlowBtn">
+                        <i class="fas fa-save"></i> Enregistrer
+                    </button>
+                    <button class="btn btn-secondary" id="testFlowBtn">
+                        <i class="fas fa-play"></i> Tester
+                    </button>
                 </div>
             </div>
 
             <!-- Zone de construction du flux -->
-            <div class="flow-builder">
+            <div class="card-body flow-builder">
+                <!-- Palette de nœuds (colonne gauche) -->
                 <div class="node-palette">
                     <h4>Éléments</h4>
                     <div class="node-item" draggable="true" data-type="message">
                         <i class="fas fa-comment"></i>
-                        Message
+                        <span>Message</span>
                     </div>
                     <div class="node-item" draggable="true" data-type="condition">
                         <i class="fas fa-code-branch"></i>
-                        Condition
+                        <span>Condition</span>
                     </div>
                     <div class="node-item" draggable="true" data-type="input">
                         <i class="fas fa-keyboard"></i>
-                        Saisie
+                        <span>Saisie</span>
                     </div>
                     <div class="node-item" draggable="true" data-type="action">
                         <i class="fas fa-bolt"></i>
-                        Action
+                        <span>Action</span>
                     </div>
                     <div class="node-item" draggable="true" data-type="api">
                         <i class="fas fa-plug"></i>
-                        API
+                        <span>API</span>
                     </div>
                 </div>
 
+                <!-- Canvas de flux (zone centrale) -->
                 <div class="flow-canvas">
-                    <!-- Le canvas de construction du flux -->
                     <div class="flow-nodes" id="flowNodes">
-                        <!-- Les nœuds seront ajoutés ici -->
+                        <!-- Les nœuds et connexions seront ajoutés ici -->
                     </div>
                 </div>
 
+                <!-- Panneau de propriétés (colonne droite) -->
                 <div class="node-properties">
                     <h4>Propriétés</h4>
                     <div class="properties-content">
-                        <!-- Les propriétés du nœud sélectionné seront affichées ici -->
+                        <div class="properties-empty">
+                            Sélectionnez un nœud pour voir ses propriétés
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal de test -->
+    <!-- Modal de test avec classes communes -->
     <div class="modal" id="testModal">
         <div class="modal-content">
-            <h3>Test du Flux</h3>
-            <div class="test-conversation">
-                <!-- La conversation de test sera affichée ici -->
+            <div class="modal-header">
+                <h3>Test du Flux</h3>
+                <button class="modal-close" onclick="document.getElementById('testModal').classList.remove('active')">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <div class="test-input">
-                <input type="text" placeholder="Entrez votre message...">
-                <button class="btn btn-primary">Envoyer</button>
+            <div class="modal-body">
+                <div class="test-conversation">
+                    <!-- La conversation de test sera affichée ici -->
+                </div>
+                <div class="test-input">
+                    <input type="text" class="form-control" placeholder="Entrez votre message...">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Envoyer
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('testModal').classList.remove('active')">
+                    Fermer
+                </button>
             </div>
         </div>
     </div>

@@ -2150,6 +2150,210 @@ def create_flow():
        'message': 'Flux créé avec succès'
    }), 201
 
+@flow_bp.route('/<int:flow_id>', methods=['GET'])
+@login_required
+def get_flow(flow_id):
+   """Récupère les détails d'un flux spécifique."""
+   flow = ConversationFlow.query.get_or_404(flow_id)
+
+   # Récupérer tous les nœuds et connexions
+   nodes = [{
+       'id': node.id,
+       'type': node.node_type,
+       'position': {
+           'x': node.position_x,
+           'y': node.position_y
+       },
+       'config': node.config
+   } for node in flow.nodes]
+
+   connections = []
+   for node in flow.nodes:
+       for conn in node.connections:
+           connections.append({
+               'id': conn.id,
+               'source_id': conn.source_node_id,
+               'target_id': conn.target_node_id,
+               'condition': conn.condition,
+               'priority': conn.priority
+           })
+
+   return jsonify({
+       'id': flow.id,
+       'name': flow.name,
+       'description': flow.description,
+       'is_active': flow.is_active,
+       'flow_data': flow.flow_data,
+       'nodes': nodes,
+       'connections': connections,
+       'created_at': flow.created_at.isoformat(),
+       'updated_at': flow.updated_at.isoformat()
+   })
+
+@flow_bp.route('/<int:flow_id>', methods=['PUT'])
+@login_required
+def update_flow(flow_id):
+   """Met à jour un flux existant."""
+   flow = ConversationFlow.query.get_or_404(flow_id)
+   data = request.get_json()
+
+   try:
+       if 'name' in data:
+           flow.name = data['name']
+       if 'description' in data:
+           flow.description = data['description']
+       if 'is_active' in data:
+           flow.is_active = data['is_active']
+       if 'flow_data' in data:
+           flow.flow_data = data['flow_data']
+
+       flow.updated_at = datetime.utcnow()
+       db.session.commit()
+
+       return jsonify({
+           'id': flow.id,
+           'name': flow.name,
+           'message': 'Flux mis à jour avec succès'
+       })
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+@flow_bp.route('/<int:flow_id>', methods=['DELETE'])
+@login_required
+def delete_flow(flow_id):
+   """Supprime un flux."""
+   flow = ConversationFlow.query.get_or_404(flow_id)
+
+   try:
+       db.session.delete(flow)
+       db.session.commit()
+       return jsonify({'message': 'Flux supprimé avec succès'})
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+@flow_bp.route('/<int:flow_id>/nodes', methods=['POST'])
+@login_required
+def create_node(flow_id):
+   """Crée un nouveau nœud dans le flux."""
+   flow = ConversationFlow.query.get_or_404(flow_id)
+   data = request.get_json()
+
+   try:
+       node = FlowNode(
+           flow_id=flow_id,
+           node_type=data['type'],
+           position_x=data.get('position', {}).get('x', 0),
+           position_y=data.get('position', {}).get('y', 0),
+           config=data.get('config', {})
+       )
+       db.session.add(node)
+       db.session.commit()
+
+       return jsonify({
+           'id': node.id,
+           'type': node.node_type,
+           'position': {
+               'x': node.position_x,
+               'y': node.position_y
+           },
+           'config': node.config
+       }), 201
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+@flow_bp.route('/nodes/<int:node_id>', methods=['PUT'])
+@login_required
+def update_node(node_id):
+   """Met à jour un nœud existant."""
+   node = FlowNode.query.get_or_404(node_id)
+   data = request.get_json()
+
+   try:
+       if 'position' in data:
+           node.position_x = data['position'].get('x', node.position_x)
+           node.position_y = data['position'].get('y', node.position_y)
+       if 'config' in data:
+           node.config = data['config']
+
+       db.session.commit()
+
+       return jsonify({
+           'id': node.id,
+           'message': 'Nœud mis à jour avec succès'
+       })
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+@flow_bp.route('/nodes/<int:node_id>', methods=['DELETE'])
+@login_required
+def delete_node(node_id):
+   """Supprime un nœud."""
+   node = FlowNode.query.get_or_404(node_id)
+
+   try:
+       db.session.delete(node)
+       db.session.commit()
+       return jsonify({'message': 'Nœud supprimé avec succès'})
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+@flow_bp.route('/nodes/<int:source_id>/connect', methods=['POST'])
+@login_required
+def create_connection(source_id):
+   """Crée une connexion entre deux nœuds."""
+   source_node = FlowNode.query.get_or_404(source_id)
+   data = request.get_json()
+
+   target_id = data.get('target_id')
+   if not target_id:
+       return jsonify({'error': 'target_id est requis'}), 400
+
+   target_node = FlowNode.query.get_or_404(target_id)
+
+   # Vérifier que les deux nœuds appartiennent au même flux
+   if source_node.flow_id != target_node.flow_id:
+       return jsonify({'error': 'Les nœuds doivent appartenir au même flux'}), 400
+
+   try:
+       connection = NodeConnection(
+           source_node_id=source_id,
+           target_node_id=target_id,
+           condition=data.get('condition'),
+           priority=data.get('priority', 0)
+       )
+       db.session.add(connection)
+       db.session.commit()
+
+       return jsonify({
+           'id': connection.id,
+           'source_id': connection.source_node_id,
+           'target_id': connection.target_node_id,
+           'condition': connection.condition,
+           'priority': connection.priority
+       }), 201
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+@flow_bp.route('/connections/<int:connection_id>', methods=['DELETE'])
+@login_required
+def delete_connection(connection_id):
+   """Supprime une connexion."""
+   connection = NodeConnection.query.get_or_404(connection_id)
+
+   try:
+       db.session.delete(connection)
+       db.session.commit()
+       return jsonify({'message': 'Connexion supprimée avec succès'})
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
 
 #######################################
 # Blueprint pour les actions et automatisations
