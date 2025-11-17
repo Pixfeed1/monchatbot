@@ -2009,6 +2009,82 @@ window.testKnowledge = function() {
    console.log('Tests terminés. Vérifiez les changements dans l\'interface.');
 };
 
+// Gestion du formulaire rapide de création de règles
+document.addEventListener('DOMContentLoaded', () => {
+    const quickRuleSave = document.getElementById('quickRuleSave');
+    const quickRuleReset = document.getElementById('quickRuleReset');
+
+    if (quickRuleSave) {
+        quickRuleSave.addEventListener('click', async () => {
+            const name = document.getElementById('quickRuleName')?.value.trim();
+            const type = document.getElementById('quickRuleType')?.value;
+            const condition = document.getElementById('quickRuleCondition')?.value.trim();
+            const action = document.getElementById('quickRuleAction')?.value.trim();
+
+            if (!name || !condition || !action) {
+                if (window.knowledgeManager) {
+                    window.knowledgeManager.showToast('Veuillez remplir tous les champs', 'warning');
+                }
+                return;
+            }
+
+            const ruleData = {
+                name: name,
+                type: type,
+                conditions: [{
+                    type: 'contains',
+                    value: condition
+                }],
+                actions: [{
+                    type: 'respond',
+                    content: action
+                }],
+                active: true
+            };
+
+            try {
+                const response = await fetch('/api/knowledge/rules', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content
+                    },
+                    body: JSON.stringify(ruleData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (window.knowledgeManager) {
+                        window.knowledgeManager.showToast('Règle créée avec succès', 'success');
+                        window.knowledgeManager.loadRules();
+                    }
+                    // Réinitialiser le formulaire
+                    document.getElementById('quickRuleName').value = '';
+                    document.getElementById('quickRuleCondition').value = '';
+                    document.getElementById('quickRuleAction').value = '';
+                } else {
+                    throw new Error(result.message || 'Erreur lors de la création');
+                }
+            } catch (error) {
+                console.error('Erreur création règle:', error);
+                if (window.knowledgeManager) {
+                    window.knowledgeManager.showToast('Erreur lors de la création de la règle', 'error');
+                }
+            }
+        });
+    }
+
+    if (quickRuleReset) {
+        quickRuleReset.addEventListener('click', () => {
+            document.getElementById('quickRuleName').value = '';
+            document.getElementById('quickRuleCondition').value = '';
+            document.getElementById('quickRuleAction').value = '';
+            document.getElementById('quickRuleType').value = 'conditional';
+        });
+    }
+});
+
 // Métriques et analytics (optionnel)
 class KnowledgeAnalytics {
    constructor() {

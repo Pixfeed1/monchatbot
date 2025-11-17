@@ -202,6 +202,7 @@
     gap: 12px;
 }
 
+.knowledge-container .category-btn,
 .knowledge-container .scenario-btn {
     background: white;
     border: 1px solid #e2e8f0;
@@ -216,18 +217,21 @@
     color: #475569;
 }
 
+.knowledge-container .category-btn:hover,
 .knowledge-container .scenario-btn:hover {
     border-color: #0d6efd;
     background: #eff6ff;
     color: #1e40af;
 }
 
+.knowledge-container .category-btn.selected,
 .knowledge-container .scenario-btn.selected {
     background: #0d6efd;
     border-color: #0d6efd;
     color: white;
 }
 
+.knowledge-container .category-btn i,
 .knowledge-container .scenario-btn i {
     width: 18px;
     height: 18px;
@@ -335,6 +339,87 @@
 .knowledge-container .document-buttons {
     display: flex;
     gap: 4px;
+}
+
+/* FORMULAIRE RAPIDE RÈGLE */
+.knowledge-container .quick-rule-form {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.knowledge-container .quick-rule-form h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 20px 0;
+}
+
+.knowledge-container .quick-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.knowledge-container .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.knowledge-container .form-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #475569;
+}
+
+.knowledge-container .form-group input,
+.knowledge-container .form-group select {
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1e293b;
+}
+
+.knowledge-container .form-group input:focus,
+.knowledge-container .form-group select:focus {
+    outline: none;
+    border-color: #0d6efd;
+}
+
+.knowledge-container .quick-form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.knowledge-container .or-divider {
+    text-align: center;
+    margin: 32px 0;
+    position: relative;
+}
+
+.knowledge-container .or-divider::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: #e2e8f0;
+}
+
+.knowledge-container .or-divider span {
+    background: white;
+    padding: 0 16px;
+    color: #94a3b8;
+    font-size: 13px;
+    position: relative;
+    z-index: 1;
 }
 
 /* GRID DE RÈGLES */
@@ -827,6 +912,10 @@
 @media (max-width: 768px) {
     .knowledge-container {
         padding: 16px;
+    }
+
+    .knowledge-container .quick-form-row {
+        grid-template-columns: 1fr;
     }
 
     .knowledge-container .editor-row {

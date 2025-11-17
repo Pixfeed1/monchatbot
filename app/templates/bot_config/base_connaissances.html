@@ -56,19 +56,19 @@
             <div class="categories-section">
                 <label>Catégorie :</label>
                 <div class="category-buttons">
-                    <button class="scenario-btn" data-category="general">
+                    <button class="category-btn selected" data-category="general">
                         <i data-lucide="folder"></i>
                         <span>Général</span>
                     </button>
-                    <button class="scenario-btn" data-category="produits">
+                    <button class="category-btn" data-category="produits">
                         <i data-lucide="package"></i>
                         <span>Produits</span>
                     </button>
-                    <button class="scenario-btn" data-category="procedures">
+                    <button class="category-btn" data-category="procedures">
                         <i data-lucide="list-ordered"></i>
                         <span>Procédures</span>
                     </button>
-                    <button class="scenario-btn" data-category="support">
+                    <button class="category-btn" data-category="support">
                         <i data-lucide="life-buoy"></i>
                         <span>Support</span>
                     </button>
@@ -111,6 +111,43 @@
             <i data-lucide="settings"></i>
             Règles Avancées
         </h2>
+
+        <!-- Formulaire simple création règle -->
+        <div class="quick-rule-form">
+            <h3>Créer une règle simple</h3>
+            <div class="quick-form-row">
+                <div class="form-group">
+                    <label>Nom de la règle</label>
+                    <input type="text" id="quickRuleName" placeholder="Ex: Redirection support technique">
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="quickRuleType">
+                        <option value="conditional">Conditionnelle</option>
+                        <option value="context">Contextuelle</option>
+                        <option value="priority">Priorité</option>
+                    </select>
+                </div>
+            </div>
+            <div class="quick-form-row">
+                <div class="form-group">
+                    <label>Si le message contient</label>
+                    <input type="text" id="quickRuleCondition" placeholder="Ex: bug, erreur, problème">
+                </div>
+                <div class="form-group">
+                    <label>Alors répondre</label>
+                    <input type="text" id="quickRuleAction" placeholder="Ex: Je vous transfère au support">
+                </div>
+            </div>
+            <div class="quick-form-actions">
+                <button class="btn-secondary" id="quickRuleReset">Réinitialiser</button>
+                <button class="btn-primary" id="quickRuleSave">Créer la règle</button>
+            </div>
+        </div>
+
+        <div class="or-divider">
+            <span>ou utilisez l'éditeur avancé</span>
+        </div>
 
         <div class="rules-grid">
             <div class="rule-card" onclick="knowledgeManager.showRuleEditor('conditional')">
