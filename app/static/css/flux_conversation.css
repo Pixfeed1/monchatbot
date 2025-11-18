@@ -65,7 +65,7 @@
     align-items: center;
 }
 
-.flow-container .search-input {
+.flow-container .flow-search {
     padding: 8px 12px;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
@@ -73,13 +73,13 @@
     width: 250px;
 }
 
-.flow-container .search-input:focus {
+.flow-container .flow-search:focus {
     outline: none;
     border-color: #0d6efd;
 }
 
 /* GRID DE FLUX */
-.flow-container .flows-grid {
+.flow-container .flows {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 16px;
@@ -161,7 +161,7 @@
     border-bottom: 1px solid #e2e8f0;
 }
 
-.flow-container .flow-name-input {
+.flow-container .flow-name {
     font-size: 18px;
     font-weight: 600;
     border: 1px solid transparent;
@@ -171,11 +171,11 @@
     max-width: 400px;
 }
 
-.flow-container .flow-name-input:hover {
+.flow-container .flow-name:hover {
     border-color: #e2e8f0;
 }
 
-.flow-container .flow-name-input:focus {
+.flow-container .flow-name:focus {
     outline: none;
     border-color: #0d6efd;
 }
@@ -192,19 +192,19 @@
 }
 
 /* PALETTE D'ÉLÉMENTS */
-.flow-container .elements-palette {
+.flow-container .node-palette {
     border-right: 1px solid #e2e8f0;
     padding: 20px;
 }
 
-.flow-container .elements-palette h3 {
+.flow-container .node-palette h3 {
     font-size: 14px;
     font-weight: 600;
     color: #475569;
     margin: 0 0 16px 0;
 }
 
-.flow-container .element-item {
+.flow-container .node-item {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -217,18 +217,18 @@
     transition: all 0.2s ease;
 }
 
-.flow-container .element-item:hover {
+.flow-container .node-item:hover {
     background: #f8fafc;
     border-color: #0d6efd;
 }
 
-.flow-container .element-item i {
+.flow-container .node-item i {
     width: 18px;
     height: 18px;
     color: #3b82f6;
 }
 
-.flow-container .element-item span {
+.flow-container .node-item span {
     font-size: 13px;
     color: #1e293b;
 }
@@ -565,13 +565,13 @@
         grid-template-columns: 1fr;
     }
 
-    .flow-container .elements-palette,
+    .flow-container .node-palette,
     .flow-container .node-properties {
         border: none;
         border-top: 1px solid #e2e8f0;
     }
 
-    .flow-container .flows-grid {
+    .flow-container .flows {
         grid-template-columns: 1fr;
     }
 }

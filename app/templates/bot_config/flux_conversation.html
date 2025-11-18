@@ -40,14 +40,14 @@
                 Mes Flux
             </h2>
             <div class="header-actions">
-                <input type="text" id="flowSearch" class="search-input" placeholder="Rechercher un flux...">
+                <input type="text" class="flow-search" placeholder="Rechercher un flux...">
                 <button class="btn-icon" id="refreshFlows">
                     <i data-lucide="refresh-cw"></i>
                 </button>
             </div>
         </div>
 
-        <div class="flows-grid" id="flowsGrid">
+        <div class="flows" id="flowsGrid">
             <div class="empty-state">
                 <i data-lucide="git-branch"></i>
                 <p>Aucun flux créé</p>
@@ -57,9 +57,9 @@
     </section>
 
     <!-- Éditeur de flux (affiché uniquement quand un flux est sélectionné) -->
-    <div class="flow-editor" id="flowEditor" style="display: none;">
+    <div class="flow-editor" id="flowEditor" style="display: block;">
         <div class="editor-header">
-            <input type="text" id="flowName" class="flow-name-input" placeholder="Nom du flux">
+            <input type="text" class="flow-name" placeholder="Nom du flux">
             <div class="editor-actions">
                 <button class="btn-secondary" id="testFlowBtn">
                     <i data-lucide="play"></i>
@@ -77,31 +77,27 @@
 
         <div class="editor-workspace">
             <!-- Palette d'éléments -->
-            <div class="elements-palette">
+            <div class="node-palette">
                 <h3>Éléments</h3>
-                <div class="element-item" draggable="true" data-type="message">
+                <div class="node-item" draggable="true" data-type="message">
                     <i data-lucide="message-circle"></i>
                     <span>Message</span>
                 </div>
-                <div class="element-item" draggable="true" data-type="condition">
+                <div class="node-item" draggable="true" data-type="condition">
                     <i data-lucide="git-branch"></i>
                     <span>Condition</span>
                 </div>
-                <div class="element-item" draggable="true" data-type="input">
+                <div class="node-item" draggable="true" data-type="input">
                     <i data-lucide="type"></i>
                     <span>Saisie Utilisateur</span>
                 </div>
-                <div class="element-item" draggable="true" data-type="action">
+                <div class="node-item" draggable="true" data-type="action">
                     <i data-lucide="zap"></i>
                     <span>Action</span>
                 </div>
-                <div class="element-item" draggable="true" data-type="api">
+                <div class="node-item" draggable="true" data-type="api">
                     <i data-lucide="plug"></i>
                     <span>Appel API</span>
-                </div>
-                <div class="element-item" draggable="true" data-type="delay">
-                    <i data-lucide="clock"></i>
-                    <span>Délai</span>
                 </div>
             </div>
 
