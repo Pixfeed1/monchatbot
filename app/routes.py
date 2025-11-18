@@ -6346,6 +6346,236 @@ def mark_response_read(response_id):
 
 
 # ========================
+# ROUTES WIDGETS - Gestion des widgets d'intégration
+# ========================
+
+@main_bp.route('/widgets')
+@login_required
+def widgets_page():
+    """Page de gestion des widgets"""
+    return render_template('widgets.html')
+
+@main_bp.route('/api/widgets', methods=['GET'])
+@login_required
+def get_widgets():
+    """Récupère tous les widgets de l'utilisateur"""
+    try:
+        from .models import Widget
+
+        widgets = Widget.query.filter_by(created_by=current_user.id).all()
+
+        return jsonify({
+            'success': True,
+            'widgets': [{
+                'id': w.id,
+                'name': w.name,
+                'widget_key': w.widget_key,
+                'allowed_domains': w.allowed_domains_list,
+                'page_scope': w.page_scope,
+                'allowed_pages': w.allowed_pages_list,
+                'primary_color': w.primary_color,
+                'position': w.position,
+                'welcome_message': w.welcome_message,
+                'is_active': w.is_active,
+                'created_at': w.created_at.isoformat() if w.created_at else None
+            } for w in widgets]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_widgets: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@main_bp.route('/api/widgets', methods=['POST'])
+@login_required
+def create_widget():
+    """Crée un nouveau widget"""
+    try:
+        from .models import Widget
+
+        # Vérifier la limite de 5 widgets
+        count = Widget.query.filter_by(created_by=current_user.id).count()
+        if count >= 5:
+            return jsonify({
+                'success': False,
+                'error': 'Vous avez atteint la limite de 5 widgets'
+            }), 400
+
+        data = request.get_json()
+
+        # Validation
+        if not data.get('name'):
+            return jsonify({
+                'success': False,
+                'error': 'Le nom du widget est obligatoire'
+            }), 400
+
+        if not data.get('allowed_domains') or len(data['allowed_domains']) == 0:
+            return jsonify({
+                'success': False,
+                'error': 'Au moins un domaine autorisé est requis'
+            }), 400
+
+        # Créer le widget
+        widget = Widget(
+            name=data['name'],
+            widget_key=Widget.generate_unique_key(),
+            page_scope=data.get('page_scope', 'all'),
+            primary_color=data.get('primary_color', '#0d6efd'),
+            position=data.get('position', 'bottom-right'),
+            welcome_message=data.get('welcome_message'),
+            created_by=current_user.id
+        )
+
+        # Set domains and pages
+        widget.allowed_domains_list = data['allowed_domains']
+        if data.get('allowed_pages'):
+            widget.allowed_pages_list = data['allowed_pages']
+
+        db.session.add(widget)
+        db.session.commit()
+
+        logger.info(f"Widget créé: {widget.name} par user {current_user.id}")
+
+        return jsonify({
+            'success': True,
+            'widget_id': widget.id,
+            'message': 'Widget créé avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur create_widget: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@main_bp.route('/api/widgets/<int:widget_id>', methods=['PUT'])
+@login_required
+def update_widget(widget_id):
+    """Met à jour un widget existant"""
+    try:
+        from .models import Widget
+
+        widget = Widget.query.filter_by(id=widget_id, created_by=current_user.id).first()
+        if not widget:
+            return jsonify({
+                'success': False,
+                'error': 'Widget non trouvé'
+            }), 404
+
+        data = request.get_json()
+
+        # Validation
+        if data.get('name'):
+            widget.name = data['name']
+
+        if data.get('allowed_domains'):
+            widget.allowed_domains_list = data['allowed_domains']
+
+        if 'page_scope' in data:
+            widget.page_scope = data['page_scope']
+
+        if data.get('allowed_pages') is not None:
+            widget.allowed_pages_list = data['allowed_pages']
+
+        if data.get('primary_color'):
+            widget.primary_color = data['primary_color']
+
+        if data.get('position'):
+            widget.position = data['position']
+
+        if 'welcome_message' in data:
+            widget.welcome_message = data['welcome_message']
+
+        db.session.commit()
+
+        logger.info(f"Widget {widget_id} mis à jour par user {current_user.id}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Widget mis à jour avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur update_widget: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@main_bp.route('/api/widgets/<int:widget_id>/toggle', methods=['POST'])
+@login_required
+def toggle_widget(widget_id):
+    """Active/Désactive un widget"""
+    try:
+        from .models import Widget
+
+        widget = Widget.query.filter_by(id=widget_id, created_by=current_user.id).first()
+        if not widget:
+            return jsonify({
+                'success': False,
+                'error': 'Widget non trouvé'
+            }), 404
+
+        data = request.get_json()
+        widget.is_active = data.get('is_active', not widget.is_active)
+
+        db.session.commit()
+
+        logger.info(f"Widget {widget_id} {'activé' if widget.is_active else 'désactivé'} par user {current_user.id}")
+
+        return jsonify({
+            'success': True,
+            'is_active': widget.is_active,
+            'message': f'Widget {"activé" if widget.is_active else "désactivé"} avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur toggle_widget: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@main_bp.route('/api/widgets/<int:widget_id>', methods=['DELETE'])
+@login_required
+def delete_widget(widget_id):
+    """Supprime un widget"""
+    try:
+        from .models import Widget
+
+        widget = Widget.query.filter_by(id=widget_id, created_by=current_user.id).first()
+        if not widget:
+            return jsonify({
+                'success': False,
+                'error': 'Widget non trouvé'
+            }), 404
+
+        db.session.delete(widget)
+        db.session.commit()
+
+        logger.info(f"Widget {widget_id} supprimé par user {current_user.id}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Widget supprimé avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur delete_widget: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ========================
 # FIN DU FICHIER routes.py - VERSION COMPLÈTE MISE À JOUR
 # ========================
 
