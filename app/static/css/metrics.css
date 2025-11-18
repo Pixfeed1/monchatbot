@@ -105,7 +105,7 @@
     justify-content: space-between;
     padding: 28px 24px;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
     cursor: grab;
     position: relative;
@@ -117,21 +117,35 @@
     cursor: grabbing;
 }
 
+/* Overlay diffus pour adoucir les couleurs */
+.kpi-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.15);
+    pointer-events: none;
+    z-index: 1;
+}
+
 .kpi-card::before {
     content: '';
     position: absolute;
     top: 0;
     right: 0;
-    width: 100px;
-    height: 100px;
-    background: rgba(255, 255, 255, 0.1);
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 50%;
     transform: translate(40%, -40%);
+    z-index: 0;
 }
 
 .kpi-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .kpi-card.dragging {
@@ -139,29 +153,29 @@
     cursor: grabbing;
 }
 
-/* Dégradés stylés pour chaque KPI */
+/* Dégradés adoucis et plus professionnels */
 .kpi-card.conversations {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.85) 0%, rgba(118, 75, 162, 0.85) 100%);
 }
 
 .kpi-card.messages {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, rgba(240, 147, 251, 0.85) 0%, rgba(245, 87, 108, 0.85) 100%);
 }
 
 .kpi-card.users {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    background: linear-gradient(135deg, rgba(79, 172, 254, 0.85) 0%, rgba(0, 242, 254, 0.85) 100%);
 }
 
 .kpi-card.resolution {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    background: linear-gradient(135deg, rgba(67, 233, 123, 0.85) 0%, rgba(56, 249, 215, 0.85) 100%);
 }
 
 .kpi-card.response-time {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    background: linear-gradient(135deg, rgba(250, 112, 154, 0.85) 0%, rgba(254, 225, 64, 0.85) 100%);
 }
 
 .kpi-card.satisfaction {
-    background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+    background: linear-gradient(135deg, rgba(48, 207, 208, 0.85) 0%, rgba(51, 8, 103, 0.85) 100%);
 }
 
 .kpi-icon {
@@ -172,9 +186,11 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(10px);
     margin-bottom: 16px;
+    position: relative;
+    z-index: 2;
 }
 
 .kpi-icon i {
@@ -185,6 +201,8 @@
 
 .kpi-content {
     flex: 1;
+    position: relative;
+    z-index: 2;
 }
 
 .kpi-content h3 {
@@ -192,14 +210,15 @@
     font-weight: 700;
     color: white;
     margin: 0 0 8px 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .kpi-content p {
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255, 0.95);
     margin: 0 0 12px 0;
     font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .kpi-trend {
@@ -208,9 +227,11 @@
     border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(10px);
     color: white;
+    position: relative;
+    z-index: 2;
 }
 
 .kpi-trend.positive::before {
