@@ -1,10 +1,9 @@
 /**
- * FluxBuilder - Version FINALE avec VRAIS fixes
- * - PAS de notifications visuelles
- * - Clic SIMPLE sur connexions
- * - Pan avec molette qui MARCHE
- * - Connexions sur les VRAIS ports bleus
- * - Nœud entre deux qui FONCTIONNE
+ * FluxBuilder - Version PRO comme n8n
+ * - Molette = Zoom
+ * - Clic gauche + drag = Pan
+ * - Connexions EXACTES sur les ports
+ * - Ajout de nœud qui FONCTIONNE
  */
 
 class FlowBuilder {
@@ -19,6 +18,8 @@ class FlowBuilder {
         this.autoSaveTimer = null;
         this.currentSelectorCloseHandler = null;
         this.scale = 1;
+        this.isPanning = false;
+        this.panStart = null;
 
         this.initializeElements();
         this.setupEventListeners();
@@ -131,8 +132,8 @@ class FlowBuilder {
             fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
         }
 
-        // Pan avec molette ET zoom
-        this.setupCanvasPan();
+        // SETUP COMME N8N : Pan et Zoom
+        this.setupCanvasControls();
 
         // Cleanup à la fermeture de la page
         window.addEventListener('beforeunload', () => this.destroy());
@@ -148,7 +149,6 @@ class FlowBuilder {
         if (editor) {
             editor.classList.toggle('fullscreen');
 
-            // Changer l'icône
             const icon = fullscreenBtn.querySelector('i');
             if (editor.classList.contains('fullscreen')) {
                 icon.setAttribute('data-lucide', 'minimize-2');
@@ -156,7 +156,6 @@ class FlowBuilder {
                 icon.setAttribute('data-lucide', 'maximize-2');
             }
 
-            // Rafraîchir les icônes
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
@@ -164,80 +163,85 @@ class FlowBuilder {
     }
 
     /**
-     * PAN QUI MARCHE VRAIMENT avec molette + zoom
+     * COMME N8N : Molette = Zoom, Clic gauche + drag = Pan
      */
-    setupCanvasPan() {
-        let isPanning = false;
-        let startX, startY;
+    setupCanvasControls() {
         const minScale = 0.3;
         const maxScale = 2;
 
-        // Pan avec MOLETTE (button 1) ou CLIC GAUCHE + SHIFT
-        this.flowCanvas.addEventListener('mousedown', (e) => {
-            // Molette (button 1) OU clic gauche + shift
-            if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
-                e.preventDefault();
-                isPanning = true;
-                this.flowCanvas.style.cursor = 'grabbing';
+        // ZOOM avec MOLETTE (comme n8n)
+        this.flowCanvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            
+            // Calculer le nouveau scale
+            const delta = e.deltaY > 0 ? -0.05 : 0.05;
+            const newScale = Math.max(minScale, Math.min(maxScale, this.scale + delta));
+            
+            if (newScale !== this.scale) {
+                // Point de zoom (position de la souris)
+                const rect = this.flowCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
                 
-                startX = e.pageX - this.flowCanvas.scrollLeft;
-                startY = e.pageY - this.flowCanvas.scrollTop;
+                // Ratio de zoom
+                const ratio = newScale / this.scale;
+                
+                // Ajuster le scroll pour zoomer sur la position de la souris
+                this.flowCanvas.scrollLeft = x + (this.flowCanvas.scrollLeft - x) * ratio;
+                this.flowCanvas.scrollTop = y + (this.flowCanvas.scrollTop - y) * ratio;
+                
+                // Appliquer le nouveau scale
+                this.scale = newScale;
+                this.nodesContainer.style.transform = `scale(${this.scale})`;
+                this.connectionsContainer.style.transform = `scale(${this.scale})`;
+                
+                // Mettre à jour les connexions
+                this.updateAllConnections();
+            }
+        }, { passive: false });
+
+        // PAN avec CLIC GAUCHE sur le fond (comme n8n)
+        this.flowCanvas.addEventListener('mousedown', (e) => {
+            // Seulement si on clique sur le fond (pas sur un nœud)
+            if (e.target === this.flowCanvas || e.target === this.nodesContainer || e.target === this.connectionsContainer) {
+                if (e.button === 0) { // Clic gauche
+                    e.preventDefault();
+                    this.isPanning = true;
+                    this.panStart = {
+                        x: e.clientX,
+                        y: e.clientY,
+                        scrollLeft: this.flowCanvas.scrollLeft,
+                        scrollTop: this.flowCanvas.scrollTop
+                    };
+                    this.flowCanvas.style.cursor = 'grabbing';
+                }
             }
         });
 
-        // Mouvement de la souris
+        // Mouvement pendant le pan
         document.addEventListener('mousemove', (e) => {
-            if (!isPanning) return;
-            e.preventDefault();
-            
-            this.flowCanvas.scrollLeft = startX - e.pageX;
-            this.flowCanvas.scrollTop = startY - e.pageY;
-            
-            // Mettre à jour les connexions pendant le pan
-            this.updateAllConnections();
+            if (this.isPanning && this.panStart) {
+                const dx = e.clientX - this.panStart.x;
+                const dy = e.clientY - this.panStart.y;
+                
+                this.flowCanvas.scrollLeft = this.panStart.scrollLeft - dx;
+                this.flowCanvas.scrollTop = this.panStart.scrollTop - dy;
+            }
         });
 
-        // Relâchement de la souris
+        // Fin du pan
         document.addEventListener('mouseup', () => {
-            if (isPanning) {
-                isPanning = false;
+            if (this.isPanning) {
+                this.isPanning = false;
+                this.panStart = null;
                 this.flowCanvas.style.cursor = 'grab';
             }
         });
-        
-        // Désactiver le menu contextuel sur molette
-        this.flowCanvas.addEventListener('auxclick', (e) => {
-            if (e.button === 1) e.preventDefault();
-        });
 
-        // Empêcher le menu contextuel
+        // Désactiver le menu contextuel
         this.flowCanvas.addEventListener('contextmenu', (e) => {
-            if (e.button === 1) {
-                e.preventDefault();
-            }
+            e.preventDefault();
         });
-
-        // ZOOM avec Ctrl + Molette
-        this.flowCanvas.addEventListener('wheel', (e) => {
-            if (e.ctrlKey) {
-                e.preventDefault();
-
-                const delta = e.deltaY > 0 ? -0.1 : 0.1;
-                const newScale = Math.max(minScale, Math.min(maxScale, this.scale + delta));
-
-                if (newScale !== this.scale) {
-                    this.scale = newScale;
-                    // Appliquer le zoom aux DEUX conteneurs
-                    this.nodesContainer.style.transform = `scale(${this.scale})`;
-                    this.nodesContainer.style.transformOrigin = '0 0';
-                    this.connectionsContainer.style.transform = `scale(${this.scale})`;
-                    this.connectionsContainer.style.transformOrigin = '0 0';
-
-                    // Mettre à jour toutes les connexions après zoom
-                    this.updateAllConnections();
-                }
-            }
-        }, { passive: false });
 
         // Méthode pour obtenir le scale actuel
         this.currentScale = () => this.scale;
@@ -261,7 +265,6 @@ class FlowBuilder {
             const data = await response.json();
             this.renderFlowsList(data.flows);
 
-            // Charger le premier flux ou créer un nouveau
             if (data.flows.length > 0) {
                 await this.loadFlow(data.flows[0].id);
             }
@@ -271,7 +274,7 @@ class FlowBuilder {
     }
 
     /**
-     * Affiche la liste des flux dans la sidebar
+     * Affiche la liste des flux
      */
     renderFlowsList(flows) {
         if (!this.flowsList) return;
@@ -353,10 +356,12 @@ class FlowBuilder {
                 flow.nodes.forEach(node => this.renderNode(node.id, node));
             }
 
-            // Rendre les connexions APRÈS les nœuds
+            // Rendre les connexions APRÈS avec délai pour être sûr
             setTimeout(() => {
                 if (flow.connections) {
-                    flow.connections.forEach(conn => this.renderConnection(conn.id, conn.source_id, conn.target_id));
+                    flow.connections.forEach(conn => {
+                        this.renderConnection(conn.id, conn.source_id, conn.target_id);
+                    });
                 }
             }, 100);
 
@@ -364,6 +369,7 @@ class FlowBuilder {
             document.querySelectorAll('.flow-card').forEach(item => {
                 item.classList.toggle('active', item.dataset.flowId == flowId);
             });
+
         } catch (error) {
             console.error('Erreur loadFlow:', error);
         }
@@ -398,11 +404,7 @@ class FlowBuilder {
             }
 
             const data = await response.json();
-
-            // Recharger la liste des flux
             await this.loadFlows();
-
-            // Charger le nouveau flux
             await this.loadFlow(data.id);
 
         } catch (error) {
@@ -414,10 +416,7 @@ class FlowBuilder {
      * Sauvegarde le flux actuel
      */
     async saveFlow() {
-        if (!this.currentFlow) {
-            console.warn('Aucun flux à sauvegarder');
-            return;
-        }
+        if (!this.currentFlow) return;
 
         try {
             const flowData = {
@@ -439,7 +438,6 @@ class FlowBuilder {
                 throw new Error('Erreur lors de la sauvegarde');
             }
 
-            // Réinitialiser l'indicateur de changement
             this.flowNameInput.style.borderBottomColor = '';
             
         } catch (error) {
@@ -477,10 +475,7 @@ class FlowBuilder {
     async handleCanvasDrop(e) {
         e.preventDefault();
 
-        if (!this.currentFlow) {
-            console.warn('Veuillez d\'abord créer ou charger un flux');
-            return;
-        }
+        if (!this.currentFlow) return;
 
         const nodeType = e.dataTransfer.getData('nodeType');
         if (!nodeType) return;
@@ -496,7 +491,7 @@ class FlowBuilder {
     }
 
     /**
-     * Gère le clic sur le canvas (déselection)
+     * Gère le clic sur le canvas
      */
     handleCanvasClick(e) {
         if (e.target === this.flowCanvas || e.target === this.nodesContainer) {
@@ -510,12 +505,19 @@ class FlowBuilder {
     async createNode(type, position) {
         if (!this.currentFlow) return;
 
+        // Créer le nœud LOCALEMENT d'abord
+        const tempId = 'temp_' + Date.now();
         const nodeData = {
+            id: tempId,
             type: type,
             position: position,
             config: this.getDefaultConfigForType(type)
         };
 
+        // Rendre immédiatement
+        this.renderNode(tempId, nodeData);
+
+        // Puis appeler le serveur
         try {
             const response = await fetch(`/flow/${this.currentFlow.id}/nodes`, {
                 method: 'POST',
@@ -523,17 +525,27 @@ class FlowBuilder {
                     'Content-Type': 'application/json',
                     'X-CSRF-Token': this.csrfToken
                 },
-                body: JSON.stringify(nodeData)
+                body: JSON.stringify({
+                    type: type,
+                    position: position,
+                    config: nodeData.config
+                })
             });
 
-            if (!response.ok) {
-                throw new Error('Erreur lors de la création du nœud');
+            if (response.ok) {
+                const data = await response.json();
+                // Mettre à jour l'ID du nœud
+                const tempNode = this.nodesContainer.querySelector(`[data-node-id="${tempId}"]`);
+                if (tempNode) {
+                    tempNode.dataset.nodeId = data.id;
+                }
             }
-
-            const data = await response.json();
-            this.renderNode(data.id, data);
+            
         } catch (error) {
             console.error('Erreur createNode:', error);
+            // Supprimer le nœud temporaire en cas d'erreur
+            const tempNode = this.nodesContainer.querySelector(`[data-node-id="${tempId}"]`);
+            if (tempNode) tempNode.remove();
         }
     }
 
@@ -588,15 +600,15 @@ class FlowBuilder {
         const portOut = nodeElement.querySelector('.port-out');
         portOut.addEventListener('mousedown', (e) => {
             e.stopPropagation();
+            e.preventDefault();
             this.startConnection(e, id);
         });
 
-        // Sauvegarder les changements des inputs
+        // Auto-save sur changement
         const inputs = nodeElement.querySelectorAll('input, textarea, select');
         inputs.forEach(input => {
             input.addEventListener('change', () => {
                 this.markAsChanged();
-                // Auto-save après 2 secondes
                 clearTimeout(this.autoSaveTimer);
                 this.autoSaveTimer = setTimeout(() => this.saveFlow(), 2000);
             });
@@ -604,19 +616,19 @@ class FlowBuilder {
 
         this.nodesContainer.appendChild(nodeElement);
 
-        // Rafraîchir les icônes Lucide
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
     }
 
     /**
-     * Gère le début du drag d'un nœud
+     * Gère le drag d'un nœud
      */
     startNodeDrag(e, nodeElement) {
         if (e.target.closest('.btn-icon') || e.target.closest('.port')) return;
 
         e.preventDefault();
+        e.stopPropagation();
 
         const startX = e.clientX;
         const startY = e.clientY;
@@ -641,7 +653,6 @@ class FlowBuilder {
             document.removeEventListener('mouseup', handleMouseUp);
             nodeElement.classList.remove('dragging');
 
-            // Sauvegarder la nouvelle position
             await this.updateNodePosition(nodeElement.dataset.nodeId, {
                 x: parseFloat(nodeElement.style.left),
                 y: parseFloat(nodeElement.style.top)
@@ -656,6 +667,9 @@ class FlowBuilder {
      * Met à jour la position d'un nœud sur le serveur
      */
     async updateNodePosition(nodeId, position) {
+        // Ignorer les IDs temporaires
+        if (nodeId.startsWith('temp_')) return;
+
         try {
             await fetch(`/flow/nodes/${nodeId}`, {
                 method: 'PUT',
@@ -679,19 +693,22 @@ class FlowBuilder {
 
         if (!confirm('Supprimer ce nœud et toutes ses connexions ?')) return;
 
+        // Supprimer visuellement d'abord
+        nodeEl.remove();
+        this.connectionsContainer.querySelectorAll(
+            `[data-source-id="${nodeId}"], [data-target-id="${nodeId}"]`
+        ).forEach(el => el.remove());
+
+        // Si c'est un nœud temporaire, pas d'appel serveur
+        if (nodeId.startsWith('temp_')) return;
+
         try {
-            const response = await fetch(`/flow/nodes/${nodeId}`, {
+            await fetch(`/flow/nodes/${nodeId}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-Token': this.csrfToken
                 }
             });
-
-            if (!response.ok) throw new Error('Erreur suppression');
-
-            nodeEl.remove();
-            this.connectionsContainer.querySelectorAll(`[data-source-id="${nodeId}"], [data-target-id="${nodeId}"]`).forEach(el => el.remove());
-            
         } catch (error) {
             console.error('Erreur deleteNode:', error);
         }
@@ -706,7 +723,6 @@ class FlowBuilder {
         this.isDrawingConnection = true;
         this.sourceNodeId = sourceId;
 
-        // Créer un élément SVG temporaire pour la connexion
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.classList.add('temp-connection');
         svg.style.position = 'absolute';
@@ -735,7 +751,7 @@ class FlowBuilder {
     }
 
     /**
-     * Dessine la connexion temporaire avec gestion du scale
+     * Dessine la connexion temporaire
      */
     drawTempConnection(e) {
         if (!this.tempConnectionEl) return;
@@ -743,20 +759,21 @@ class FlowBuilder {
         const sourceNode = this.nodesContainer.querySelector(`[data-node-id="${this.sourceNodeId}"]`);
         if (!sourceNode) return;
 
+        // Position du nœud source
         const sourceLeft = parseFloat(sourceNode.style.left) || 0;
         const sourceTop = parseFloat(sourceNode.style.top) || 0;
         const sourceWidth = sourceNode.offsetWidth;
         const sourceHeight = sourceNode.offsetHeight;
 
-        // Point de départ
+        // Point de départ (centre du port-out)
         const x1 = sourceLeft + sourceWidth;
         const y1 = sourceTop + sourceHeight / 2;
 
-        // Point d'arrivée - Calcul corrigé avec scale
+        // Position de la souris dans le canvas
         const canvasRect = this.flowCanvas.getBoundingClientRect();
         const scale = this.currentScale();
-        const x2 = (e.clientX - canvasRect.left) / scale + this.flowCanvas.scrollLeft / scale;
-        const y2 = (e.clientY - canvasRect.top) / scale + this.flowCanvas.scrollTop / scale;
+        const x2 = (e.clientX - canvasRect.left + this.flowCanvas.scrollLeft) / scale;
+        const y2 = (e.clientY - canvasRect.top + this.flowCanvas.scrollTop) / scale;
 
         const path = this.tempConnectionEl.querySelector('path');
         path.setAttribute('d', this.createBezierPath(x1, y1, x2, y2));
@@ -769,7 +786,6 @@ class FlowBuilder {
         document.removeEventListener('mousemove', moveHandler);
         document.removeEventListener('mouseup', upHandler);
 
-        // Supprimer la connexion temporaire
         if (this.tempConnectionEl) {
             this.tempConnectionEl.remove();
             this.tempConnectionEl = null;
@@ -796,11 +812,14 @@ class FlowBuilder {
      * Crée une connexion entre deux nœuds
      */
     async createConnection(sourceId, targetId) {
-        // Empêcher les boucles
-        if (sourceId === targetId) {
-            console.warn('Un nœud ne peut pas être connecté à lui-même');
-            return;
-        }
+        if (sourceId === targetId) return;
+
+        // Créer visuellement d'abord
+        const tempConnId = 'temp_conn_' + Date.now();
+        this.renderConnection(tempConnId, sourceId, targetId);
+
+        // Si ce sont des nœuds temporaires, pas d'appel serveur
+        if (sourceId.startsWith('temp_') || targetId.startsWith('temp_')) return;
 
         try {
             const response = await fetch(`/flow/nodes/${sourceId}/connect`, {
@@ -814,14 +833,19 @@ class FlowBuilder {
                 })
             });
 
-            if (!response.ok) {
-                throw new Error('Erreur lors de la création de la connexion');
+            if (response.ok) {
+                const data = await response.json();
+                // Mettre à jour l'ID de la connexion
+                const tempConn = this.connectionsContainer.querySelector(`[data-connection-id="${tempConnId}"]`);
+                if (tempConn) {
+                    tempConn.dataset.connectionId = data.id;
+                }
             }
-
-            const data = await response.json();
-            this.renderConnection(data.id, sourceId, targetId);
         } catch (error) {
             console.error('Erreur createConnection:', error);
+            // Supprimer la connexion temporaire en cas d'erreur
+            const tempConn = this.connectionsContainer.querySelector(`[data-connection-id="${tempConnId}"]`);
+            if (tempConn) tempConn.remove();
         }
     }
 
@@ -842,7 +866,7 @@ class FlowBuilder {
         svg.style.pointerEvents = 'none';
         svg.style.zIndex = '0';
 
-        // Chemin invisible large pour capturer les clics (20px)
+        // Path invisible pour les clics
         const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         hitPath.setAttribute('stroke', 'transparent');
         hitPath.setAttribute('stroke-width', '20');
@@ -851,7 +875,7 @@ class FlowBuilder {
         hitPath.style.cursor = 'pointer';
         svg.appendChild(hitPath);
 
-        // Chemin visible fin (2px)
+        // Path visible
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('stroke', '#9ca3af');
         path.setAttribute('stroke-width', '2');
@@ -859,10 +883,10 @@ class FlowBuilder {
         path.style.pointerEvents = 'none';
         svg.appendChild(path);
 
-        // CLIC SIMPLE (pas double-clic) sur le chemin invisible
+        // CLIC SIMPLE pour le menu
         hitPath.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.showConnectionMenu(e, id, sourceId, targetId, svg);
+            this.showConnectionMenu(e, id, sourceId, targetId);
         });
 
         this.connectionsContainer.appendChild(svg);
@@ -870,7 +894,7 @@ class FlowBuilder {
     }
 
     /**
-     * Met à jour le chemin d'une connexion - POSITION EXACTE sur les ports
+     * Met à jour le chemin d'une connexion - VERSION QUI MARCHE
      */
     updateConnectionPath(connectionEl) {
         const sourceId = connectionEl.dataset.sourceId;
@@ -880,25 +904,28 @@ class FlowBuilder {
         const targetNode = this.nodesContainer.querySelector(`[data-node-id="${targetId}"]`);
 
         if (!sourceNode || !targetNode) {
-            console.warn(`Connexion orpheline: source=${sourceId}, target=${targetId}`);
             connectionEl.remove();
             return;
         }
 
-        // Utiliser getBoundingClientRect pour position EXACTE
-        const sourceRect = sourceNode.getBoundingClientRect();
-        const targetRect = targetNode.getBoundingClientRect();
-        const canvasRect = this.flowCanvas.getBoundingClientRect();
-        
-        // Position relative au canvas avec scroll
-        const scale = this.currentScale();
-        const x1 = (sourceRect.right - canvasRect.left + this.flowCanvas.scrollLeft) / scale;
-        const y1 = (sourceRect.top + sourceRect.height/2 - canvasRect.top + this.flowCanvas.scrollTop) / scale;
-        
-        const x2 = (targetRect.left - canvasRect.left + this.flowCanvas.scrollLeft) / scale;
-        const y2 = (targetRect.top + targetRect.height/2 - canvasRect.top + this.flowCanvas.scrollTop) / scale;
+        // Utiliser les positions CSS des nœuds (pas getBoundingClientRect)
+        const sourceLeft = parseFloat(sourceNode.style.left) || 0;
+        const sourceTop = parseFloat(sourceNode.style.top) || 0;
+        const sourceWidth = sourceNode.offsetWidth;
+        const sourceHeight = sourceNode.offsetHeight;
 
-        // Mettre à jour les deux chemins
+        const targetLeft = parseFloat(targetNode.style.left) || 0;
+        const targetTop = parseFloat(targetNode.style.top) || 0;
+        const targetHeight = targetNode.offsetHeight;
+
+        // Position EXACTE des ports (port = 16px, centré sur le bord)
+        const x1 = sourceLeft + sourceWidth; // Bord droit du nœud source
+        const y1 = sourceTop + sourceHeight / 2; // Milieu vertical
+
+        const x2 = targetLeft; // Bord gauche du nœud cible
+        const y2 = targetTop + targetHeight / 2; // Milieu vertical
+
+        // Créer le chemin
         const paths = connectionEl.querySelectorAll('path');
         const bezierPath = this.createBezierPath(x1, y1, x2, y2);
         paths.forEach(path => {
@@ -911,8 +938,7 @@ class FlowBuilder {
      */
     createBezierPath(x1, y1, x2, y2) {
         const dx = x2 - x1;
-        const dy = y2 - y1;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const distance = Math.abs(dx);
         const offset = Math.min(distance / 2, 100);
 
         const cp1x = x1 + offset;
@@ -930,7 +956,6 @@ class FlowBuilder {
         const connections = this.connectionsContainer.querySelectorAll(
             `[data-source-id="${nodeId}"], [data-target-id="${nodeId}"]`
         );
-
         connections.forEach(conn => this.updateConnectionPath(conn));
     }
 
@@ -946,20 +971,19 @@ class FlowBuilder {
      * Supprime une connexion
      */
     async deleteConnection(connectionId) {
+        const connEl = this.connectionsContainer.querySelector(`[data-connection-id="${connectionId}"]`);
+        if (connEl) connEl.remove();
+
+        // Si c'est une connexion temporaire, pas d'appel serveur
+        if (connectionId.startsWith('temp_')) return;
+
         try {
-            const response = await fetch(`/flow/connections/${connectionId}`, {
+            await fetch(`/flow/connections/${connectionId}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-Token': this.csrfToken
                 }
             });
-
-            if (!response.ok) {
-                throw new Error('Erreur lors de la suppression');
-            }
-
-            const connEl = this.connectionsContainer.querySelector(`[data-connection-id="${connectionId}"]`);
-            if (connEl) connEl.remove();
         } catch (error) {
             console.error('Erreur deleteConnection:', error);
         }
@@ -968,21 +992,20 @@ class FlowBuilder {
     /**
      * Affiche le menu de connexion
      */
-    showConnectionMenu(e, connectionId, sourceId, targetId, connectionElement) {
+    showConnectionMenu(e, connectionId, sourceId, targetId) {
         this.hideConnectionMenu();
 
         const menu = document.createElement('div');
         menu.className = 'connection-menu';
         menu.innerHTML = `
-            <button class="btn-connection-action btn-delete" data-action="delete" title="Supprimer">
+            <button class="btn-connection-action btn-delete" title="Supprimer">
                 <i data-lucide="trash-2"></i>
             </button>
-            <button class="btn-connection-action btn-add" data-action="add" title="Ajouter un nœud">
+            <button class="btn-connection-action btn-add" title="Ajouter un nœud">
                 <i data-lucide="plus"></i>
             </button>
         `;
 
-        // Positionner le menu au point de clic
         const canvasRect = this.flowCanvas.getBoundingClientRect();
         const scale = this.currentScale();
         menu.style.left = `${(e.clientX - canvasRect.left + this.flowCanvas.scrollLeft) / scale}px`;
@@ -990,26 +1013,23 @@ class FlowBuilder {
 
         this.nodesContainer.appendChild(menu);
         this.currentConnectionMenu = menu;
-        this.currentConnectionMenuData = { connectionId, sourceId, targetId };
 
-        // Rafraîchir les icônes
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
 
-        menu.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
+        menu.querySelector('.btn-delete').addEventListener('click', (e) => {
             e.stopPropagation();
             this.deleteConnection(connectionId);
             this.hideConnectionMenu();
         });
 
-        menu.querySelector('[data-action="add"]').addEventListener('click', (e) => {
+        menu.querySelector('.btn-add').addEventListener('click', (e) => {
             e.stopPropagation();
             this.hideConnectionMenu();
             this.addNodeBetween(sourceId, targetId, connectionId);
         });
 
-        // Fermer au clic ailleurs
         setTimeout(() => {
             document.addEventListener('click', this.hideConnectionMenu.bind(this), { once: true });
         }, 100);
@@ -1022,54 +1042,57 @@ class FlowBuilder {
         if (this.currentConnectionMenu) {
             this.currentConnectionMenu.remove();
             this.currentConnectionMenu = null;
-            this.currentConnectionMenuData = null;
         }
     }
 
     /**
-     * VRAIE CORRECTION: Ajoute un nœud entre deux nœuds existants
+     * VERSION QUI MARCHE : Ajoute un nœud entre deux nœuds
      */
     async addNodeBetween(sourceId, targetId, connectionId) {
         const sourceNode = this.nodesContainer.querySelector(`[data-node-id="${sourceId}"]`);
         const targetNode = this.nodesContainer.querySelector(`[data-node-id="${targetId}"]`);
 
-        if (!sourceNode || !targetNode) {
-            console.error('Nœuds source ou cible introuvables');
-            return;
-        }
+        if (!sourceNode || !targetNode) return;
 
         // Position au milieu
-        const sourceX = parseFloat(sourceNode.style.left);
-        const sourceY = parseFloat(sourceNode.style.top);
-        const targetX = parseFloat(targetNode.style.left);
-        const targetY = parseFloat(targetNode.style.top);
+        const sourceX = parseFloat(sourceNode.style.left) || 0;
+        const sourceY = parseFloat(sourceNode.style.top) || 0;
+        const targetX = parseFloat(targetNode.style.left) || 0;
+        const targetY = parseFloat(targetNode.style.top) || 0;
         
         const midX = (sourceX + targetX) / 2;
         const midY = (sourceY + targetY) / 2;
 
         this.showNodeTypeSelector(midX, midY, async (selectedType) => {
+            // Créer le nœud IMMÉDIATEMENT avec ID temporaire
+            const tempNodeId = 'temp_node_' + Date.now();
+            const nodeData = {
+                id: tempNodeId,
+                type: selectedType,
+                position: { x: midX, y: midY },
+                config: this.getDefaultConfigForType(selectedType)
+            };
+            
+            // Rendre le nœud TOUT DE SUITE
+            this.renderNode(tempNodeId, nodeData);
+            
+            // Supprimer l'ancienne connexion TOUT DE SUITE
+            const oldConn = this.connectionsContainer.querySelector(`[data-connection-id="${connectionId}"]`);
+            if (oldConn) oldConn.remove();
+            
+            // Créer les nouvelles connexions TOUT DE SUITE
+            const tempConn1 = 'temp_conn_' + Date.now() + '_1';
+            const tempConn2 = 'temp_conn_' + Date.now() + '_2';
+            this.renderConnection(tempConn1, sourceId, tempNodeId);
+            this.renderConnection(tempConn2, tempNodeId, targetId);
+            
+            // APRÈS SEULEMENT, appeler le serveur
             try {
-                // Créer d'abord le nœud LOCALEMENT avec un ID temporaire
-                const tempId = 'temp_' + Date.now();
-                const nodeData = {
-                    id: tempId,
-                    type: selectedType,
-                    position: { x: midX, y: midY },
-                    config: this.getDefaultConfigForType(selectedType)
-                };
-                
-                // Rendre IMMÉDIATEMENT le nœud
-                this.renderNode(tempId, nodeData);
-                
-                // Supprimer l'ancienne connexion VISUELLEMENT
-                const connEl = this.connectionsContainer.querySelector(`[data-connection-id="${connectionId}"]`);
-                if (connEl) connEl.remove();
-                
-                // Créer les nouvelles connexions VISUELLEMENT avec des IDs temporaires
-                this.renderConnection('temp_conn_1', sourceId, tempId);
-                this.renderConnection('temp_conn_2', tempId, targetId);
-                
-                // ENSUITE faire l'appel serveur
+                // Si les nœuds source/target sont temporaires, pas d'appel serveur
+                if (sourceId.startsWith('temp_') || targetId.startsWith('temp_')) {
+                    return;
+                }
+
                 const response = await fetch(`/flow/${this.currentFlow.id}/nodes`, {
                     method: 'POST',
                     headers: {
@@ -1086,31 +1109,29 @@ class FlowBuilder {
                 if (response.ok) {
                     const newNode = await response.json();
                     
-                    // Remplacer l'ID temporaire par le vrai ID
-                    const tempNodeEl = this.nodesContainer.querySelector(`[data-node-id="${tempId}"]`);
+                    // Mettre à jour l'ID du nœud temporaire
+                    const tempNodeEl = this.nodesContainer.querySelector(`[data-node-id="${tempNodeId}"]`);
                     if (tempNodeEl) {
                         tempNodeEl.dataset.nodeId = newNode.id;
                     }
                     
-                    // Supprimer les connexions temporaires
-                    this.connectionsContainer.querySelector('[data-connection-id="temp_conn_1"]')?.remove();
-                    this.connectionsContainer.querySelector('[data-connection-id="temp_conn_2"]')?.remove();
+                    // Supprimer l'ancienne connexion côté serveur
+                    if (!connectionId.startsWith('temp_')) {
+                        await this.deleteConnection(connectionId);
+                    }
                     
-                    // Supprimer l'ancienne connexion sur le serveur
-                    await this.deleteConnection(connectionId);
-                    
-                    // Créer les vraies connexions
+                    // Créer les vraies connexions côté serveur
                     await this.createConnection(sourceId, newNode.id);
                     await this.createConnection(newNode.id, targetId);
+                    
+                    // Mettre à jour les IDs des connexions temporaires
+                    const tc1 = this.connectionsContainer.querySelector(`[data-connection-id="${tempConn1}"]`);
+                    const tc2 = this.connectionsContainer.querySelector(`[data-connection-id="${tempConn2}"]`);
+                    if (tc1) tc1.dataset.connectionId = 'conn_' + Date.now() + '_1';
+                    if (tc2) tc2.dataset.connectionId = 'conn_' + Date.now() + '_2';
                 }
-
             } catch (error) {
-                console.error('Erreur:', error);
-                // En cas d'erreur, nettoyer les éléments temporaires
-                const tempNodeEl = this.nodesContainer.querySelector('[data-node-id^="temp_"]');
-                if (tempNodeEl) tempNodeEl.remove();
-                this.connectionsContainer.querySelector('[data-connection-id="temp_conn_1"]')?.remove();
-                this.connectionsContainer.querySelector('[data-connection-id="temp_conn_2"]')?.remove();
+                console.error('Erreur serveur, mais le nœud est visible:', error);
             }
         });
     }
@@ -1155,7 +1176,6 @@ class FlowBuilder {
             lucide.createIcons();
         }
 
-        // Gérer les clics sur les boutons
         selector.querySelectorAll('.node-type-selector-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1165,22 +1185,16 @@ class FlowBuilder {
             });
         });
 
-        // Fermer en cliquant ailleurs avec un délai plus long
         setTimeout(() => {
             const closeHandler = (e) => {
-                const clickedElement = e.target;
-                const isInsideSelector = selector.contains(clickedElement);
-                
-                if (!isInsideSelector) {
+                if (!selector.contains(e.target)) {
                     this.hideNodeTypeSelector();
                     document.removeEventListener('click', closeHandler);
                 }
             };
             document.addEventListener('click', closeHandler);
-            
-            // Stocker le handler pour pouvoir le supprimer
             this.currentSelectorCloseHandler = closeHandler;
-        }, 500);
+        }, 300);
     }
 
     /**
@@ -1192,7 +1206,6 @@ class FlowBuilder {
             this.currentNodeTypeSelector = null;
         }
         
-        // Nettoyer le handler s'il existe
         if (this.currentSelectorCloseHandler) {
             document.removeEventListener('click', this.currentSelectorCloseHandler);
             this.currentSelectorCloseHandler = null;
@@ -1204,14 +1217,8 @@ class FlowBuilder {
      */
     selectNode(nodeElement) {
         this.deselectAll();
-
         nodeElement.classList.add('selected');
         this.selectedNode = nodeElement;
-
-        // Afficher les propriétés si le panneau est visible
-        if (this.propertiesPanel && this.propertiesPanel.style.display !== 'none') {
-            this.showNodeProperties(nodeElement);
-        }
     }
 
     /**
@@ -1222,35 +1229,6 @@ class FlowBuilder {
         document.querySelectorAll('.flow-connection.selected').forEach(el => el.classList.remove('selected'));
         this.selectedNode = null;
         this.selectedConnection = null;
-
-        if (this.propertiesContent) {
-            this.propertiesContent.innerHTML = '<div class="properties-empty">Sélectionnez un nœud pour voir ses propriétés</div>';
-        }
-    }
-
-    /**
-     * Affiche les propriétés d'un nœud
-     */
-    showNodeProperties(nodeElement) {
-        if (!this.propertiesContent) return;
-
-        const nodeId = nodeElement.dataset.nodeId;
-        const nodeType = nodeElement.dataset.nodeType;
-
-        this.propertiesContent.innerHTML = `
-            <div class="property-group">
-                <label class="property-label">Type de nœud</label>
-                <input type="text" class="property-input form-control" value="${this.getNodeTypeLabel(nodeType)}" disabled>
-            </div>
-            <div class="property-group">
-                <label class="property-label">ID</label>
-                <input type="text" class="property-input form-control" value="${nodeId}" disabled>
-            </div>
-            <div class="property-group">
-                <label class="property-label">Configuration</label>
-                <small class="form-help">Les propriétés spécifiques au nœud apparaîtront ici.</small>
-            </div>
-        `;
     }
 
     /**
@@ -1258,7 +1236,6 @@ class FlowBuilder {
      */
     openTestModal() {
         if (!this.testModal) return;
-
         this.testModal.classList.add('show');
         this.testConversation.innerHTML = '';
         this.testInput.value = '';
@@ -1289,17 +1266,15 @@ class FlowBuilder {
         const message = this.testInput.value.trim();
         if (!message) return;
 
-        // Afficher le message utilisateur
         const userMsg = document.createElement('div');
         userMsg.className = 'test-message user';
         userMsg.innerHTML = `<div class="test-message-content">${message}</div>`;
         this.testConversation.appendChild(userMsg);
 
-        // Simuler une réponse du bot
         setTimeout(() => {
             const botMsg = document.createElement('div');
             botMsg.className = 'test-message bot';
-            botMsg.innerHTML = `<div class="test-message-content">Fonction de test en développement.</div>`;
+            botMsg.innerHTML = `<div class="test-message-content">Test en cours...</div>`;
             this.testConversation.appendChild(botMsg);
             this.testConversation.scrollTop = this.testConversation.scrollHeight;
         }, 500);
@@ -1312,10 +1287,7 @@ class FlowBuilder {
      * Exporte le flux
      */
     exportFlow() {
-        if (!this.currentFlow) {
-            console.warn('Aucun flux à exporter');
-            return;
-        }
+        if (!this.currentFlow) return;
 
         const flowData = {
             ...this.currentFlow,
@@ -1349,7 +1321,6 @@ class FlowBuilder {
                 const text = await file.text();
                 const flowData = JSON.parse(text);
 
-                // Créer un nouveau flux avec les données importées
                 const response = await fetch('/flow/', {
                     method: 'POST',
                     headers: {
@@ -1386,9 +1357,10 @@ class FlowBuilder {
     serializeNodes() {
         const nodes = [];
         this.nodesContainer.querySelectorAll('.flow-node').forEach(nodeEl => {
+            // Ignorer les nœuds temporaires
+            if (nodeEl.dataset.nodeId.startsWith('temp_')) return;
+
             const config = {};
-            
-            // Récupérer les valeurs des inputs selon le type
             const nodeType = nodeEl.dataset.nodeType;
             const content = nodeEl.querySelector('.node-content');
             
@@ -1439,13 +1411,13 @@ class FlowBuilder {
         const connections = [];
         this.connectionsContainer.querySelectorAll('.flow-connection').forEach(connEl => {
             // Ignorer les connexions temporaires
-            if (!connEl.dataset.connectionId.startsWith('temp_')) {
-                connections.push({
-                    id: connEl.dataset.connectionId,
-                    source_id: connEl.dataset.sourceId,
-                    target_id: connEl.dataset.targetId
-                });
-            }
+            if (connEl.dataset.connectionId.startsWith('temp_')) return;
+
+            connections.push({
+                id: connEl.dataset.connectionId,
+                source_id: connEl.dataset.sourceId,
+                target_id: connEl.dataset.targetId
+            });
         });
         return connections;
     }
@@ -1458,7 +1430,6 @@ class FlowBuilder {
         if (!items) return;
         
         const lowerQuery = query.toLowerCase();
-
         items.forEach(item => {
             const title = item.querySelector('.flow-card-title')?.textContent.toLowerCase() || '';
             const description = item.querySelector('.flow-card-description')?.textContent.toLowerCase() || '';
@@ -1471,7 +1442,6 @@ class FlowBuilder {
      * Marque le flux comme modifié
      */
     markAsChanged() {
-        // Indicateur visuel que le flux a été modifié
         this.flowNameInput.style.borderBottomColor = '#f59e0b';
     }
 
@@ -1490,7 +1460,7 @@ class FlowBuilder {
     }
 
     /**
-     * Contenu HTML d'un nœud avec les valeurs pré-remplies
+     * Contenu HTML d'un nœud
      */
     getNodeContent(nodeData) {
         const config = nodeData.config || {};
@@ -1555,7 +1525,7 @@ class FlowBuilder {
     }
 
     /**
-     * PAS DE NOTIFICATIONS VISUELLES
+     * PAS DE NOTIFICATIONS - Juste console
      */
     showSuccess(message) {
         console.log('✅', message);
@@ -1574,22 +1544,17 @@ class FlowBuilder {
     }
 
     showNotification(message, type = 'info') {
-        // RIEN - Pas de notification visuelle
         console.log(`[${type}]`, message);
     }
 
     /**
-     * Nettoyage complet
+     * Nettoyage
      */
     destroy() {
-        // Cleanup tous les timers
         clearTimeout(this.autoSaveTimer);
-        
-        // Cleanup les menus
         this.hideConnectionMenu();
         this.hideNodeTypeSelector();
         
-        // Cleanup les connexions temporaires
         if (this.tempConnectionEl) {
             this.tempConnectionEl.remove();
             this.tempConnectionEl = null;
@@ -1599,7 +1564,7 @@ class FlowBuilder {
     }
 }
 
-// Initialisation au chargement de la page
+// Initialisation
 document.addEventListener('DOMContentLoaded', () => {
     window.flowBuilder = new FlowBuilder();
 });
