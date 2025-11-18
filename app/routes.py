@@ -6576,6 +6576,299 @@ def delete_widget(widget_id):
 
 
 # ========================
+# RECOMMENDATIONS - Gestion des recommandations
+# ========================
+
+@main_bp.route('/recommendations')
+@login_required
+def recommendations_page():
+    """Page de gestion des recommandations"""
+    return render_template('recommendations.html')
+
+
+@main_bp.route('/api/recommendations', methods=['GET'])
+@login_required
+def get_recommendations():
+    """Récupère toutes les recommandations de l'utilisateur"""
+    from .models import Recommendation
+
+    try:
+        recommendations = Recommendation.query.filter_by(created_by=current_user.id).order_by(
+            Recommendation.created_at.desc()
+        ).all()
+
+        return jsonify({
+            'success': True,
+            'recommendations': [{
+                'id': rec.id,
+                'title': rec.title,
+                'description': rec.description,
+                'recommendation_type': rec.recommendation_type,
+                'category': rec.category,
+                'priority': rec.priority,
+                'status': rec.status,
+                'source': rec.source,
+                'source_data': rec.source_data,
+                'estimated_impact': rec.estimated_impact,
+                'affected_users_count': rec.affected_users_count,
+                'created_at': rec.created_at.isoformat() if rec.created_at else None,
+                'updated_at': rec.updated_at.isoformat() if rec.updated_at else None
+            } for rec in recommendations]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_recommendations: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@main_bp.route('/api/recommendations', methods=['POST'])
+@login_required
+def create_recommendation():
+    """Crée une nouvelle recommandation"""
+    from .models import Recommendation
+    import json
+
+    try:
+        data = request.get_json()
+
+        # Validation
+        if not data.get('title'):
+            return jsonify({
+                'success': False,
+                'error': 'Le titre est obligatoire'
+            }), 400
+
+        if not data.get('description'):
+            return jsonify({
+                'success': False,
+                'error': 'La description est obligatoire'
+            }), 400
+
+        # Validation JSON pour source_data si présent
+        source_data = data.get('source_data')
+        if source_data:
+            try:
+                json.loads(source_data)
+            except json.JSONDecodeError:
+                return jsonify({
+                    'success': False,
+                    'error': 'Format JSON invalide pour source_data'
+                }), 400
+
+        # Créer la recommandation
+        recommendation = Recommendation(
+            title=data['title'],
+            description=data['description'],
+            recommendation_type=data.get('recommendation_type', 'manual'),
+            category=data.get('category'),
+            priority=data.get('priority', 'medium'),
+            status='pending',
+            source=data.get('source'),
+            source_data=source_data,
+            estimated_impact=data.get('estimated_impact'),
+            affected_users_count=data.get('affected_users_count', 0),
+            created_by=current_user.id
+        )
+
+        db.session.add(recommendation)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'recommendation': {
+                'id': recommendation.id,
+                'title': recommendation.title,
+                'description': recommendation.description,
+                'recommendation_type': recommendation.recommendation_type,
+                'category': recommendation.category,
+                'priority': recommendation.priority,
+                'status': recommendation.status,
+                'source': recommendation.source,
+                'source_data': recommendation.source_data,
+                'estimated_impact': recommendation.estimated_impact,
+                'affected_users_count': recommendation.affected_users_count,
+                'created_at': recommendation.created_at.isoformat() if recommendation.created_at else None
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur create_recommendation: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@main_bp.route('/api/recommendations/<int:recommendation_id>', methods=['PUT'])
+@login_required
+def update_recommendation(recommendation_id):
+    """Met à jour une recommandation existante"""
+    from .models import Recommendation
+    import json
+
+    try:
+        recommendation = Recommendation.query.filter_by(
+            id=recommendation_id,
+            created_by=current_user.id
+        ).first()
+
+        if not recommendation:
+            return jsonify({
+                'success': False,
+                'error': 'Recommandation non trouvée'
+            }), 404
+
+        data = request.get_json()
+
+        # Validation JSON pour source_data si présent
+        source_data = data.get('source_data')
+        if source_data:
+            try:
+                json.loads(source_data)
+            except json.JSONDecodeError:
+                return jsonify({
+                    'success': False,
+                    'error': 'Format JSON invalide pour source_data'
+                }), 400
+
+        # Mise à jour
+        if 'title' in data:
+            recommendation.title = data['title']
+        if 'description' in data:
+            recommendation.description = data['description']
+        if 'category' in data:
+            recommendation.category = data['category']
+        if 'priority' in data:
+            recommendation.priority = data['priority']
+        if 'source' in data:
+            recommendation.source = data['source']
+        if 'source_data' in data:
+            recommendation.source_data = source_data
+        if 'estimated_impact' in data:
+            recommendation.estimated_impact = data['estimated_impact']
+        if 'affected_users_count' in data:
+            recommendation.affected_users_count = data['affected_users_count']
+
+        recommendation.updated_at = db.func.now()
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'recommendation': {
+                'id': recommendation.id,
+                'title': recommendation.title,
+                'description': recommendation.description,
+                'recommendation_type': recommendation.recommendation_type,
+                'category': recommendation.category,
+                'priority': recommendation.priority,
+                'status': recommendation.status,
+                'source': recommendation.source,
+                'source_data': recommendation.source_data,
+                'estimated_impact': recommendation.estimated_impact,
+                'affected_users_count': recommendation.affected_users_count,
+                'updated_at': recommendation.updated_at.isoformat() if recommendation.updated_at else None
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur update_recommendation: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@main_bp.route('/api/recommendations/<int:recommendation_id>/status', methods=['PUT'])
+@login_required
+def update_recommendation_status(recommendation_id):
+    """Met à jour le statut d'une recommandation"""
+    from .models import Recommendation
+
+    try:
+        recommendation = Recommendation.query.filter_by(
+            id=recommendation_id,
+            created_by=current_user.id
+        ).first()
+
+        if not recommendation:
+            return jsonify({
+                'success': False,
+                'error': 'Recommandation non trouvée'
+            }), 404
+
+        data = request.get_json()
+        new_status = data.get('status')
+
+        if new_status not in ['pending', 'in_progress', 'implemented', 'dismissed']:
+            return jsonify({
+                'success': False,
+                'error': 'Statut invalide'
+            }), 400
+
+        recommendation.status = new_status
+        recommendation.updated_at = db.func.now()
+
+        # Si implémenté, enregistrer la date
+        if new_status == 'implemented' and not recommendation.implemented_at:
+            recommendation.implemented_at = db.func.now()
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'recommendation': {
+                'id': recommendation.id,
+                'status': recommendation.status,
+                'updated_at': recommendation.updated_at.isoformat() if recommendation.updated_at else None
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur update_recommendation_status: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@main_bp.route('/api/recommendations/<int:recommendation_id>', methods=['DELETE'])
+@login_required
+def delete_recommendation(recommendation_id):
+    """Supprime une recommandation"""
+    from .models import Recommendation
+
+    try:
+        recommendation = Recommendation.query.filter_by(
+            id=recommendation_id,
+            created_by=current_user.id
+        ).first()
+
+        if not recommendation:
+            return jsonify({
+                'success': False,
+                'error': 'Recommandation non trouvée'
+            }), 404
+
+        db.session.delete(recommendation)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Recommandation supprimée'
+        })
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur delete_recommendation: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ========================
 # FIN DU FICHIER routes.py - VERSION COMPLÈTE MISE À JOUR
 # ========================
 
@@ -6588,5 +6881,7 @@ def delete_widget(widget_id):
 # 6. Les routes de diagnostic et monitoring
 # 7. Les fonctionnalités de sécurité et audit
 # 8. Le wizard d'onboarding et le mode simple/avancé
+# 9. La gestion des widgets
+# 10. La gestion des recommandations
 
-logger.info("🚀 Module routes.py chargé avec succès - Version 2.0 avec nouvelle interface de réponses")
+logger.info("🚀 Module routes.py chargé avec succès - Version 2.0 avec widgets et recommandations")

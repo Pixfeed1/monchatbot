@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Recommandations - {{ super() }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/recommendations.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="recommendations-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1>
+                <i data-lucide="lightbulb"></i>
+                Recommandations
+            </h1>
+            <p class="subtitle">Améliorez votre bot avec des recommandations basées sur les demandes des utilisateurs</p>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-primary" id="create-recommendation-btn">
+                <i data-lucide="plus"></i>
+                Nouvelle recommandation
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon pending">
+                <i data-lucide="clock"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value" id="pending-count">0</div>
+                <div class="stat-label">En attente</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon in-progress">
+                <i data-lucide="loader"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value" id="in-progress-count">0</div>
+                <div class="stat-label">En cours</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon implemented">
+                <i data-lucide="check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value" id="implemented-count">0</div>
+                <div class="stat-label">Implémentées</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon high-priority">
+                <i data-lucide="alert-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value" id="high-priority-count">0</div>
+                <div class="stat-label">Priorité haute</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+        <div class="filter-group">
+            <label>Statut:</label>
+            <select id="filter-status" class="filter-select">
+                <option value="">Tous</option>
+                <option value="pending">En attente</option>
+                <option value="in_progress">En cours</option>
+                <option value="implemented">Implémentée</option>
+                <option value="dismissed">Rejetée</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Priorité:</label>
+            <select id="filter-priority" class="filter-select">
+                <option value="">Toutes</option>
+                <option value="critical">Critique</option>
+                <option value="high">Haute</option>
+                <option value="medium">Moyenne</option>
+                <option value="low">Basse</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Type:</label>
+            <select id="filter-type" class="filter-select">
+                <option value="">Tous</option>
+                <option value="manual">Manuelle</option>
+                <option value="auto">Automatique</option>
+                <option value="ai_suggested">Suggérée IA</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Catégorie:</label>
+            <select id="filter-category" class="filter-select">
+                <option value="">Toutes</option>
+                <option value="response_quality">Qualité des réponses</option>
+                <option value="new_topic">Nouveau sujet</option>
+                <option value="missing_info">Information manquante</option>
+                <option value="flow_improvement">Amélioration flux</option>
+                <option value="other">Autre</option>
+            </select>
+        </div>
+        <button class="btn btn-secondary" id="reset-filters-btn">
+            <i data-lucide="x"></i>
+            Réinitialiser
+        </button>
+    </div>
+
+    <!-- Recommendations Grid -->
+    <div class="recommendations-grid" id="recommendations-grid">
+        <!-- Les recommandations seront insérées ici dynamiquement -->
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="empty-state" style="display: none;">
+        <i data-lucide="lightbulb"></i>
+        <h3>Aucune recommandation</h3>
+        <p>Créez votre première recommandation pour améliorer votre bot</p>
+        <button class="btn btn-primary" onclick="document.getElementById('create-recommendation-btn').click()">
+            <i data-lucide="plus"></i>
+            Créer une recommandation
+        </button>
+    </div>
+</div>
+
+<!-- Modal: Create/Edit Recommendation -->
+<div class="modal" id="recommendation-modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3 id="modal-title">Nouvelle recommandation</h3>
+            <button class="close-modal" id="close-recommendation-modal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="recommendation-form">
+                <!-- Title -->
+                <div class="form-group">
+                    <label for="recommendation-title">
+                        Titre <span class="required">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="recommendation-title"
+                        class="form-control"
+                        placeholder="Ex: Ajouter des informations sur les horaires d'ouverture"
+                        maxlength="255"
+                        required
+                    >
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label for="recommendation-description">
+                        Description <span class="required">*</span>
+                    </label>
+                    <textarea
+                        id="recommendation-description"
+                        class="form-control"
+                        rows="4"
+                        placeholder="Décrivez en détail la recommandation et pourquoi elle est importante"
+                        required
+                    ></textarea>
+                </div>
+
+                <!-- Category & Priority -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recommendation-category">Catégorie</label>
+                        <select id="recommendation-category" class="form-control">
+                            <option value="response_quality">Qualité des réponses</option>
+                            <option value="new_topic">Nouveau sujet</option>
+                            <option value="missing_info">Information manquante</option>
+                            <option value="flow_improvement">Amélioration flux</option>
+                            <option value="other">Autre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="recommendation-priority">Priorité</label>
+                        <select id="recommendation-priority" class="form-control">
+                            <option value="low">Basse</option>
+                            <option value="medium" selected>Moyenne</option>
+                            <option value="high">Haute</option>
+                            <option value="critical">Critique</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Impact & Affected Users -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recommendation-impact">Impact estimé</label>
+                        <select id="recommendation-impact" class="form-control">
+                            <option value="">Non estimé</option>
+                            <option value="low">Faible</option>
+                            <option value="medium">Moyen</option>
+                            <option value="high">Élevé</option>
+                            <option value="very_high">Très élevé</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="recommendation-users">Utilisateurs affectés</label>
+                        <input
+                            type="number"
+                            id="recommendation-users"
+                            class="form-control"
+                            placeholder="Ex: 15"
+                            min="0"
+                        >
+                    </div>
+                </div>
+
+                <!-- Source -->
+                <div class="form-group">
+                    <label for="recommendation-source">Source (optionnel)</label>
+                    <input
+                        type="text"
+                        id="recommendation-source"
+                        class="form-control"
+                        placeholder="Ex: Requêtes non traitées, feedback utilisateur, analyse IA"
+                    >
+                </div>
+
+                <!-- Source Data (JSON) -->
+                <div class="form-group">
+                    <label for="recommendation-source-data">
+                        Données source (JSON - optionnel)
+                        <span class="help-text">Format JSON avec contexte supplémentaire</span>
+                    </label>
+                    <textarea
+                        id="recommendation-source-data"
+                        class="form-control code-input"
+                        rows="3"
+                        placeholder='{"query_ids": [123, 456], "frequency": 15}'
+                    ></textarea>
+                    <span class="error-message" id="json-error" style="display: none;">
+                        JSON invalide
+                    </span>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancel-recommendation">Annuler</button>
+            <button class="btn btn-primary" id="save-recommendation">
+                <i data-lucide="save"></i>
+                Enregistrer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: View Recommendation Details -->
+<div class="modal" id="view-recommendation-modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3 id="view-modal-title"></h3>
+            <button class="close-modal" id="close-view-modal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="recommendation-details">
+                <!-- Sera rempli dynamiquement -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="close-view-btn">Fermer</button>
+            <button class="btn btn-primary" id="edit-from-view-btn">
+                <i data-lucide="edit"></i>
+                Modifier
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/recommendations.js') }}"></script>
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Initialize recommendations manager
+    const recommendationsManager = new RecommendationsManager();
+</script>
+{% endblock %}
