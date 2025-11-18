@@ -481,12 +481,16 @@ class FlowBuilder {
      * Rendu d'un nœud dans le canvas
      */
     renderNode(id, nodeData) {
+        console.log('renderNode appelé - ID:', id, 'Type:', nodeData.type);
+
         const nodeElement = document.createElement('div');
         nodeElement.className = `flow-node ${nodeData.type}-node fade-in`;
         nodeElement.dataset.nodeId = id;
         nodeElement.dataset.nodeType = nodeData.type;
         nodeElement.style.left = `${nodeData.position.x}px`;
         nodeElement.style.top = `${nodeData.position.y}px`;
+
+        console.log('Nœud créé avec data-node-id:', nodeElement.dataset.nodeId);
 
         nodeElement.innerHTML = `
             <div class="node-header">
@@ -519,10 +523,13 @@ class FlowBuilder {
         const header = nodeElement.querySelector('.node-header');
         header.addEventListener('mousedown', (e) => this.startNodeDrag(e, nodeElement));
 
-        // Bouton suppression
-        nodeElement.querySelector('.delete-node').addEventListener('click', (e) => {
+        // Bouton suppression - récupérer l'ID depuis le DOM pour éviter problèmes de closure
+        const deleteBtn = nodeElement.querySelector('.delete-node');
+        deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.deleteNode(id);
+            const nodeId = nodeElement.dataset.nodeId;
+            console.log('Suppression du nœud ID:', nodeId, 'Type:', nodeElement.dataset.nodeType);
+            this.deleteNode(nodeId);
         });
 
         // Connexions
@@ -603,7 +610,22 @@ class FlowBuilder {
      * Supprime un nœud
      */
     async deleteNode(nodeId) {
-        if (!confirm('Supprimer ce nœud ?')) return;
+        console.log('deleteNode appelé avec nodeId:', nodeId);
+
+        // Vérifier que le nœud existe avant de demander confirmation
+        const nodeEl = this.nodesContainer.querySelector(`[data-node-id="${nodeId}"]`);
+        if (!nodeEl) {
+            console.error('Nœud introuvable dans le DOM:', nodeId);
+            this.showError('Nœud introuvable');
+            return;
+        }
+
+        console.log('Nœud trouvé:', nodeEl.dataset.nodeType, nodeEl.dataset.nodeId);
+
+        if (!confirm(`Supprimer ce nœud ${nodeEl.dataset.nodeType} ?`)) {
+            console.log('Suppression annulée par l\'utilisateur');
+            return;
+        }
 
         try {
             const response = await fetch(`/flow/nodes/${nodeId}`, {
@@ -617,12 +639,15 @@ class FlowBuilder {
                 throw new Error('Erreur lors de la suppression');
             }
 
+            console.log('Suppression du nœud dans le DOM:', nodeId);
+
             // Supprimer l'élément du DOM
-            const nodeEl = this.nodesContainer.querySelector(`[data-node-id="${nodeId}"]`);
-            if (nodeEl) nodeEl.remove();
+            nodeEl.remove();
 
             // Supprimer les connexions associées
-            document.querySelectorAll(`[data-source-id="${nodeId}"], [data-target-id="${nodeId}"]`).forEach(el => el.remove());
+            const connections = this.nodesContainer.querySelectorAll(`[data-source-id="${nodeId}"], [data-target-id="${nodeId}"]`);
+            console.log('Connexions à supprimer:', connections.length);
+            connections.forEach(el => el.remove());
 
             this.showSuccess('Nœud supprimé');
         } catch (error) {
