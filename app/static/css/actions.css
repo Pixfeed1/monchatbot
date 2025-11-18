@@ -415,6 +415,94 @@ textarea.form-control {
     font-weight: 600;
 }
 
+/* Cartes de redirection */
+.redirection-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+}
+
+.redirection-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.redirection-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.redirection-card .card-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.redirection-card .card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.redirection-card .form-group {
+    margin-bottom: 0;
+}
+
+.redirection-card .url-display,
+.redirection-card .conditions-display {
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    color: #475569;
+    word-break: break-all;
+}
+
+.redirection-card .delete-redirection-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+.redirection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.add-redirection-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.add-redirection-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: #eff6ff;
+}
+
+.add-redirection-btn i {
+    width: 20px;
+    height: 20px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .action-type-selector {

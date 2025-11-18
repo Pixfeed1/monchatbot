@@ -5079,6 +5079,149 @@ def update_ticket_config():
         }), 500
 
 
+@main_bp.route('/actions/redirections', methods=['GET'])
+@login_required
+def get_form_redirections():
+    """Récupère la liste des redirections de formulaires"""
+    try:
+        redirections = FormRedirection.query.all()
+
+        redirections_data = []
+        for redirection in redirections:
+            redirections_data.append({
+                'id': redirection.id,
+                'name': redirection.name,
+                'url': redirection.url,
+                'conditions': redirection.conditions,
+                'parameters': redirection.parameters
+            })
+
+        return jsonify({
+            'success': True,
+            'redirections': redirections_data
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_form_redirections: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/actions/redirections', methods=['POST'])
+@login_required
+def create_form_redirection():
+    """Crée une nouvelle redirection de formulaire"""
+    try:
+        data = request.get_json()
+
+        name = data.get('name')
+        url = data.get('url')
+        conditions = data.get('conditions', '')
+        parameters = data.get('parameters', '')
+
+        if not name or not url:
+            return jsonify({
+                'success': False,
+                'error': 'Nom et URL requis'
+            }), 400
+
+        redirection = FormRedirection(
+            name=name,
+            url=url,
+            conditions=conditions,
+            parameters=parameters
+        )
+
+        db.session.add(redirection)
+        db.session.commit()
+
+        logger.info(f"Redirection de formulaire créée: {name}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Redirection créée avec succès',
+            'redirection': {
+                'id': redirection.id,
+                'name': redirection.name,
+                'url': redirection.url,
+                'conditions': redirection.conditions,
+                'parameters': redirection.parameters
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur create_form_redirection: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/actions/redirections/<int:redirection_id>', methods=['PUT'])
+@login_required
+def update_form_redirection(redirection_id):
+    """Met à jour une redirection de formulaire"""
+    try:
+        redirection = FormRedirection.query.get_or_404(redirection_id)
+        data = request.get_json()
+
+        if 'name' in data:
+            redirection.name = data['name']
+        if 'url' in data:
+            redirection.url = data['url']
+        if 'conditions' in data:
+            redirection.conditions = data['conditions']
+        if 'parameters' in data:
+            redirection.parameters = data['parameters']
+
+        db.session.commit()
+
+        logger.info(f"Redirection {redirection_id} mise à jour")
+
+        return jsonify({
+            'success': True,
+            'message': 'Redirection mise à jour avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur update_form_redirection: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/actions/redirections/<int:redirection_id>', methods=['DELETE'])
+@login_required
+def delete_form_redirection(redirection_id):
+    """Supprime une redirection de formulaire"""
+    try:
+        redirection = FormRedirection.query.get_or_404(redirection_id)
+        name = redirection.name
+
+        db.session.delete(redirection)
+        db.session.commit()
+
+        logger.info(f"Redirection {redirection_id} supprimée")
+
+        return jsonify({
+            'success': True,
+            'message': f'{name} supprimé avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur delete_form_redirection: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
 ###############################################
 # ROUTES - CANAUX DE COMMUNICATION (INTEGRATIONS)
 ###############################################

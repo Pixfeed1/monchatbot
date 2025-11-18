@@ -2,6 +2,7 @@ class ActionsManager {
     constructor() {
         this.csrfToken = this.getCsrfToken();
         this.currentSection = 'email';
+        this.redirections = [];
         this.initializeElements();
         this.setupEventListeners();
         this.loadInitialData();
@@ -94,6 +95,9 @@ class ActionsManager {
 
             // Charger les configurations
             await this.loadConfigurations();
+
+            // Charger les redirections
+            await this.loadRedirections();
         } catch (error) {
             console.error('Erreur lors du chargement des données:', error);
             this.showError('Erreur lors du chargement des données');
@@ -492,8 +496,231 @@ class ActionsManager {
         }
     }
 
+    async loadRedirections() {
+        try {
+            const response = await fetch('/actions/redirections', {
+                headers: {
+                    'X-CSRF-Token': this.csrfToken
+                }
+            });
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+            if (data.success) {
+                this.redirections = data.redirections;
+                this.renderRedirections();
+            }
+        } catch (error) {
+            console.error('Erreur loadRedirections:', error);
+        }
+    }
+
+    renderRedirections() {
+        const redirectionList = document.querySelector('#forms-config .redirection-list');
+        if (!redirectionList) return;
+
+        // Supprimer les anciennes cartes (sauf le bouton d'ajout)
+        const existingCards = redirectionList.querySelectorAll('.redirection-card');
+        existingCards.forEach(card => card.remove());
+
+        // Ajouter les redirections
+        const addBtn = redirectionList.querySelector('.add-redirection-btn');
+
+        this.redirections.forEach(redirection => {
+            const card = document.createElement('div');
+            card.className = 'redirection-card';
+            card.dataset.redirectionId = redirection.id;
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <h4>${redirection.name}</h4>
+                    <button class="btn btn-danger btn-sm delete-redirection-btn" data-redirection-id="${redirection.id}">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <label>URL du formulaire</label>
+                        <div class="url-display">${redirection.url}</div>
+                    </div>
+                    ${redirection.conditions ? `
+                    <div class="form-group">
+                        <label>Conditions</label>
+                        <div class="conditions-display">${redirection.conditions}</div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            if (addBtn) {
+                redirectionList.insertBefore(card, addBtn);
+            } else {
+                redirectionList.appendChild(card);
+            }
+
+            // Ajouter listener pour le bouton supprimer
+            const deleteBtn = card.querySelector('.delete-redirection-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.deleteRedirection(redirection.id);
+                });
+            }
+        });
+
+        // Réinitialiser les icônes Lucide
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
     showRedirectionModal() {
-        this.showInfo('Fonctionnalité de redirection en cours de développement');
+        // Créer la modale dynamiquement
+        const modal = document.createElement('div');
+        modal.className = 'modal show';
+        modal.id = 'redirectionModal';
+
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Nouvelle Redirection de Formulaire</h3>
+                    <button class="close-modal" id="close-redirection-modal">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="redirection-form">
+                        <div class="form-group">
+                            <label class="form-label">Nom de la redirection</label>
+                            <input type="text" class="form-control" name="name" required placeholder="Ex: Formulaire de contact">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">URL du formulaire</label>
+                            <input type="url" class="form-control" name="url" required placeholder="https://example.com/form">
+                            <small class="help-text">URL complète du formulaire externe</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Conditions de déclenchement (optionnel)</label>
+                            <textarea class="form-control" name="conditions" rows="3" placeholder="Ex: Quand l'utilisateur demande à nous contacter"></textarea>
+                            <small class="help-text">Conditions pour déclencher cette redirection</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Paramètres à transmettre (optionnel)</label>
+                            <textarea class="form-control" name="parameters" rows="2" placeholder="Ex: email={{user_email}}&name={{user_name}}"></textarea>
+                            <small class="help-text">Paramètres URL à ajouter automatiquement</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="cancel-redirection-btn">Annuler</button>
+                    <button class="btn btn-primary" id="save-redirection-btn">
+                        <i data-lucide="save"></i>
+                        Créer
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Réinitialiser les icônes Lucide
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        // Event listeners
+        const closeBtn = modal.querySelector('#close-redirection-modal');
+        const cancelBtn = modal.querySelector('#cancel-redirection-btn');
+        const saveBtn = modal.querySelector('#save-redirection-btn');
+
+        const closeModal = () => {
+            modal.remove();
+        };
+
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        saveBtn.addEventListener('click', () => this.saveRedirection(modal));
+
+        // Fermer en cliquant à l'extérieur
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    }
+
+    async saveRedirection(modal) {
+        const form = modal.querySelector('#redirection-form');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const formData = new FormData(form);
+        const data = {
+            name: formData.get('name'),
+            url: formData.get('url'),
+            conditions: formData.get('conditions') || '',
+            parameters: formData.get('parameters') || ''
+        };
+
+        try {
+            const saveBtn = modal.querySelector('#save-redirection-btn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i data-lucide="loader"></i> Création...';
+
+            const response = await fetch('/actions/redirections', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': this.csrfToken
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess(result.message || 'Redirection créée avec succès');
+                await this.loadRedirections();
+                modal.remove();
+            } else {
+                this.showError(result.error || 'Erreur lors de la création');
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i data-lucide="save"></i> Créer';
+            }
+        } catch (error) {
+            console.error('Erreur saveRedirection:', error);
+            this.showError('Erreur lors de la création de la redirection');
+        }
+    }
+
+    async deleteRedirection(redirectionId) {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette redirection ?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/actions/redirections/${redirectionId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-Token': this.csrfToken
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess(result.message || 'Redirection supprimée');
+                await this.loadRedirections();
+            } else {
+                this.showError(result.error || 'Erreur lors de la suppression');
+            }
+        } catch (error) {
+            console.error('Erreur deleteRedirection:', error);
+            this.showError('Erreur lors de la suppression de la redirection');
+        }
     }
 
     // Méthodes de notification
