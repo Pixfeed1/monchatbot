@@ -789,7 +789,7 @@ class FlowBuilder {
         svg.style.left = '0';
         svg.style.width = '100%';
         svg.style.height = '100%';
-        svg.style.pointerEvents = 'auto';
+        svg.style.pointerEvents = 'none';  // SVG ne capte RIEN
         svg.style.zIndex = '0';
 
         // Chemin invisible large pour capturer les clics (20px)

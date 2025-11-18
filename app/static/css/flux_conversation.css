@@ -356,7 +356,7 @@
     min-width: 200%;
     padding: 50px;
     z-index: 0;
-    pointer-events: none;
+    pointer-events: none;  /* Le conteneur ne capte rien */
 }
 
 /* Conteneur des nœuds (au-dessus) */
@@ -367,7 +367,8 @@
     padding: 50px;
     transform-origin: 0 0;
     transition: transform 0.1s ease-out;
-    z-index: 1;
+    z-index: 10;  /* BIEN au-dessus des connexions */
+    pointer-events: auto;  /* Laisse passer les clics aux enfants */
 }
 
 /* NŒUDS - Simplifié avec charte bleue */
