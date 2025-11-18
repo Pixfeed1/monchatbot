@@ -729,9 +729,46 @@ class SecurityAuditLog(db.Model):
     success = db.Column(db.Boolean, default=True)
     risk_level = db.Column(db.String(20), default='low')  # low, medium, high, critical
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Relation avec User
     user = db.relationship('User', backref=db.backref('security_logs', lazy=True))
+
+
+class UnhandledQuery(db.Model):
+    """Requêtes non comprises par le bot"""
+    __tablename__ = 'unhandled_query'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_message = db.Column(db.Text, nullable=False)  # Message de l'utilisateur
+    user_identifier = db.Column(db.String(255), nullable=True)  # ID ou email de l'utilisateur
+    channel = db.Column(db.String(50), nullable=True)  # Canal de communication (web, whatsapp, etc.)
+    confidence_score = db.Column(db.Float, nullable=True)  # Score de confiance du bot (si disponible)
+    bot_response = db.Column(db.Text, nullable=True)  # Réponse donnée par le bot
+    reformulation_count = db.Column(db.Integer, default=1)  # Nombre de fois que l'utilisateur a reformulé
+    context = db.Column(db.Text, nullable=True)  # Contexte de la conversation (JSON)
+    resolved = db.Column(db.Boolean, default=False)  # Si la requête a été traitée/améliorée
+    resolved_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Admin qui a résolu
+    resolution_notes = db.Column(db.Text, nullable=True)  # Notes sur la résolution
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relation avec User (admin qui a résolu)
+    resolver = db.relationship('User', backref=db.backref('resolved_queries', lazy=True))
+
+    @property
+    def context_dict(self):
+        """Retourne le contexte comme dictionnaire"""
+        if self.context:
+            try:
+                return json.loads(self.context)
+            except:
+                return {}
+        return {}
+
+    @context_dict.setter
+    def context_dict(self, value):
+        """Définit le contexte depuis un dictionnaire"""
+        self.context = json.dumps(value) if value else None
 
 
 ###############################################
