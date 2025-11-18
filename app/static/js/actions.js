@@ -47,9 +47,12 @@ class ActionsManager {
         }
 
         // Gestion des ajouts de déclencheurs
+        console.log('Found trigger buttons:', this.addTriggerBtns.length);
         this.addTriggerBtns.forEach(button => {
+            console.log('Attaching listener to button with type:', button.dataset.triggerType);
             button.addEventListener('click', () => {
                 const triggerType = button.dataset.triggerType || 'email';
+                console.log('Trigger button clicked, type:', triggerType);
                 this.showTriggerModal(triggerType);
             });
         });
