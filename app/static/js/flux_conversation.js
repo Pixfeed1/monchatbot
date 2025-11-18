@@ -687,7 +687,7 @@ class FlowBuilder {
     }
 
     /**
-     * Dessine la connexion temporaire
+     * Dessine la connexion temporaire (version fluide)
      */
     drawTempConnection(e) {
         if (!this.tempConnectionEl) return;
@@ -695,14 +695,21 @@ class FlowBuilder {
         const sourceNode = this.nodesContainer.querySelector(`[data-node-id="${this.sourceNodeId}"]`);
         if (!sourceNode) return;
 
-        const sourcePort = sourceNode.querySelector('.port-out');
-        const sourceRect = sourcePort.getBoundingClientRect();
-        const canvasRect = this.flowCanvas.getBoundingClientRect();
+        // Utiliser les positions directes pour plus de fluidité
+        const sourceLeft = parseFloat(sourceNode.style.left) || 0;
+        const sourceTop = parseFloat(sourceNode.style.top) || 0;
+        const sourceWidth = sourceNode.offsetWidth;
+        const sourceHeight = sourceNode.offsetHeight;
 
-        const x1 = sourceRect.left + sourceRect.width / 2 - canvasRect.left + this.flowCanvas.scrollLeft;
-        const y1 = sourceRect.top + sourceRect.height / 2 - canvasRect.top + this.flowCanvas.scrollTop;
-        const x2 = e.clientX - canvasRect.left + this.flowCanvas.scrollLeft;
-        const y2 = e.clientY - canvasRect.top + this.flowCanvas.scrollTop;
+        // Point de départ (port de sortie)
+        const x1 = sourceLeft + sourceWidth;
+        const y1 = sourceTop + sourceHeight / 2;
+
+        // Point d'arrivée (curseur)
+        const canvasRect = this.flowCanvas.getBoundingClientRect();
+        const scale = this.currentScale ? this.currentScale() : 1;
+        const x2 = (e.clientX - canvasRect.left + this.flowCanvas.scrollLeft) / scale;
+        const y2 = (e.clientY - canvasRect.top + this.flowCanvas.scrollTop) / scale;
 
         const path = this.tempConnectionEl.querySelector('path');
         path.setAttribute('d', this.createBezierPath(x1, y1, x2, y2));
@@ -790,10 +797,10 @@ class FlowBuilder {
         path.setAttribute('fill', 'none');
         svg.appendChild(path);
 
-        // Click pour afficher tooltip de suppression
-        svg.addEventListener('click', (e) => {
+        // Double-clic pour afficher menu (supprimer + ajouter nœud)
+        svg.addEventListener('dblclick', (e) => {
             e.stopPropagation();
-            this.showConnectionTooltip(e, id, svg);
+            this.showConnectionMenu(e, id, sourceId, targetId, svg);
         });
 
         this.nodesContainer.insertBefore(svg, this.nodesContainer.firstChild);
@@ -902,27 +909,32 @@ class FlowBuilder {
     }
 
     /**
-     * Affiche une tooltip pour supprimer une connexion
+     * Affiche le menu de connexion (supprimer + ajouter nœud)
      */
-    showConnectionTooltip(e, connectionId, connectionElement) {
-        // Supprimer toute tooltip existante
-        this.hideConnectionTooltip();
+    showConnectionMenu(e, connectionId, sourceId, targetId, connectionElement) {
+        // Supprimer tout menu existant
+        this.hideConnectionMenu();
 
-        const tooltip = document.createElement('div');
-        tooltip.className = 'connection-tooltip';
-        tooltip.innerHTML = `
-            <button class="btn-delete-tiny" data-action="delete" title="Supprimer">
+        const menu = document.createElement('div');
+        menu.className = 'connection-menu';
+        menu.innerHTML = `
+            <button class="btn-connection-action btn-delete" data-action="delete" title="Supprimer">
                 <i data-lucide="trash-2"></i>
+            </button>
+            <button class="btn-connection-action btn-add" data-action="add" title="Ajouter un nœud">
+                <i data-lucide="plus"></i>
             </button>
         `;
 
-        // Positionner la tooltip au point de clic
+        // Positionner le menu au point de clic
         const canvasRect = this.flowCanvas.getBoundingClientRect();
-        tooltip.style.left = `${e.clientX - canvasRect.left + this.flowCanvas.scrollLeft}px`;
-        tooltip.style.top = `${e.clientY - canvasRect.top + this.flowCanvas.scrollTop}px`;
+        const scale = this.currentScale ? this.currentScale() : 1;
+        menu.style.left = `${(e.clientX - canvasRect.left + this.flowCanvas.scrollLeft) / scale}px`;
+        menu.style.top = `${(e.clientY - canvasRect.top + this.flowCanvas.scrollTop) / scale}px`;
 
-        this.nodesContainer.appendChild(tooltip);
-        this.currentTooltip = tooltip;
+        this.nodesContainer.appendChild(menu);
+        this.currentConnectionMenu = menu;
+        this.currentConnectionMenuData = { connectionId, sourceId, targetId, clickX: e.clientX, clickY: e.clientY };
 
         // Rafraîchir les icônes
         if (typeof lucide !== 'undefined') {
@@ -930,26 +942,88 @@ class FlowBuilder {
         }
 
         // Bouton supprimer
-        const deleteBtn = tooltip.querySelector('[data-action="delete"]');
+        const deleteBtn = menu.querySelector('[data-action="delete"]');
         deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.deleteConnection(connectionId);
-            this.hideConnectionTooltip();
+            this.hideConnectionMenu();
+        });
+
+        // Bouton ajouter nœud
+        const addBtn = menu.querySelector('[data-action="add"]');
+        addBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await this.addNodeBetween(sourceId, targetId, connectionId);
+            this.hideConnectionMenu();
         });
 
         // Fermer au clic ailleurs
         setTimeout(() => {
-            document.addEventListener('click', this.hideConnectionTooltip.bind(this), { once: true });
+            document.addEventListener('click', this.hideConnectionMenu.bind(this), { once: true });
         }, 100);
     }
 
     /**
-     * Cache la tooltip de connexion
+     * Cache le menu de connexion
      */
-    hideConnectionTooltip() {
-        if (this.currentTooltip) {
-            this.currentTooltip.remove();
-            this.currentTooltip = null;
+    hideConnectionMenu() {
+        if (this.currentConnectionMenu) {
+            this.currentConnectionMenu.remove();
+            this.currentConnectionMenu = null;
+            this.currentConnectionMenuData = null;
+        }
+    }
+
+    /**
+     * Ajoute un nœud entre deux nœuds existants
+     */
+    async addNodeBetween(sourceId, targetId, connectionId) {
+        try {
+            // Calculer la position au milieu entre les deux nœuds
+            const sourceNode = this.nodesContainer.querySelector(`[data-node-id="${sourceId}"]`);
+            const targetNode = this.nodesContainer.querySelector(`[data-node-id="${targetId}"]`);
+
+            if (!sourceNode || !targetNode) {
+                this.showError('Nœuds introuvables');
+                return;
+            }
+
+            const sourceLeft = parseFloat(sourceNode.style.left) || 0;
+            const sourceTop = parseFloat(sourceNode.style.top) || 0;
+            const targetLeft = parseFloat(targetNode.style.left) || 0;
+            const targetTop = parseFloat(targetNode.style.top) || 0;
+
+            const midX = (sourceLeft + targetLeft) / 2;
+            const midY = (sourceTop + targetTop) / 2;
+
+            // Créer un nouveau nœud de type "action" au milieu
+            const response = await fetch(`/flow/${this.currentFlow.id}/nodes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': this.csrfToken
+                },
+                body: JSON.stringify({
+                    type: 'action',
+                    position: { x: midX, y: midY },
+                    config: { label: 'Nouvelle action' }
+                })
+            });
+
+            if (!response.ok) throw new Error('Erreur création nœud');
+
+            const newNode = await response.json();
+
+            // Supprimer l'ancienne connexion
+            await this.deleteConnection(connectionId);
+
+            // Créer deux nouvelles connexions : source -> nouveau, nouveau -> target
+            await this.createConnection(sourceId, newNode.id);
+            await this.createConnection(newNode.id, targetId);
+
+        } catch (error) {
+            console.error('Erreur addNodeBetween:', error);
+            this.showError('Impossible d\'ajouter le nœud');
         }
     }
 
@@ -1280,8 +1354,8 @@ class FlowBuilder {
      * Nettoyage à la destruction
      */
     destroy() {
-        // Cleanup de la tooltip si elle existe
-        this.hideConnectionTooltip();
+        // Cleanup du menu de connexion
+        this.hideConnectionMenu();
 
         // Cleanup des event listeners si nécessaire
         console.log('FlowBuilder destroyed');
