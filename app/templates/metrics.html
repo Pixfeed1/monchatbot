@@ -17,12 +17,31 @@
 
 <!-- Filtres de période -->
 <section class="config-section">
-    <div class="period-filters">
-        <button class="period-btn active" data-period="today">Aujourd'hui</button>
-        <button class="period-btn" data-period="week">7 jours</button>
-        <button class="period-btn" data-period="month">30 jours</button>
-        <button class="period-btn" data-period="year">1 an</button>
-        <button class="period-btn" data-period="all">Tout</button>
+    <div class="period-filters-container">
+        <div class="period-filters">
+            <button class="period-btn active" data-period="today">Aujourd'hui</button>
+            <button class="period-btn" data-period="week">7 jours</button>
+            <button class="period-btn" data-period="month">30 jours</button>
+            <button class="period-btn" data-period="year">1 an</button>
+            <button class="period-btn" data-period="all">Tout</button>
+        </div>
+        <div class="export-dropdown">
+            <button class="export-btn" id="export-btn">
+                <i data-lucide="download"></i>
+                Exporter
+                <i data-lucide="chevron-down"></i>
+            </button>
+            <div class="export-menu" id="export-menu">
+                <button class="export-option" data-format="csv">
+                    <i data-lucide="file-spreadsheet"></i>
+                    Exporter en CSV
+                </button>
+                <button class="export-option" data-format="pdf">
+                    <i data-lucide="file-text"></i>
+                    Exporter en PDF
+                </button>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -320,5 +339,7 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="{{ url_for('static', filename='js/metrics.js') }}?v=20251118g"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/metrics.js') }}?v=20251118h"></script>
 {% endblock %}

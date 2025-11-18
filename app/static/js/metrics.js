@@ -13,6 +13,7 @@ class MetricsManager {
     init() {
         this.setupPeriodFilters();
         this.setupDragAndDrop();
+        this.setupExport();
         this.restoreKpiOrder();
         this.loadMetrics();
 
@@ -530,6 +531,252 @@ class MetricsManager {
             const secs = Math.round(seconds % 60);
             return `${minutes}m ${secs}s`;
         }
+    }
+
+    setupExport() {
+        const exportBtn = document.getElementById('export-btn');
+        const exportMenu = document.getElementById('export-menu');
+        const exportOptions = document.querySelectorAll('.export-option');
+
+        // Toggle menu
+        exportBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            exportMenu.classList.toggle('show');
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', () => {
+            exportMenu.classList.remove('show');
+        });
+
+        // Handle export options
+        exportOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const format = option.dataset.format;
+                exportMenu.classList.remove('show');
+
+                if (format === 'csv') {
+                    this.exportCSV();
+                } else if (format === 'pdf') {
+                    this.exportPDF();
+                }
+            });
+        });
+    }
+
+    exportCSV() {
+        const period = this.getPeriodLabel();
+        const now = new Date().toLocaleString('fr-FR').replace(/[/:]/g, '-');
+
+        // Prepare CSV data
+        let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+
+        // Header
+        csvContent += `Rapport Métriques LeoBot - ${period}\n`;
+        csvContent += `Généré le: ${new Date().toLocaleString('fr-FR')}\n\n`;
+
+        // KPIs
+        csvContent += "INDICATEURS CLÉS\n";
+        csvContent += "Métrique,Valeur,Tendance\n";
+        csvContent += `Conversations totales,${document.getElementById('total-conversations').textContent},${document.getElementById('conversations-trend').textContent}\n`;
+        csvContent += `Messages échangés,${document.getElementById('total-messages').textContent},${document.getElementById('messages-trend').textContent}\n`;
+        csvContent += `Utilisateurs actifs,${document.getElementById('active-users').textContent},${document.getElementById('users-trend').textContent}\n`;
+        csvContent += `Taux de résolution,${document.getElementById('resolution-rate').textContent},${document.getElementById('resolution-trend').textContent}\n`;
+        csvContent += `Temps de réponse moyen,${document.getElementById('avg-response-time').textContent},${document.getElementById('response-time-trend').textContent}\n`;
+        csvContent += `Satisfaction client,${document.getElementById('satisfaction-score').textContent},${document.getElementById('satisfaction-trend').textContent}\n`;
+
+        // API Usage
+        csvContent += "\nUTILISATION DE L'IA\n";
+        csvContent += "Métrique,Valeur\n";
+        csvContent += `Tokens utilisés,${document.getElementById('total-tokens').textContent}\n`;
+        csvContent += `Coût estimé,${document.getElementById('total-cost').textContent}\n`;
+        csvContent += `Requêtes totales,${document.getElementById('total-requests').textContent}\n`;
+        csvContent += `Requêtes réussies,${document.getElementById('successful-requests').textContent}\n`;
+        csvContent += `Requêtes échouées,${document.getElementById('failed-requests').textContent}\n`;
+
+        // Knowledge Base
+        csvContent += "\nBASE DE CONNAISSANCES\n";
+        csvContent += "Métrique,Valeur\n";
+        csvContent += `Documents,${document.getElementById('total-documents').textContent}\n`;
+        csvContent += `FAQs,${document.getElementById('total-faqs').textContent}\n`;
+        csvContent += `Catégories,${document.getElementById('total-categories').textContent}\n`;
+        csvContent += `Taux d'utilisation,${document.getElementById('kb-usage-rate').textContent}\n`;
+
+        // Actions
+        csvContent += "\nACTIONS ET AUTOMATISATIONS\n";
+        csvContent += "Métrique,Valeur\n";
+        csvContent += `Déclencheurs actifs,${document.getElementById('active-triggers').textContent}\n`;
+        csvContent += `Actions exécutées,${document.getElementById('executed-actions').textContent}\n`;
+        csvContent += `Emails envoyés,${document.getElementById('emails-sent').textContent}\n`;
+        csvContent += `Redirections formulaire,${document.getElementById('form-redirects').textContent}\n`;
+
+        // Download
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `metriques_leobot_${now}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        console.log('Export CSV terminé');
+    }
+
+    async exportPDF() {
+        try {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+
+            const period = this.getPeriodLabel();
+            const now = new Date().toLocaleString('fr-FR');
+
+            // Header
+            pdf.setFillColor(13, 110, 253);
+            pdf.rect(0, 0, pageWidth, 40, 'F');
+
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFontSize(24);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('Rapport Métriques LeoBot', pageWidth / 2, 20, { align: 'center' });
+
+            pdf.setFontSize(12);
+            pdf.setFont(undefined, 'normal');
+            pdf.text(`Période: ${period}`, pageWidth / 2, 28, { align: 'center' });
+            pdf.text(`Généré le: ${now}`, pageWidth / 2, 35, { align: 'center' });
+
+            let yPos = 50;
+
+            // KPIs Section
+            pdf.setTextColor(0, 0, 0);
+            pdf.setFontSize(16);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('Indicateurs Clés', 15, yPos);
+            yPos += 10;
+
+            pdf.setFontSize(11);
+            pdf.setFont(undefined, 'normal');
+
+            const kpis = [
+                ['Conversations totales', document.getElementById('total-conversations').textContent, document.getElementById('conversations-trend').textContent],
+                ['Messages échangés', document.getElementById('total-messages').textContent, document.getElementById('messages-trend').textContent],
+                ['Utilisateurs actifs', document.getElementById('active-users').textContent, document.getElementById('users-trend').textContent],
+                ['Taux de résolution', document.getElementById('resolution-rate').textContent, document.getElementById('resolution-trend').textContent],
+                ['Temps de réponse moyen', document.getElementById('avg-response-time').textContent, document.getElementById('response-time-trend').textContent],
+                ['Satisfaction client', document.getElementById('satisfaction-score').textContent, document.getElementById('satisfaction-trend').textContent]
+            ];
+
+            kpis.forEach(([label, value, trend]) => {
+                pdf.text(`${label}: ${value} (${trend})`, 20, yPos);
+                yPos += 7;
+            });
+
+            yPos += 5;
+
+            // API Usage
+            pdf.setFontSize(16);
+            pdf.setFont(undefined, 'bold');
+            pdf.text("Utilisation de l'IA", 15, yPos);
+            yPos += 10;
+
+            pdf.setFontSize(11);
+            pdf.setFont(undefined, 'normal');
+
+            const apiData = [
+                ['Tokens utilisés', document.getElementById('total-tokens').textContent],
+                ['Coût estimé', document.getElementById('total-cost').textContent],
+                ['Requêtes totales', document.getElementById('total-requests').textContent],
+                ['Temps de réponse IA', document.getElementById('avg-ai-response-time').textContent]
+            ];
+
+            apiData.forEach(([label, value]) => {
+                pdf.text(`${label}: ${value}`, 20, yPos);
+                yPos += 7;
+            });
+
+            yPos += 5;
+
+            // Check if we need a new page
+            if (yPos > pageHeight - 40) {
+                pdf.addPage();
+                yPos = 20;
+            }
+
+            // Knowledge Base
+            pdf.setFontSize(16);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('Base de Connaissances', 15, yPos);
+            yPos += 10;
+
+            pdf.setFontSize(11);
+            pdf.setFont(undefined, 'normal');
+
+            const kbData = [
+                ['Documents', document.getElementById('total-documents').textContent],
+                ['FAQs', document.getElementById('total-faqs').textContent],
+                ['Catégories', document.getElementById('total-categories').textContent],
+                ["Taux d'utilisation", document.getElementById('kb-usage-rate').textContent]
+            ];
+
+            kbData.forEach(([label, value]) => {
+                pdf.text(`${label}: ${value}`, 20, yPos);
+                yPos += 7;
+            });
+
+            yPos += 5;
+
+            // Actions
+            pdf.setFontSize(16);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('Actions et Automatisations', 15, yPos);
+            yPos += 10;
+
+            pdf.setFontSize(11);
+            pdf.setFont(undefined, 'normal');
+
+            const actionsData = [
+                ['Déclencheurs actifs', document.getElementById('active-triggers').textContent],
+                ['Actions exécutées', document.getElementById('executed-actions').textContent],
+                ['Emails envoyés', document.getElementById('emails-sent').textContent],
+                ['Redirections formulaire', document.getElementById('form-redirects').textContent]
+            ];
+
+            actionsData.forEach(([label, value]) => {
+                pdf.text(`${label}: ${value}`, 20, yPos);
+                yPos += 7;
+            });
+
+            // Footer
+            const footerY = pageHeight - 10;
+            pdf.setFontSize(9);
+            pdf.setTextColor(128, 128, 128);
+            pdf.text('LeoBot @ 2025 - Propulsé par Pixfeed', pageWidth / 2, footerY, { align: 'center' });
+
+            // Save PDF
+            const filename = `metriques_leobot_${new Date().toISOString().slice(0, 10)}.pdf`;
+            pdf.save(filename);
+
+            console.log('Export PDF terminé');
+        } catch (error) {
+            console.error('Erreur lors de l\'export PDF:', error);
+            alert('Erreur lors de l\'export PDF. Veuillez réessayer.');
+        }
+    }
+
+    getPeriodLabel() {
+        const labels = {
+            'today': "Aujourd'hui",
+            'week': '7 derniers jours',
+            'month': '30 derniers jours',
+            'year': '1 an',
+            'all': 'Toute la période'
+        };
+        return labels[this.currentPeriod] || 'Période personnalisée';
     }
 
     showError(message) {

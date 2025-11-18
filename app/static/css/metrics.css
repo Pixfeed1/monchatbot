@@ -58,11 +58,18 @@
 /* ==========================================
    FILTRES DE PÉRIODE
    ========================================== */
+.period-filters-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
 .period-filters {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 24px;
 }
 
 .period-btn {
@@ -87,6 +94,92 @@
     border-color: #0d6efd;
     background: #0d6efd;
     color: white;
+}
+
+/* Export Button & Dropdown */
+.export-dropdown {
+    position: relative;
+}
+
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid #0d6efd;
+    border-radius: 6px;
+    background: #0d6efd;
+    color: white;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.export-btn:hover {
+    background: #0b5ed7;
+    border-color: #0b5ed7;
+}
+
+.export-btn i {
+    width: 16px;
+    height: 16px;
+}
+
+.export-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 200px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+.export-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.export-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: white;
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.export-option:first-child {
+    border-radius: 6px 6px 0 0;
+}
+
+.export-option:last-child {
+    border-radius: 0 0 6px 6px;
+}
+
+.export-option:hover {
+    background: #eff6ff;
+    color: #0d6efd;
+}
+
+.export-option i {
+    width: 18px;
+    height: 18px;
 }
 
 /* ==========================================
