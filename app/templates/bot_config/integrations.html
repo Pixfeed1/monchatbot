@@ -4,18 +4,20 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/integrations.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="integrations-container">
-    <div class="page-header">
+<!-- Bannière -->
+<div class="banner">
+    <div class="banner-content">
         <h1>Canaux de Communication</h1>
-        <p class="subtitle">Connectez votre chatbot aux principales plateformes de messagerie</p>
+        <p>Connectez votre chatbot aux principales plateformes de messagerie</p>
     </div>
+</div>
 
-    <!-- Statistiques globales -->
+<!-- Statistiques globales -->
+<section class="config-section">
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-icon">
@@ -54,224 +56,235 @@
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Grille de canaux -->
-    <div class="channels-section">
-        <h2>Canaux Disponibles</h2>
-        <div class="channels-grid">
-            <!-- WhatsApp -->
-            <div class="channel-card" data-channel="whatsapp">
-                <div class="channel-header">
-                    <div class="channel-icon whatsapp">
-                        <i data-lucide="message-circle"></i>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" data-channel-type="whatsapp">
-                        <span class="slider"></span>
-                    </label>
+<!-- Canaux Disponibles -->
+<section class="config-section">
+    <h2 class="section-title">
+        <i data-lucide="zap"></i>
+        Canaux Disponibles
+    </h2>
+
+    <div class="channels-grid">
+        <!-- WhatsApp -->
+        <div class="channel-card" data-channel="whatsapp">
+            <div class="channel-header">
+                <div class="channel-icon whatsapp">
+                    <i data-lucide="message-circle"></i>
                 </div>
-                <div class="channel-content">
-                    <h3>WhatsApp Business</h3>
-                    <p class="channel-status">Non connecté</p>
-                    <button class="btn btn-primary btn-sm config-btn" data-channel="whatsapp">
-                        <i data-lucide="settings"></i> Configurer
-                    </button>
-                </div>
+                <label class="switch">
+                    <input type="checkbox" data-channel-type="whatsapp">
+                    <span class="slider"></span>
+                </label>
             </div>
-
-            <!-- Messenger -->
-            <div class="channel-card" data-channel="messenger">
-                <div class="channel-header">
-                    <div class="channel-icon messenger">
-                        <i data-lucide="message-circle"></i>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" data-channel-type="messenger">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="channel-content">
-                    <h3>Facebook Messenger</h3>
-                    <p class="channel-status">Non connecté</p>
-                    <button class="btn btn-primary btn-sm config-btn" data-channel="messenger">
-                        <i data-lucide="settings"></i> Configurer
-                    </button>
-                </div>
+            <div class="channel-content">
+                <h3>WhatsApp Business</h3>
+                <p class="channel-status">Non connecté</p>
+                <button class="btn btn-primary btn-sm config-btn" data-channel="whatsapp">
+                    <i data-lucide="settings"></i> Configurer
+                </button>
             </div>
+        </div>
 
-            <!-- Instagram -->
-            <div class="channel-card" data-channel="instagram">
-                <div class="channel-header">
-                    <div class="channel-icon instagram">
-                        <i data-lucide="camera"></i>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" data-channel-type="instagram">
-                        <span class="slider"></span>
-                    </label>
+        <!-- Messenger -->
+        <div class="channel-card" data-channel="messenger">
+            <div class="channel-header">
+                <div class="channel-icon messenger">
+                    <i data-lucide="message-circle"></i>
                 </div>
-                <div class="channel-content">
-                    <h3>Instagram Direct</h3>
-                    <p class="channel-status">Non connecté</p>
-                    <button class="btn btn-primary btn-sm config-btn" data-channel="instagram">
-                        <i data-lucide="settings"></i> Configurer
-                    </button>
-                </div>
+                <label class="switch">
+                    <input type="checkbox" data-channel-type="messenger">
+                    <span class="slider"></span>
+                </label>
             </div>
-
-            <!-- Telegram -->
-            <div class="channel-card" data-channel="telegram">
-                <div class="channel-header">
-                    <div class="channel-icon telegram">
-                        <i data-lucide="send-horizontal"></i>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" data-channel-type="telegram">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="channel-content">
-                    <h3>Telegram</h3>
-                    <p class="channel-status">Non connecté</p>
-                    <button class="btn btn-primary btn-sm config-btn" data-channel="telegram">
-                        <i data-lucide="settings"></i> Configurer
-                    </button>
-                </div>
+            <div class="channel-content">
+                <h3>Facebook Messenger</h3>
+                <p class="channel-status">Non connecté</p>
+                <button class="btn btn-primary btn-sm config-btn" data-channel="messenger">
+                    <i data-lucide="settings"></i> Configurer
+                </button>
             </div>
+        </div>
 
-            <!-- SMS -->
-            <div class="channel-card" data-channel="sms">
-                <div class="channel-header">
-                    <div class="channel-icon sms">
-                        <i data-lucide="message-square"></i>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" data-channel-type="sms">
-                        <span class="slider"></span>
-                    </label>
+        <!-- Instagram -->
+        <div class="channel-card" data-channel="instagram">
+            <div class="channel-header">
+                <div class="channel-icon instagram">
+                    <i data-lucide="camera"></i>
                 </div>
-                <div class="channel-content">
-                    <h3>SMS (Twilio)</h3>
-                    <p class="channel-status">Non connecté</p>
-                    <button class="btn btn-primary btn-sm config-btn" data-channel="sms">
-                        <i data-lucide="settings"></i> Configurer
-                    </button>
-                </div>
+                <label class="switch">
+                    <input type="checkbox" data-channel-type="instagram">
+                    <span class="slider"></span>
+                </label>
             </div>
-
-            <!-- Email -->
-            <div class="channel-card" data-channel="email">
-                <div class="channel-header">
-                    <div class="channel-icon email">
-                        <i data-lucide="mail"></i>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" data-channel-type="email">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="channel-content">
-                    <h3>Email</h3>
-                    <p class="channel-status">Non connecté</p>
-                    <button class="btn btn-primary btn-sm config-btn" data-channel="email">
-                        <i data-lucide="settings"></i> Configurer
-                    </button>
-                </div>
+            <div class="channel-content">
+                <h3>Instagram Direct</h3>
+                <p class="channel-status">Non connecté</p>
+                <button class="btn btn-primary btn-sm config-btn" data-channel="instagram">
+                    <i data-lucide="settings"></i> Configurer
+                </button>
             </div>
+        </div>
 
-            <!-- Slack -->
-            <div class="channel-card" data-channel="slack">
-                <div class="channel-header">
-                    <div class="channel-icon slack">
-                        <i data-lucide="hash"></i>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" data-channel-type="slack">
-                        <span class="slider"></span>
-                    </label>
+        <!-- Telegram -->
+        <div class="channel-card" data-channel="telegram">
+            <div class="channel-header">
+                <div class="channel-icon telegram">
+                    <i data-lucide="send-horizontal"></i>
                 </div>
-                <div class="channel-content">
-                    <h3>Slack</h3>
-                    <p class="channel-status">Non connecté</p>
-                    <button class="btn btn-primary btn-sm config-btn" data-channel="slack">
-                        <i data-lucide="settings"></i> Configurer
-                    </button>
-                </div>
+                <label class="switch">
+                    <input type="checkbox" data-channel-type="telegram">
+                    <span class="slider"></span>
+                </label>
             </div>
-
-            <!-- Microsoft Teams -->
-            <div class="channel-card" data-channel="teams">
-                <div class="channel-header">
-                    <div class="channel-icon teams">
-                        <i data-lucide="briefcase"></i>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" data-channel-type="teams">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="channel-content">
-                    <h3>Microsoft Teams</h3>
-                    <p class="channel-status">Non connecté</p>
-                    <button class="btn btn-primary btn-sm config-btn" data-channel="teams">
-                        <i data-lucide="settings"></i> Configurer
-                    </button>
-                </div>
+            <div class="channel-content">
+                <h3>Telegram</h3>
+                <p class="channel-status">Non connecté</p>
+                <button class="btn btn-primary btn-sm config-btn" data-channel="telegram">
+                    <i data-lucide="settings"></i> Configurer
+                </button>
             </div>
+        </div>
 
-            <!-- Web Widget -->
-            <div class="channel-card" data-channel="web">
-                <div class="channel-header">
-                    <div class="channel-icon web">
-                        <i data-lucide="globe"></i>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" data-channel-type="web">
-                        <span class="slider"></span>
-                    </label>
+        <!-- SMS -->
+        <div class="channel-card" data-channel="sms">
+            <div class="channel-header">
+                <div class="channel-icon sms">
+                    <i data-lucide="message-square"></i>
                 </div>
-                <div class="channel-content">
-                    <h3>Widget Web</h3>
-                    <p class="channel-status">Non connecté</p>
-                    <button class="btn btn-primary btn-sm config-btn" data-channel="web">
-                        <i data-lucide="settings"></i> Configurer
-                    </button>
+                <label class="switch">
+                    <input type="checkbox" data-channel-type="sms">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="channel-content">
+                <h3>SMS (Twilio)</h3>
+                <p class="channel-status">Non connecté</p>
+                <button class="btn btn-primary btn-sm config-btn" data-channel="sms">
+                    <i data-lucide="settings"></i> Configurer
+                </button>
+            </div>
+        </div>
+
+        <!-- Email -->
+        <div class="channel-card" data-channel="email">
+            <div class="channel-header">
+                <div class="channel-icon email">
+                    <i data-lucide="mail"></i>
                 </div>
+                <label class="switch">
+                    <input type="checkbox" data-channel-type="email">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="channel-content">
+                <h3>Email</h3>
+                <p class="channel-status">Non connecté</p>
+                <button class="btn btn-primary btn-sm config-btn" data-channel="email">
+                    <i data-lucide="settings"></i> Configurer
+                </button>
+            </div>
+        </div>
+
+        <!-- Slack -->
+        <div class="channel-card" data-channel="slack">
+            <div class="channel-header">
+                <div class="channel-icon slack">
+                    <i data-lucide="hash"></i>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" data-channel-type="slack">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="channel-content">
+                <h3>Slack</h3>
+                <p class="channel-status">Non connecté</p>
+                <button class="btn btn-primary btn-sm config-btn" data-channel="slack">
+                    <i data-lucide="settings"></i> Configurer
+                </button>
+            </div>
+        </div>
+
+        <!-- Microsoft Teams -->
+        <div class="channel-card" data-channel="teams">
+            <div class="channel-header">
+                <div class="channel-icon teams">
+                    <i data-lucide="briefcase"></i>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" data-channel-type="teams">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="channel-content">
+                <h3>Microsoft Teams</h3>
+                <p class="channel-status">Non connecté</p>
+                <button class="btn btn-primary btn-sm config-btn" data-channel="teams">
+                    <i data-lucide="settings"></i> Configurer
+                </button>
+            </div>
+        </div>
+
+        <!-- Web Widget -->
+        <div class="channel-card" data-channel="web">
+            <div class="channel-header">
+                <div class="channel-icon web">
+                    <i data-lucide="globe"></i>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" data-channel-type="web">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="channel-content">
+                <h3>Widget Web</h3>
+                <p class="channel-status">Non connecté</p>
+                <button class="btn btn-primary btn-sm config-btn" data-channel="web">
+                    <i data-lucide="settings"></i> Configurer
+                </button>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Section Logs -->
-    <div class="logs-section">
-        <div class="section-header">
-            <h2>Journaux d'Activité</h2>
-            <button class="btn btn-secondary btn-sm" id="refresh-logs-btn">
-                <i data-lucide="refresh-cw"></i> Actualiser
+<!-- Journaux d'Activité -->
+<section class="config-section">
+    <div class="section-header-with-actions">
+        <h2 class="section-title">
+            <i data-lucide="clipboard-list"></i>
+            Journaux d'Activité
+        </h2>
+        <div class="header-actions">
+            <button class="btn-secondary" id="refresh-logs-btn">
+                <i data-lucide="refresh-cw"></i>
+                Actualiser
             </button>
         </div>
-        <div class="logs-container">
-            <div class="logs-filters">
-                <select class="form-control" id="log-type-filter">
-                    <option value="all">Tous les types</option>
-                    <option value="info">Info</option>
-                    <option value="warning">Avertissements</option>
-                    <option value="error">Erreurs</option>
-                    <option value="message_sent">Messages envoyés</option>
-                    <option value="message_received">Messages reçus</option>
-                </select>
-                <select class="form-control" id="log-channel-filter">
-                    <option value="all">Tous les canaux</option>
-                </select>
-            </div>
-            <div class="logs-list" id="logs-list">
-                <div class="empty-state">
-                    <i data-lucide="clipboard-list"></i>
-                    <p>Aucun journal disponible</p>
-                </div>
+    </div>
+
+    <div class="logs-card">
+        <div class="logs-filters">
+            <select class="form-control" id="log-type-filter">
+                <option value="all">Tous les types</option>
+                <option value="info">Info</option>
+                <option value="warning">Avertissements</option>
+                <option value="error">Erreurs</option>
+                <option value="message_sent">Messages envoyés</option>
+                <option value="message_received">Messages reçus</option>
+            </select>
+            <select class="form-control" id="log-channel-filter">
+                <option value="all">Tous les canaux</option>
+            </select>
+        </div>
+        <div class="logs-list" id="logs-list">
+            <div class="empty-state">
+                <i data-lucide="clipboard-list"></i>
+                <p>Aucun journal disponible</p>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 <!-- Modal de Configuration -->
 <div class="modal" id="configModal">
