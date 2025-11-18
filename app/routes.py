@@ -6163,6 +6163,189 @@ def track_unhandled_query():
 
 
 # ========================
+# ROUTES COMMUNICATION - Emails/SMS Envoyés et Réponses
+# ========================
+
+@main_bp.route('/communication/emails-sent')
+@login_required
+def emails_sent_page():
+    """Page des emails envoyés"""
+    return render_template('communication/emails_sent.html')
+
+@main_bp.route('/api/emails/sent', methods=['GET'])
+@login_required
+def get_emails_sent():
+    """Récupère la liste des emails envoyés"""
+    try:
+        period = request.args.get('period', 'today')
+
+        # TODO: Implémenter le modèle EmailLog dans models.py
+        # Pour l'instant, retourner des données fictives
+        emails = []
+
+        return jsonify({
+            'success': True,
+            'emails': emails
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_emails_sent: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@main_bp.route('/api/emails/stats', methods=['GET'])
+@login_required
+def get_emails_stats():
+    """Récupère les statistiques des emails"""
+    try:
+        period = request.args.get('period', 'today')
+
+        # TODO: Implémenter le calcul des statistiques
+        stats = {
+            'total': 0,
+            'delivered': 0,
+            'failed': 0
+        }
+
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_emails_stats: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@main_bp.route('/communication/sms-sent')
+@login_required
+def sms_sent_page():
+    """Page des SMS envoyés"""
+    return render_template('communication/sms_sent.html')
+
+@main_bp.route('/api/sms/sent', methods=['GET'])
+@login_required
+def get_sms_sent():
+    """Récupère la liste des SMS envoyés"""
+    try:
+        period = request.args.get('period', 'today')
+
+        # TODO: Implémenter le modèle SMSLog dans models.py
+        # Pour l'instant, retourner des données fictives
+        sms = []
+
+        return jsonify({
+            'success': True,
+            'sms': sms
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_sms_sent: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@main_bp.route('/api/sms/stats', methods=['GET'])
+@login_required
+def get_sms_stats():
+    """Récupère les statistiques des SMS"""
+    try:
+        period = request.args.get('period', 'today')
+
+        # TODO: Implémenter le calcul des statistiques
+        stats = {
+            'total': 0,
+            'delivered': 0,
+            'failed': 0
+        }
+
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_sms_stats: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@main_bp.route('/communication/responses')
+@login_required
+def communication_responses_page():
+    """Page des réponses reçues"""
+    return render_template('communication/responses.html')
+
+@main_bp.route('/api/communication/responses', methods=['GET'])
+@login_required
+def get_communication_responses():
+    """Récupère la liste des réponses reçues"""
+    try:
+        period = request.args.get('period', 'today')
+
+        # TODO: Implémenter le modèle CommunicationResponse dans models.py
+        # Pour l'instant, retourner des données fictives
+        responses = []
+
+        return jsonify({
+            'success': True,
+            'responses': responses
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_communication_responses: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@main_bp.route('/api/communication/responses/stats', methods=['GET'])
+@login_required
+def get_communication_responses_stats():
+    """Récupère les statistiques des réponses"""
+    try:
+        period = request.args.get('period', 'today')
+
+        # TODO: Implémenter le calcul des statistiques
+        stats = {
+            'total': 0,
+            'email': 0,
+            'sms': 0,
+            'sent': 0
+        }
+
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_communication_responses_stats: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@main_bp.route('/api/communication/responses/<int:response_id>/mark-read', methods=['POST'])
+@login_required
+def mark_response_read(response_id):
+    """Marque une réponse comme lue"""
+    try:
+        # TODO: Implémenter la logique de marquage comme lu
+
+        return jsonify({
+            'success': True,
+            'message': 'Réponse marquée comme lue'
+        })
+    except Exception as e:
+        logger.error(f"Erreur mark_response_read: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ========================
 # FIN DU FICHIER routes.py - VERSION COMPLÈTE MISE À JOUR
 # ========================
 

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Réponses Emails/SMS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/communication.css') }}?v=20251118a">
+{% endblock %}
+
+{% block content %}
+<!-- Bannière -->
+<div class="banner">
+    <div class="banner-content">
+        <h1>Réponses Emails/SMS</h1>
+        <p>Consultez toutes les réponses reçues suite aux emails et SMS envoyés par votre chatbot</p>
+    </div>
+</div>
+
+<!-- KPI Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i data-lucide="mail-open"></i>
+        </div>
+        <div class="stat-content">
+            <h3 id="total-responses">0</h3>
+            <p>Total réponses reçues</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i data-lucide="mail"></i>
+        </div>
+        <div class="stat-content">
+            <h3 id="email-responses">0</h3>
+            <p>Réponses email</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i data-lucide="message-square"></i>
+        </div>
+        <div class="stat-content">
+            <h3 id="sms-responses">0</h3>
+            <p>Réponses SMS</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i data-lucide="percent"></i>
+        </div>
+        <div class="stat-content">
+            <h3 id="response-rate">0%</h3>
+            <p>Taux de réponse</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres et recherche -->
+<section class="config-section">
+    <div class="filters-container">
+        <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="search-input" placeholder="Rechercher dans les réponses...">
+        </div>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">
+                <i data-lucide="list"></i> Tous
+            </button>
+            <button class="filter-btn" data-filter="email">
+                <i data-lucide="mail"></i> Emails
+            </button>
+            <button class="filter-btn" data-filter="sms">
+                <i data-lucide="message-square"></i> SMS
+            </button>
+            <button class="filter-btn" data-filter="unread">
+                <i data-lucide="mail-open"></i> Non lus
+            </button>
+        </div>
+        <div class="period-filters">
+            <button class="period-btn active" data-period="today">Aujourd'hui</button>
+            <button class="period-btn" data-period="week">7 jours</button>
+            <button class="period-btn" data-period="month">30 jours</button>
+            <button class="period-btn" data-period="all">Tout</button>
+        </div>
+    </div>
+</section>
+
+<!-- Table des réponses -->
+<section class="config-section">
+    <h2 class="section-title">
+        <i data-lucide="inbox"></i>
+        Historique des réponses
+    </h2>
+
+    <div class="table-container">
+        <table class="comm-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Expéditeur</th>
+                    <th>Type</th>
+                    <th>Aperçu</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="responses-tbody">
+                <tr class="empty-row">
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i data-lucide="inbox"></i>
+                            <p>Aucune réponse reçue pour le moment</p>
+                            <small>Les réponses aux emails et SMS apparaîtront ici</small>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination" style="display: none;">
+        <button class="btn btn-sm" id="prev-page">
+            <i data-lucide="chevron-left"></i> Précédent
+        </button>
+        <span class="page-info">Page <span id="current-page">1</span> sur <span id="total-pages">1</span></span>
+        <button class="btn btn-sm" id="next-page">
+            Suivant <i data-lucide="chevron-right"></i>
+        </button>
+    </div>
+</section>
+
+<!-- Modal détails -->
+<div class="modal" id="response-modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>Détails de la réponse</h3>
+            <button class="close-modal" id="close-response-modal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="response-details">
+                <div class="detail-section">
+                    <h4><i data-lucide="info"></i> Informations générales</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Expéditeur</label>
+                            <span id="detail-sender">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Date de réception</label>
+                            <span id="detail-date">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Type</label>
+                            <span id="detail-type">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Statut</label>
+                            <span id="detail-status">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4><i data-lucide="mail-open"></i> Message original envoyé</h4>
+                    <div class="message-box original-message" id="detail-original">-</div>
+                </div>
+
+                <div class="detail-section">
+                    <h4><i data-lucide="corner-down-right"></i> Réponse reçue</h4>
+                    <div class="message-box response-message" id="detail-response">-</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="close-modal-btn">Fermer</button>
+            <button class="btn btn-primary" id="mark-read-btn">
+                <i data-lucide="check"></i> Marquer comme lu
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/responses.js') }}?v=20251118a"></script>
+{% endblock %}

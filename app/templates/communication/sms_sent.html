@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}SMS Envoyés{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/communication.css') }}?v=20251118a">
+{% endblock %}
+
+{% block content %}
+<!-- Bannière -->
+<div class="banner">
+    <div class="banner-content">
+        <h1>SMS Envoyés</h1>
+        <p>Suivez l'historique et les statistiques de tous les SMS envoyés par votre chatbot</p>
+    </div>
+</div>
+
+<!-- KPI Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i data-lucide="message-square"></i>
+        </div>
+        <div class="stat-content">
+            <h3 id="total-sms">0</h3>
+            <p>Total SMS envoyés</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i data-lucide="check-circle"></i>
+        </div>
+        <div class="stat-content">
+            <h3 id="delivered-sms">0</h3>
+            <p>SMS délivrés</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon error">
+            <i data-lucide="alert-circle"></i>
+        </div>
+        <div class="stat-content">
+            <h3 id="failed-sms">0</h3>
+            <p>Échecs d'envoi</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i data-lucide="percent"></i>
+        </div>
+        <div class="stat-content">
+            <h3 id="success-rate">0%</h3>
+            <p>Taux de réussite</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres et recherche -->
+<section class="config-section">
+    <div class="filters-container">
+        <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="search-input" placeholder="Rechercher par numéro ou message...">
+        </div>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">
+                <i data-lucide="list"></i> Tous
+            </button>
+            <button class="filter-btn" data-filter="delivered">
+                <i data-lucide="check"></i> Délivrés
+            </button>
+            <button class="filter-btn" data-filter="failed">
+                <i data-lucide="x"></i> Échecs
+            </button>
+        </div>
+        <div class="period-filters">
+            <button class="period-btn active" data-period="today">Aujourd'hui</button>
+            <button class="period-btn" data-period="week">7 jours</button>
+            <button class="period-btn" data-period="month">30 jours</button>
+            <button class="period-btn" data-period="all">Tout</button>
+        </div>
+    </div>
+</section>
+
+<!-- Table des SMS -->
+<section class="config-section">
+    <h2 class="section-title">
+        <i data-lucide="inbox"></i>
+        Historique des envois
+    </h2>
+
+    <div class="table-container">
+        <table class="comm-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Destinataire</th>
+                    <th>Message</th>
+                    <th>Fournisseur</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="sms-tbody">
+                <tr class="empty-row">
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i data-lucide="inbox"></i>
+                            <p>Aucun SMS envoyé pour le moment</p>
+                            <small>Les SMS envoyés par votre bot apparaîtront ici</small>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination" style="display: none;">
+        <button class="btn btn-sm" id="prev-page">
+            <i data-lucide="chevron-left"></i> Précédent
+        </button>
+        <span class="page-info">Page <span id="current-page">1</span> sur <span id="total-pages">1</span></span>
+        <button class="btn btn-sm" id="next-page">
+            Suivant <i data-lucide="chevron-right"></i>
+        </button>
+    </div>
+</section>
+
+<!-- Modal détails -->
+<div class="modal" id="sms-modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>Détails du SMS</h3>
+            <button class="close-modal" id="close-sms-modal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="sms-details">
+                <div class="detail-section">
+                    <h4><i data-lucide="info"></i> Informations générales</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Destinataire</label>
+                            <span id="detail-recipient">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Date d'envoi</label>
+                            <span id="detail-date">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Fournisseur</label>
+                            <span id="detail-provider">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Statut</label>
+                            <span id="detail-status">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4><i data-lucide="message-square"></i> Contenu du SMS</h4>
+                    <div class="message-box" id="detail-message">-</div>
+                    <small class="char-count" id="detail-char-count">0 caractères</small>
+                </div>
+
+                <div class="detail-section" id="error-section" style="display: none;">
+                    <h4><i data-lucide="alert-triangle"></i> Erreur</h4>
+                    <div class="error-box" id="detail-error">-</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="close-modal-btn">Fermer</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/sms_sent.js') }}?v=20251118a"></script>
+{% endblock %}

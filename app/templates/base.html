@@ -235,9 +235,21 @@
                         </a>
                         <div class="submenu-container">
                             <ul class="submenu">
-                                <li><a href="#">Nombre d'e-mails envoyés</a></li>
-                                <li><a href="#">Nombre de SMS envoyés</a></li>
-                                <li><a href="#">Réponses emails/SMS</a></li>
+                                <li>
+                                    <a href="{{ url_for('main.emails_sent_page') }}">
+                                        Nombre d'e-mails envoyés
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('main.sms_sent_page') }}">
+                                        Nombre de SMS envoyés
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ url_for('main.communication_responses_page') }}">
+                                        Réponses emails/SMS
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </li>
