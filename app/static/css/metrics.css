@@ -101,61 +101,86 @@
 
 .kpi-card {
     display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 24px;
-    background: white;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 28px 24px;
     border-radius: 12px;
-    border: 1px solid #f1f5f9;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
+    cursor: grab;
+    position: relative;
+    overflow: hidden;
+    color: white;
+}
+
+.kpi-card:active {
+    cursor: grabbing;
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(40%, -40%);
 }
 
 .kpi-card:hover {
-    border-color: #0d6efd;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.kpi-card.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+/* Dégradés stylés pour chaque KPI */
+.kpi-card.conversations {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.kpi-card.messages {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.kpi-card.users {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.kpi-card.resolution {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.kpi-card.response-time {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.kpi-card.satisfaction {
+    background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
 }
 
 .kpi-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    margin-bottom: 16px;
 }
 
 .kpi-icon i {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     color: white;
-}
-
-/* Couleurs d'icônes harmonisées avec la charte */
-.kpi-icon.conversations {
-    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-}
-
-.kpi-icon.messages {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-}
-
-.kpi-icon.users {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-}
-
-.kpi-icon.resolution {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-}
-
-.kpi-icon.response-time {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-}
-
-.kpi-icon.satisfaction {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
 }
 
 .kpi-content {
@@ -163,39 +188,41 @@
 }
 
 .kpi-content h3 {
-    font-size: 28px;
+    font-size: 36px;
     font-weight: 700;
-    color: #1e293b;
-    margin: 0 0 4px 0;
+    color: white;
+    margin: 0 0 8px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .kpi-content p {
     font-size: 13px;
-    color: #64748b;
-    margin: 0 0 6px 0;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 12px 0;
+    font-weight: 500;
 }
 
 .kpi-trend {
     display: inline-block;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
     font-weight: 600;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    color: white;
 }
 
-.kpi-trend.positive {
-    background: #dcfce7;
-    color: #16a34a;
+.kpi-trend.positive::before {
+    content: '↑ ';
 }
 
-.kpi-trend.negative {
-    background: #fee2e2;
-    color: #dc2626;
+.kpi-trend.negative::before {
+    content: '↓ ';
 }
 
-.kpi-trend.neutral {
-    background: #f3f4f6;
-    color: #6b7280;
+.kpi-trend.neutral::before {
+    content: '→ ';
 }
 
 /* ==========================================

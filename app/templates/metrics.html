@@ -3,7 +3,7 @@
 {% block title %}Métriques et Analyses{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/metrics.css') }}?v=20251118f">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/metrics.css') }}?v=20251118g">
 {% endblock %}
 
 {% block content %}
@@ -32,9 +32,9 @@
         <i data-lucide="trending-up"></i>
         Indicateurs Clés
     </h2>
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon conversations">
+    <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi-card conversations" draggable="true" data-kpi="conversations">
+            <div class="kpi-icon">
                 <i data-lucide="message-circle"></i>
             </div>
             <div class="kpi-content">
@@ -43,8 +43,8 @@
                 <span class="kpi-trend positive" id="conversations-trend">+0%</span>
             </div>
         </div>
-        <div class="kpi-card">
-            <div class="kpi-icon messages">
+        <div class="kpi-card messages" draggable="true" data-kpi="messages">
+            <div class="kpi-icon">
                 <i data-lucide="messages-square"></i>
             </div>
             <div class="kpi-content">
@@ -53,8 +53,8 @@
                 <span class="kpi-trend positive" id="messages-trend">+0%</span>
             </div>
         </div>
-        <div class="kpi-card">
-            <div class="kpi-icon users">
+        <div class="kpi-card users" draggable="true" data-kpi="users">
+            <div class="kpi-icon">
                 <i data-lucide="users"></i>
             </div>
             <div class="kpi-content">
@@ -63,8 +63,8 @@
                 <span class="kpi-trend positive" id="users-trend">+0%</span>
             </div>
         </div>
-        <div class="kpi-card">
-            <div class="kpi-icon resolution">
+        <div class="kpi-card resolution" draggable="true" data-kpi="resolution">
+            <div class="kpi-icon">
                 <i data-lucide="check-circle"></i>
             </div>
             <div class="kpi-content">
@@ -73,8 +73,8 @@
                 <span class="kpi-trend positive" id="resolution-trend">+0%</span>
             </div>
         </div>
-        <div class="kpi-card">
-            <div class="kpi-icon response-time">
+        <div class="kpi-card response-time" draggable="true" data-kpi="response-time">
+            <div class="kpi-icon">
                 <i data-lucide="clock"></i>
             </div>
             <div class="kpi-content">
@@ -83,8 +83,8 @@
                 <span class="kpi-trend negative" id="response-time-trend">+0%</span>
             </div>
         </div>
-        <div class="kpi-card">
-            <div class="kpi-icon satisfaction">
+        <div class="kpi-card satisfaction" draggable="true" data-kpi="satisfaction">
+            <div class="kpi-icon">
                 <i data-lucide="smile"></i>
             </div>
             <div class="kpi-content">
@@ -308,5 +308,5 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="{{ url_for('static', filename='js/metrics.js') }}?v=20251118f"></script>
+<script src="{{ url_for('static', filename='js/metrics.js') }}?v=20251118g"></script>
 {% endblock %}

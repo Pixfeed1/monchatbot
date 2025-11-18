@@ -12,11 +12,90 @@ class MetricsManager {
 
     init() {
         this.setupPeriodFilters();
+        this.setupDragAndDrop();
+        this.restoreKpiOrder();
         this.loadMetrics();
 
         // Initialiser les icônes Lucide
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
+        }
+    }
+
+    setupDragAndDrop() {
+        const kpiGrid = document.getElementById('kpi-grid');
+        const cards = kpiGrid.querySelectorAll('.kpi-card');
+
+        let draggedElement = null;
+
+        cards.forEach(card => {
+            card.addEventListener('dragstart', (e) => {
+                draggedElement = card;
+                card.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            card.addEventListener('dragend', (e) => {
+                card.classList.remove('dragging');
+                this.saveKpiOrder();
+            });
+
+            card.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+
+                const afterElement = this.getDragAfterElement(kpiGrid, e.clientX, e.clientY);
+                if (afterElement == null) {
+                    kpiGrid.appendChild(draggedElement);
+                } else {
+                    kpiGrid.insertBefore(draggedElement, afterElement);
+                }
+            });
+        });
+    }
+
+    getDragAfterElement(container, x, y) {
+        const draggableElements = [...container.querySelectorAll('.kpi-card:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offsetX = x - box.left - box.width / 2;
+            const offsetY = y - box.top - box.height / 2;
+            const offset = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+
+            if (offset < closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.POSITIVE_INFINITY }).element;
+    }
+
+    saveKpiOrder() {
+        const kpiGrid = document.getElementById('kpi-grid');
+        const cards = kpiGrid.querySelectorAll('.kpi-card');
+        const order = Array.from(cards).map(card => card.dataset.kpi);
+        localStorage.setItem('kpi-order', JSON.stringify(order));
+    }
+
+    restoreKpiOrder() {
+        const savedOrder = localStorage.getItem('kpi-order');
+        if (!savedOrder) return;
+
+        try {
+            const order = JSON.parse(savedOrder);
+            const kpiGrid = document.getElementById('kpi-grid');
+            const cards = Array.from(kpiGrid.querySelectorAll('.kpi-card'));
+
+            // Réorganiser les cartes selon l'ordre sauvegardé
+            order.forEach(kpiType => {
+                const card = cards.find(c => c.dataset.kpi === kpiType);
+                if (card) {
+                    kpiGrid.appendChild(card);
+                }
+            });
+        } catch (e) {
+            console.error('Erreur lors de la restauration de l\'ordre des KPIs:', e);
         }
     }
 
