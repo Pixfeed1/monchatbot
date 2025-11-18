@@ -355,20 +355,32 @@
     min-height: 200%;
     min-width: 200%;
     padding: 50px;
-    z-index: 0;
-    pointer-events: none;  /* Le conteneur ne capte rien */
+    z-index: 1;
+    pointer-events: none !important;  /* Le conteneur ne capte RIEN */
+}
+
+/* IMPORTANT: Désactiver pointer-events sur tous les SVG de connexion */
+.flow-container .flow-connections svg {
+    pointer-events: none !important;
+}
+
+/* Réactiver UNIQUEMENT sur les paths interactifs */
+.flow-container .flow-connections svg path[style*="pointer-events: stroke"] {
+    pointer-events: stroke !important;
 }
 
 /* Conteneur des nœuds (au-dessus) */
 .flow-container .flow-nodes {
+    position: absolute;  /* DOIT être absolute pour que z-index fonctionne */
+    top: 0;
+    left: 0;
     min-height: 200%;
     min-width: 200%;
-    position: relative;
     padding: 50px;
     transform-origin: 0 0;
     transition: transform 0.1s ease-out;
-    z-index: 10;  /* BIEN au-dessus des connexions */
-    pointer-events: auto;  /* Laisse passer les clics aux enfants */
+    z-index: 100;  /* BEAUCOUP plus haut que les connexions */
+    pointer-events: none;  /* Le conteneur ne bloque pas */
 }
 
 /* NŒUDS - Simplifié avec charte bleue */
@@ -382,6 +394,7 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: box-shadow 0.2s ease;
     overflow: hidden;
+    pointer-events: auto !important;  /* Les nœuds captent TOUJOURS les clics */
 }
 
 .flow-container .flow-node:hover {
@@ -540,7 +553,7 @@
 }
 
 .flow-container .temp-connection {
-    z-index: 2;
+    z-index: 200;  /* Au-dessus des nœuds pendant le tracé */
 }
 
 .flow-container .temp-connection path {

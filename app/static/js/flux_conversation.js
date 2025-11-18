@@ -669,7 +669,7 @@ class FlowBuilder {
         svg.style.width = '100%';
         svg.style.height = '100%';
         svg.style.pointerEvents = 'none';
-        svg.style.zIndex = '50';
+        svg.style.zIndex = '200';  // Au-dessus des nœuds (z-index: 100)
 
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('stroke', '#5a9eff');
