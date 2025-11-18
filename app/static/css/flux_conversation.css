@@ -571,6 +571,7 @@
     gap: 8px;
     animation: connectionMenuFadeIn 0.15s ease;
     transform: translate(-50%, -50%);
+    pointer-events: auto !important;  /* DOIT capter les clics */
 }
 
 .flow-container .btn-connection-action {
@@ -586,6 +587,7 @@
     cursor: pointer;
     transition: all 0.15s ease;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    pointer-events: auto !important;  /* Boutons cliquables */
 }
 
 .flow-container .btn-connection-action.btn-delete {
@@ -635,6 +637,7 @@
     animation: nodeSelectorFadeIn 0.2s ease;
     transform: translate(-50%, -50%);
     min-width: 200px;
+    pointer-events: auto !important;  /* DOIT capter les clics */
 }
 
 .flow-container .node-type-selector-header {
@@ -665,6 +668,7 @@
     font-size: 13px;
     color: #1e293b;
     text-align: left;
+    pointer-events: auto !important;  /* Boutons cliquables */
 }
 
 .flow-container .node-type-selector-item:hover {
