@@ -61,6 +61,9 @@
         <div class="editor-header">
             <input type="text" class="flow-name" placeholder="Nom du flux">
             <div class="editor-actions">
+                <button class="btn-icon" id="fullscreenBtn" title="Plein écran">
+                    <i data-lucide="maximize-2"></i>
+                </button>
                 <button class="btn-secondary" id="testFlowBtn">
                     <i data-lucide="play"></i>
                     Tester
@@ -76,28 +79,30 @@
         </div>
 
         <div class="editor-workspace">
-            <!-- Palette d'éléments -->
+            <!-- Palette d'éléments - Horizontale en haut -->
             <div class="node-palette">
                 <h3>Éléments</h3>
-                <div class="node-item" draggable="true" data-type="message">
-                    <i data-lucide="message-circle"></i>
-                    <span>Message</span>
-                </div>
-                <div class="node-item" draggable="true" data-type="condition">
-                    <i data-lucide="git-branch"></i>
-                    <span>Condition</span>
-                </div>
-                <div class="node-item" draggable="true" data-type="input">
-                    <i data-lucide="type"></i>
-                    <span>Saisie Utilisateur</span>
-                </div>
-                <div class="node-item" draggable="true" data-type="action">
-                    <i data-lucide="zap"></i>
-                    <span>Action</span>
-                </div>
-                <div class="node-item" draggable="true" data-type="api">
-                    <i data-lucide="plug"></i>
-                    <span>Appel API</span>
+                <div class="node-items">
+                    <div class="node-item" draggable="true" data-type="message">
+                        <i data-lucide="message-circle"></i>
+                        <span>Message</span>
+                    </div>
+                    <div class="node-item" draggable="true" data-type="condition">
+                        <i data-lucide="git-branch"></i>
+                        <span>Condition</span>
+                    </div>
+                    <div class="node-item" draggable="true" data-type="input">
+                        <i data-lucide="type"></i>
+                        <span>Saisie</span>
+                    </div>
+                    <div class="node-item" draggable="true" data-type="action">
+                        <i data-lucide="zap"></i>
+                        <span>Action</span>
+                    </div>
+                    <div class="node-item" draggable="true" data-type="api">
+                        <i data-lucide="plug"></i>
+                        <span>API</span>
+                    </div>
                 </div>
             </div>
 

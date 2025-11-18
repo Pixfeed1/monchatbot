@@ -105,8 +105,82 @@ class FlowBuilder {
             });
         }
 
+        // Bouton plein écran
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+        }
+
+        // Pan avec molette (middle-click + drag)
+        this.setupCanvasPan();
+
         // Cleanup à la fermeture de la page
         window.addEventListener('beforeunload', () => this.destroy());
+    }
+
+    /**
+     * Toggle plein écran
+     */
+    toggleFullscreen() {
+        const editor = document.getElementById('flowEditor');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+        if (editor) {
+            editor.classList.toggle('fullscreen');
+
+            // Changer l'icône
+            const icon = fullscreenBtn.querySelector('i');
+            if (editor.classList.contains('fullscreen')) {
+                icon.setAttribute('data-lucide', 'minimize-2');
+            } else {
+                icon.setAttribute('data-lucide', 'maximize-2');
+            }
+
+            // Rafraîchir les icônes
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+    }
+
+    /**
+     * Setup pan avec molette souris
+     */
+    setupCanvasPan() {
+        let isPanning = false;
+        let startX, startY, scrollLeft, scrollTop;
+
+        this.flowCanvas.addEventListener('mousedown', (e) => {
+            // Middle click (button 1)
+            if (e.button === 1) {
+                e.preventDefault();
+                isPanning = true;
+                this.flowCanvas.classList.add('panning');
+
+                startX = e.clientX;
+                startY = e.clientY;
+                scrollLeft = this.flowCanvas.scrollLeft;
+                scrollTop = this.flowCanvas.scrollTop;
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isPanning) return;
+
+            e.preventDefault();
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            this.flowCanvas.scrollLeft = scrollLeft - dx;
+            this.flowCanvas.scrollTop = scrollTop - dy;
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (e.button === 1) {
+                isPanning = false;
+                this.flowCanvas.classList.remove('panning');
+            }
+        });
     }
 
     /**
@@ -386,15 +460,12 @@ class FlowBuilder {
         nodeElement.innerHTML = `
             <div class="node-header">
                 <span class="node-type">
-                    <i class="${this.getNodeIcon(nodeData.type)}"></i>
+                    <i data-lucide="${this.getNodeIcon(nodeData.type)}"></i>
                     ${this.getNodeTypeLabel(nodeData.type)}
                 </span>
                 <div class="node-actions">
-                    <button class="btn-icon edit-node" title="Éditer">
-                        <i class="fas fa-edit"></i>
-                    </button>
                     <button class="btn-icon delete-node" title="Supprimer">
-                        <i class="fas fa-trash"></i>
+                        <i data-lucide="trash-2"></i>
                     </button>
                 </div>
             </div>
@@ -417,15 +488,10 @@ class FlowBuilder {
         const header = nodeElement.querySelector('.node-header');
         header.addEventListener('mousedown', (e) => this.startNodeDrag(e, nodeElement));
 
-        // Boutons d'action
+        // Bouton suppression
         nodeElement.querySelector('.delete-node').addEventListener('click', (e) => {
             e.stopPropagation();
             this.deleteNode(id);
-        });
-
-        nodeElement.querySelector('.edit-node').addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.selectNode(nodeElement);
         });
 
         // Connexions
@@ -436,6 +502,11 @@ class FlowBuilder {
         });
 
         this.nodesContainer.appendChild(nodeElement);
+
+        // Rafraîchir les icônes Lucide
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
 
     /**
@@ -1016,13 +1087,13 @@ class FlowBuilder {
      */
     getNodeIcon(type) {
         const icons = {
-            message: 'fas fa-comment',
-            condition: 'fas fa-code-branch',
-            input: 'fas fa-keyboard',
-            action: 'fas fa-bolt',
-            api: 'fas fa-plug'
+            message: 'message-circle',
+            condition: 'git-branch',
+            input: 'type',
+            action: 'zap',
+            api: 'plug'
         };
-        return icons[type] || 'fas fa-square';
+        return icons[type] || 'square';
     }
 
     /**
