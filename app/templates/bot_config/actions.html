@@ -3,144 +3,173 @@
 {% block title %}Actions et Automatisations{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/actions.css') }}">
 {% endblock %}
 
 {% block content %}
 <div class="actions-container">
-    <h1>Actions et Automatisations</h1>
+    <!-- Bannière -->
+    <div class="banner">
+        <div class="banner-content">
+            <h1>Actions et Automatisations</h1>
+            <p>Configurez les actions automatiques de votre chatbot</p>
+        </div>
+    </div>
 
-    <!-- Sélecteur de type d'action -->
-    <div class="action-type-selector">
-        <button class="type-btn active" data-type="email">
-            <i data-lucide="mail"></i>
-            Emails
+    <!-- Actions rapides -->
+    <div class="quick-actions">
+        <button class="btn-primary" id="testBtn">
+            <i data-lucide="play"></i>
+            Tester
         </button>
-        <button class="type-btn" data-type="sms">
-            <i data-lucide="message-square"></i>
-            SMS
-        </button>
-        <button class="type-btn" data-type="calendar">
-            <i data-lucide="calendar"></i>
-            Rendez-vous
-        </button>
-        <button class="type-btn" data-type="tickets">
-            <i data-lucide="ticket"></i>
-            Tickets
-        </button>
-        <button class="type-btn" data-type="forms">
-            <i data-lucide="file-text"></i>
-            Formulaires
+        <button class="btn-primary" id="saveBtn">
+            <i data-lucide="save"></i>
+            Enregistrer
         </button>
     </div>
+
+    <!-- Sélecteur de type d'action -->
+    <section class="config-section">
+        <h2 class="section-title">
+            <i data-lucide="zap"></i>
+            Types d'Actions
+        </h2>
+
+        <div class="action-type-selector">
+            <button class="type-btn active" data-type="email">
+                <i data-lucide="mail"></i>
+                Emails
+            </button>
+            <button class="type-btn" data-type="sms">
+                <i data-lucide="message-square"></i>
+                SMS
+            </button>
+            <button class="type-btn" data-type="calendar">
+                <i data-lucide="calendar"></i>
+                Rendez-vous
+            </button>
+            <button class="type-btn" data-type="tickets">
+                <i data-lucide="ticket"></i>
+                Tickets
+            </button>
+            <button class="type-btn" data-type="forms">
+                <i data-lucide="file-text"></i>
+                Formulaires
+            </button>
+        </div>
+    </section>
 
     <!-- Zone de configuration -->
     <div class="config-area">
         <!-- Configuration Email -->
         <div class="config-section active" id="email-config">
-            <div class="triggers-section">
-                <h3>Déclencheurs d'Emails</h3>
-                <div class="trigger-list">
-                    <div class="trigger-card">
-                        <div class="card-header">
-                            <h4>Nouveau Lead</h4>
-                            <label class="switch">
-                                <input type="checkbox" name="trigger_lead_email">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div class="card-content">
+            <h2 class="section-title">
+                <i data-lucide="mail"></i>
+                Déclencheurs d'Emails
+            </h2>
+            <div class="trigger-list">
+                <div class="trigger-card">
+                    <div class="card-header">
+                        <h4>Nouveau Lead</h4>
+                        <label class="switch">
+                            <input type="checkbox" name="trigger_lead_email">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label>Template Email</label>
                             <select class="form-control" name="email_template">
                                 <option value="">Sélectionner un template</option>
                                 {% for template in email_templates %}
                                 <option value="{{ template.id }}">{{ template.name }}</option>
                                 {% endfor %}
                             </select>
-                            <textarea class="form-control" placeholder="Conditions de déclenchement..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Conditions de déclenchement</label>
+                            <textarea class="form-control" placeholder="Entrez les conditions..."></textarea>
                         </div>
                     </div>
-
-                    <button class="add-trigger-btn">
-                        <i data-lucide="plus"></i> Ajouter un déclencheur
-                    </button>
                 </div>
+
+                <button class="add-trigger-btn">
+                    <i data-lucide="plus"></i> Ajouter un déclencheur
+                </button>
             </div>
         </div>
 
         <!-- Configuration SMS -->
         <div class="config-section" id="sms-config">
-            <div class="triggers-section">
-                <h3>Alertes SMS</h3>
-                <div class="trigger-list">
-                    <!-- Similaire à la section email -->
-                </div>
+            <h2 class="section-title">
+                <i data-lucide="message-square"></i>
+                Alertes SMS
+            </h2>
+            <div class="trigger-list">
+                <button class="add-trigger-btn">
+                    <i data-lucide="plus"></i> Ajouter une alerte SMS
+                </button>
             </div>
         </div>
 
         <!-- Configuration Rendez-vous -->
         <div class="config-section" id="calendar-config">
-            <div class="calendar-settings">
-                <h3>Configuration du Calendrier</h3>
-                <div class="settings-form">
-                    <div class="form-group">
-                        <label>Service de Calendrier</label>
-                        <select class="form-control" name="calendar_service">
-                            <option value="google">Google Calendar</option>
-                            <option value="outlook">Outlook Calendar</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Durée par défaut</label>
-                        <select class="form-control" name="default_duration">
-                            <option value="30">30 minutes</option>
-                            <option value="60">1 heure</option>
-                        </select>
-                    </div>
+            <h2 class="section-title">
+                <i data-lucide="calendar"></i>
+                Configuration du Calendrier
+            </h2>
+            <div class="settings-form">
+                <div class="form-group">
+                    <label>Service de Calendrier</label>
+                    <select class="form-control" name="calendar_service">
+                        <option value="google">Google Calendar</option>
+                        <option value="outlook">Outlook Calendar</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Durée par défaut</label>
+                    <select class="form-control" name="default_duration">
+                        <option value="30">30 minutes</option>
+                        <option value="60">1 heure</option>
+                    </select>
                 </div>
             </div>
         </div>
 
         <!-- Configuration Tickets -->
         <div class="config-section" id="tickets-config">
-            <div class="ticket-settings">
-                <h3>Gestion des Tickets</h3>
-                <div class="settings-form">
-                    <div class="form-group">
-                        <label>Service de Tickets</label>
-                        <select class="form-control" name="ticket_service">
-                            <option value="internal">Système Interne</option>
-                            <option value="zendesk">Zendesk</option>
-                            <option value="freshdesk">Freshdesk</option>
-                        </select>
-                    </div>
-                    <div class="priority-mapping">
-                        <h4>Mapping des Priorités</h4>
-                        <!-- Configuration des priorités -->
-                    </div>
+            <h2 class="section-title">
+                <i data-lucide="ticket"></i>
+                Gestion des Tickets
+            </h2>
+            <div class="settings-form">
+                <div class="form-group">
+                    <label>Service de Tickets</label>
+                    <select class="form-control" name="ticket_service">
+                        <option value="internal">Système Interne</option>
+                        <option value="zendesk">Zendesk</option>
+                        <option value="freshdesk">Freshdesk</option>
+                    </select>
+                </div>
+                <div class="priority-mapping">
+                    <h4>Mapping des Priorités</h4>
+                    <!-- Configuration des priorités -->
                 </div>
             </div>
         </div>
 
         <!-- Configuration Formulaires -->
         <div class="config-section" id="forms-config">
-            <div class="form-redirections">
-                <h3>Redirections vers Formulaires</h3>
-                <div class="redirection-list">
-                    <!-- Liste des redirections -->
-                </div>
+            <h2 class="section-title">
+                <i data-lucide="file-text"></i>
+                Redirections vers Formulaires
+            </h2>
+            <div class="redirection-list">
                 <button class="add-redirection-btn">
                     <i data-lucide="plus"></i> Ajouter une redirection
                 </button>
             </div>
         </div>
-    </div>
-
-    <!-- Actions globales -->
-    <div class="global-actions">
-        <button class="btn btn-secondary" id="testBtn">Tester les automatisations</button>
-        <button class="btn btn-primary" id="saveBtn">Enregistrer</button>
     </div>
 </div>
 
