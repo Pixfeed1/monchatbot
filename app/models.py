@@ -59,6 +59,14 @@ class CalendarConfig(db.Model):
     calendar_id = db.Column(db.String(200))
     settings = db.Column(db.Text)  # Paramètres supplémentaires en JSON
 
+    @property
+    def settings_dict(self):
+        return json.loads(self.settings) if self.settings else {}
+
+    @settings_dict.setter
+    def settings_dict(self, value):
+        self.settings = json.dumps(value)
+
 
 class TicketConfig(db.Model):
     """Configuration du système de tickets"""
@@ -75,6 +83,22 @@ class TicketConfig(db.Model):
     @priority_mapping.setter
     def priority_mapping(self, value):
         self._priority_mapping = json.dumps(value)
+
+    @property
+    def priority_mapping_dict(self):
+        return self.priority_mapping
+
+    @priority_mapping_dict.setter
+    def priority_mapping_dict(self, value):
+        self.priority_mapping = value
+
+    @property
+    def settings_dict(self):
+        return {}  # Pas de champ settings pour TicketConfig
+
+    @settings_dict.setter
+    def settings_dict(self, value):
+        pass  # Ignorer pour TicketConfig
 
 
 class FormRedirection(db.Model):

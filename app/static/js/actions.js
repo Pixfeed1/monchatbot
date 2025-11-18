@@ -26,7 +26,7 @@ class ActionsManager {
         this.triggerModal = document.getElementById('triggerModal');
 
         // Boutons d'ajout
-        this.addTriggerBtn = document.querySelector('.add-trigger-btn');
+        this.addTriggerBtns = document.querySelectorAll('.add-trigger-btn');
         this.addRedirectionBtn = document.querySelector('.add-redirection-btn');
     }
 
@@ -46,10 +46,13 @@ class ActionsManager {
             this.testBtn.addEventListener('click', () => this.testConfiguration());
         }
 
-        // Gestion des ajouts
-        if (this.addTriggerBtn) {
-            this.addTriggerBtn.addEventListener('click', () => this.showTriggerModal());
-        }
+        // Gestion des ajouts de déclencheurs
+        this.addTriggerBtns.forEach(button => {
+            button.addEventListener('click', () => {
+                const triggerType = button.dataset.triggerType || 'email';
+                this.showTriggerModal(triggerType);
+            });
+        });
 
         if (this.addRedirectionBtn) {
             this.addRedirectionBtn.addEventListener('click', () => this.showRedirectionModal());
@@ -423,35 +426,80 @@ class ActionsManager {
         }
     }
 
-    showTriggerModal() {
-        if (!this.triggerModal) return;
+    showTriggerModal(triggerType = 'email') {
+        // Créer la modale dynamiquement
+        const modal = document.createElement('div');
+        modal.className = 'modal show';
+        modal.id = 'triggerModalDynamic';
 
-        const modalContent = `
-            <h3>Nouveau Déclencheur</h3>
-            <form id="triggerForm">
-                <div class="form-group">
-                    <label class="form-label">Nom du déclencheur</label>
-                    <input type="text" class="form-control" name="trigger_name" required>
+        const typeLabel = triggerType === 'email' ? 'Email' : 'SMS';
+
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Nouveau Déclencheur ${typeLabel}</h3>
+                    <button class="close-modal" id="close-trigger-modal">
+                        <i data-lucide="x"></i>
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Conditions</label>
-                    <textarea class="form-control" name="conditions" rows="3"></textarea>
+                <div class="modal-body">
+                    <form id="trigger-form">
+                        <input type="hidden" name="type" value="${triggerType}">
+                        <div class="form-group">
+                            <label class="form-label">Nom du déclencheur</label>
+                            <input type="text" class="form-control" name="name" required placeholder="Ex: Nouveau lead">
+                        </div>
+                        ${triggerType === 'email' ? `
+                        <div class="form-group">
+                            <label class="form-label">Template Email</label>
+                            <select class="form-control" name="email_template_id">
+                                <option value="">Aucun template</option>
+                            </select>
+                        </div>
+                        ` : ''}
+                        <div class="form-group">
+                            <label class="form-label">Conditions de déclenchement</label>
+                            <textarea class="form-control" name="conditions" rows="3" placeholder="Ex: Quand un utilisateur s'inscrit"></textarea>
+                            <small class="help-text">Conditions pour déclencher cette action</small>
+                        </div>
+                    </form>
                 </div>
-                <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-                    <button type="button" class="btn btn-secondary" onclick="actionsManager.hideTriggerModal()">Annuler</button>
-                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="cancel-trigger-btn">Annuler</button>
+                    <button class="btn btn-primary" id="save-trigger-btn">
+                        <i data-lucide="save"></i>
+                        Créer
+                    </button>
                 </div>
-            </form>
+            </div>
         `;
 
-        this.triggerModal.querySelector('.modal-content').innerHTML = modalContent;
-        this.triggerModal.style.display = 'block';
+        document.body.appendChild(modal);
 
-        // Ajouter listener pour le formulaire
-        const form = document.getElementById('triggerForm');
-        if (form) {
-            form.addEventListener('submit', (e) => this.handleTriggerFormSubmit(e));
+        // Réinitialiser les icônes Lucide
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
         }
+
+        // Event listeners
+        const closeBtn = modal.querySelector('#close-trigger-modal');
+        const cancelBtn = modal.querySelector('#cancel-trigger-btn');
+        const saveBtn = modal.querySelector('#save-trigger-btn');
+
+        const closeModal = () => {
+            modal.remove();
+        };
+
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        saveBtn.addEventListener('click', () => this.saveTrigger(modal));
+
+        // Fermer en cliquant à l'extérieur
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
     }
 
     async handleTriggerFormSubmit(event) {
@@ -493,6 +541,52 @@ class ActionsManager {
     hideTriggerModal() {
         if (this.triggerModal) {
             this.triggerModal.style.display = 'none';
+        }
+    }
+
+    async saveTrigger(modal) {
+        const form = modal.querySelector('#trigger-form');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const formData = new FormData(form);
+        const data = {
+            name: formData.get('name'),
+            type: formData.get('type'),
+            conditions: formData.get('conditions') || '',
+            email_template_id: formData.get('email_template_id') || null
+        };
+
+        try {
+            const saveBtn = modal.querySelector('#save-trigger-btn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i data-lucide="loader"></i> Création...';
+
+            const response = await fetch('/actions/triggers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': this.csrfToken
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess(result.message || 'Déclencheur créé avec succès');
+                await this.loadInitialData();
+                modal.remove();
+            } else {
+                this.showError(result.error || 'Erreur lors de la création');
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i data-lucide="save"></i> Créer';
+            }
+        } catch (error) {
+            console.error('Erreur saveTrigger:', error);
+            this.showError('Erreur lors de la création du déclencheur');
         }
     }
 

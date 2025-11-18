@@ -68,32 +68,7 @@
                 Déclencheurs d'Emails
             </h2>
             <div class="trigger-list">
-                <div class="trigger-card">
-                    <div class="card-header">
-                        <h4>Nouveau Lead</h4>
-                        <label class="switch">
-                            <input type="checkbox" name="trigger_lead_email">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="card-content">
-                        <div class="form-group">
-                            <label>Template Email</label>
-                            <select class="form-control" name="email_template">
-                                <option value="">Sélectionner un template</option>
-                                {% for template in email_templates %}
-                                <option value="{{ template.id }}">{{ template.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Conditions de déclenchement</label>
-                            <textarea class="form-control" placeholder="Entrez les conditions..."></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <button class="add-trigger-btn">
+                <button class="add-trigger-btn" data-trigger-type="email">
                     <i data-lucide="plus"></i> Ajouter un déclencheur
                 </button>
             </div>
@@ -106,7 +81,7 @@
                 Alertes SMS
             </h2>
             <div class="trigger-list">
-                <button class="add-trigger-btn">
+                <button class="add-trigger-btn" data-trigger-type="sms">
                     <i data-lucide="plus"></i> Ajouter une alerte SMS
                 </button>
             </div>

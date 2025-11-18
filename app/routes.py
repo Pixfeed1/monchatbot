@@ -4942,7 +4942,7 @@ def get_calendar_config():
         if not config:
             # Créer une configuration par défaut
             config = CalendarConfig(
-                service='google',
+                service_type='google',
                 default_duration=60
             )
             db.session.add(config)
@@ -4952,8 +4952,8 @@ def get_calendar_config():
             'success': True,
             'config': {
                 'id': config.id,
-                'service': config.service,
-                'api_key': config.api_key,
+                'service': config.service_type,
+                'credentials': config.credentials,
                 'default_duration': config.default_duration,
                 'settings': config.settings_dict
             }
@@ -4980,9 +4980,9 @@ def update_calendar_config():
             db.session.add(config)
 
         if 'service' in data:
-            config.service = data['service']
-        if 'api_key' in data:
-            config.api_key = data['api_key']
+            config.service_type = data['service']
+        if 'credentials' in data:
+            config.credentials = data['credentials']
         if 'default_duration' in data:
             config.default_duration = data['default_duration']
         if 'settings' in data:
@@ -5016,7 +5016,7 @@ def get_ticket_config():
         if not config:
             # Créer une configuration par défaut
             config = TicketConfig(
-                service='internal'
+                service_type='internal'
             )
             db.session.add(config)
             db.session.commit()
@@ -5025,7 +5025,7 @@ def get_ticket_config():
             'success': True,
             'config': {
                 'id': config.id,
-                'service': config.service,
+                'service': config.service_type,
                 'api_key': config.api_key,
                 'priority_mapping': config.priority_mapping_dict,
                 'settings': config.settings_dict
@@ -5053,7 +5053,7 @@ def update_ticket_config():
             db.session.add(config)
 
         if 'service' in data:
-            config.service = data['service']
+            config.service_type = data['service']
         if 'api_key' in data:
             config.api_key = data['api_key']
         if 'priority_mapping' in data:
