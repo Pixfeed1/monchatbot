@@ -1,264 +1,994 @@
-/* Container principal */
+/**
+ * Flux de Conversation - Style FINAL corrigé
+ * Design cohérent avec architecture z-index fixée
+ */
+
+/* CONTAINER */
 .flow-container {
+    padding: 24px;
+}
+
+/* BANNIÈRE */
+.flow-container .banner {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 32px;
+}
+
+.flow-container .banner-content h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e40af;
+    margin: 0 0 8px 0;
+}
+
+.flow-container .banner-content p {
+    font-size: 15px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* ACTIONS RAPIDES */
+.flow-container .quick-actions {
     display: flex;
-    flex-direction: column;
-    height: calc(100vh - 200px);
-    gap: 20px;
+    gap: 12px;
+    margin-bottom: 32px;
 }
 
-/* Barre d'outils */
-.flow-toolbar {
+/* SECTIONS */
+.flow-container .config-section {
+    margin-bottom: 32px;
+}
+
+.flow-container .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 20px;
     display: flex;
-    gap: 10px;
-    padding: 15px;
-    background-color: #f8fafc;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    align-items: center;
+    gap: 8px;
 }
 
-/* Espace de travail */
-.flow-workspace {
-    display: grid;
-    grid-template-columns: 250px 1fr;
-    gap: 20px;
-    flex: 1;
-    min-height: 0;
-}
-
-/* Liste des flux */
-.flow-list {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-}
-
-.list-header {
-    padding: 15px;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.flow-search {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    margin-top: 10px;
-}
-
-/* Éditeur de flux */
-.flow-editor {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-}
-
-.editor-header {
-    padding: 15px;
-    border-bottom: 1px solid #e2e8f0;
+.flow-container .section-header-with-actions {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 20px;
 }
 
-.flow-name {
-    font-size: 1.2em;
-    border: none;
-    border-bottom: 2px solid transparent;
-    padding: 5px;
-    width: 300px;
-}
-
-.flow-name:focus {
-    border-bottom-color: #0d6efd;
-    outline: none;
-}
-
-/* Constructeur de flux */
-.flow-builder {
-    display: grid;
-    grid-template-columns: 200px 1fr 250px;
-    gap: 10px;
-    flex: 1;
-    min-height: 0;
-}
-
-/* Palette de nœuds */
-.node-palette {
-    padding: 15px;
-    border-right: 1px solid #e2e8f0;
-    overflow-y: auto;
-}
-
-.node-item {
+.flow-container .header-actions {
     display: flex;
+    gap: 8px;
     align-items: center;
-    gap: 10px;
-    padding: 10px;
-    margin-bottom: 8px;
-    background: #f8fafc;
+}
+
+.flow-container .flow-search {
+    padding: 8px 12px;
     border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    cursor: move;
-    transition: all 0.2s;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 250px;
 }
 
-.node-item:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
+.flow-container .flow-search:focus {
+    outline: none;
+    border-color: #0d6efd;
 }
 
-.node-item i {
-    font-size: 1.2em;
-    width: 20px;
-    text-align: center;
+/* GRID DE FLUX */
+.flow-container .flows {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
 }
 
-/* Canvas de flux */
-.flow-canvas {
+.flow-container .flow-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    overflow: auto;
-    background: #f8fafc;
-    border-radius: 4px;
+    overflow: hidden;
 }
 
-/* Nœuds */
-.flow-node {
+.flow-container .flow-card::before {
+    content: '';
     position: absolute;
-    min-width: 200px;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.flow-container .flow-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+    transform: translateY(-4px);
+}
+
+.flow-container .flow-card:hover::before {
+    transform: scaleX(1);
+}
+
+.flow-container .flow-card.active {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+}
+
+.flow-container .flow-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.flow-container .flow-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.flow-container .flow-card-status {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.flow-container .flow-card-status.active {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #15803d;
+}
+
+.flow-container .flow-card-status.inactive {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #b91c1c;
+}
+
+.flow-container .flow-card-description {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 16px;
+    line-height: 1.6;
+}
+
+.flow-container .flow-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #94a3b8;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* ÉDITEUR DE FLUX */
+.flow-container .flow-editor {
     background: white;
     border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-top: 32px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    position: relative;
+}
+
+/* Mode plein écran */
+.flow-editor.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+}
+
+.flow-editor.fullscreen .editor-workspace {
+    min-height: calc(100vh - 64px);
+}
+
+.flow-container .editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 2px solid #f1f5f9;
+    background: linear-gradient(135deg, #fafbfc 0%, #ffffff 100%);
+}
+
+.flow-container .flow-name {
+    font-size: 18px;
+    font-weight: 600;
+    border: 2px solid transparent;
+    padding: 8px 12px;
+    border-radius: 8px;
+    flex: 1;
+    max-width: 400px;
+    transition: all 0.2s ease;
+    background: transparent;
+}
+
+.flow-container .flow-name:hover {
+    border-color: #e2e8f0;
+    background: white;
+}
+
+.flow-container .flow-name:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.flow-container .editor-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.flow-container .editor-workspace {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-height: 700px;
+    background: white;
+}
+
+/* PALETTE D'ÉLÉMENTS */
+.flow-container .node-palette {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 16px;
+    background: white;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.flow-container .node-palette h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.flow-container .node-items {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    overflow-x: auto;
+}
+
+.flow-container .node-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: grab;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.flow-container .node-item:hover {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #0d6efd;
+}
+
+.flow-container .node-item:active {
+    cursor: grabbing;
+}
+
+.flow-container .node-item.dragging {
+    opacity: 0.5;
+}
+
+.flow-container .node-item i {
+    width: 16px;
+    height: 16px;
+    color: #0d6efd;
+}
+
+.flow-container .node-item span {
+    font-size: 13px;
+    color: #1e293b;
+}
+
+/* CANVAS DE FLUX - Architecture z-index corrigée */
+.flow-container .flow-canvas {
+    padding: 0;
+    background: #f8fafc;
+    background-image:
+        linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+    position: relative;
+    overflow: auto;
+    min-height: 700px;
+}
+
+/* Conteneur des connexions (z-index: 1) */
+.flow-container .flow-connections {
+    position: absolute;
+    top: 0;
+    left: 0;
+    min-height: 200%;
+    min-width: 200%;
+    padding: 50px;
+    z-index: 1;
+    pointer-events: none !important;
+}
+
+.flow-container .flow-connections svg {
+    pointer-events: none !important;
+}
+
+.flow-container .flow-connections svg path[style*="pointer-events: stroke"] {
+    pointer-events: stroke !important;
+}
+
+/* Conteneur des nœuds (z-index: 100) */
+.flow-container .flow-nodes {
+    position: absolute;
+    top: 0;
+    left: 0;
+    min-height: 200%;
+    min-width: 200%;
+    padding: 50px;
+    transform-origin: 0 0;
+    transition: transform 0.1s ease-out;
+    z-index: 100;
+    pointer-events: none;
+}
+
+/* NŒUDS */
+.flow-container .flow-node {
+    position: absolute;
+    background: white;
+    border-radius: 10px;
+    min-width: 200px;
+    max-width: 300px;
+    cursor: move;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s ease;
+    overflow: hidden;
+    pointer-events: auto !important;
+}
+
+.flow-container .flow-node:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.flow-container .flow-node.selected {
+    box-shadow: 0 0 0 2px #0d6efd;
+}
+
+.flow-container .flow-node.dragging {
+    opacity: 0.9;
+    cursor: grabbing;
+    transition: none !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2) !important;
+    z-index: 1000 !important;
+}
+
+/* En-tête du nœud */
+.flow-container .node-header {
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+}
+
+.flow-container .node-type {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.flow-container .node-type i {
+    width: 14px;
+    height: 14px;
+}
+
+.flow-container .node-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.flow-container .node-header .btn-icon {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 4px;
+    padding: 4px;
+    cursor: pointer;
+    color: white;
+    transition: background 0.2s;
+}
+
+.flow-container .node-header .btn-icon:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.flow-container .node-header .btn-icon i {
+    width: 12px;
+    height: 12px;
+}
+
+/* Contenu du nœud */
+.flow-container .node-content {
+    padding: 12px;
+    min-height: 50px;
+    font-size: 13px;
+    color: #1e293b;
+}
+
+.flow-container .node-content .form-control {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #e2e8f0;
     border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 12px;
+    font-family: inherit;
+}
+
+.flow-container .node-content .form-control:focus {
+    outline: none;
+    border-color: #0d6efd;
+}
+
+.flow-container .node-content textarea.form-control {
+    resize: vertical;
+    min-height: 50px;
+}
+
+.flow-container .condition-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Ports de connexion */
+.flow-container .node-ports {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.flow-container .port {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #0d6efd;
+    border: 3px solid white;
+    cursor: crosshair;
+    pointer-events: all;
+    transition: all 0.2s;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(13, 110, 253, 0.3);
+}
+
+.flow-container .port:hover {
+    transform: scale(1.4);
+    background: #0a58ca;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.2), 0 3px 8px rgba(13, 110, 253, 0.4);
+}
+
+.flow-container .port-in {
+    left: -8px;
+}
+
+.flow-container .port-out {
+    right: -8px;
+}
+
+/* Connexions entre nœuds */
+.flow-container .flow-connection {
+    pointer-events: stroke;
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     z-index: 1;
 }
 
-.node-header {
-    padding: 10px;
+.flow-container .flow-connection path {
+    stroke: #94a3b8;
+    stroke-width: 2;
+    fill: none;
+    transition: stroke 0.2s;
+}
+
+.flow-container .flow-connection:hover path {
+    stroke: #0d6efd;
+    stroke-width: 2.5;
+}
+
+.flow-container .flow-connection.selected path {
+    stroke: #0d6efd;
+    stroke-width: 3;
+}
+
+.flow-container .temp-connection {
+    z-index: 200;
+}
+
+.flow-container .temp-connection path {
+    stroke: #0d6efd;
+    stroke-width: 2;
+    stroke-dasharray: 5,5;
+    animation: dash 0.5s linear infinite;
+}
+
+/* Menu de connexion */
+.flow-container .connection-menu {
+    position: absolute;
+    z-index: 1000;
+    display: flex;
+    gap: 8px;
+    animation: connectionMenuFadeIn 0.15s ease;
+    transform: translate(-50%, -50%);
+    pointer-events: auto !important;
+}
+
+.flow-container .btn-connection-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    pointer-events: auto !important;
+}
+
+.flow-container .btn-connection-action.btn-delete {
+    background: #ef4444;
+}
+
+.flow-container .btn-connection-action.btn-delete:hover {
+    background: #dc2626;
+    transform: scale(1.15);
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.4);
+}
+
+.flow-container .btn-connection-action.btn-add {
+    background: #0d6efd;
+}
+
+.flow-container .btn-connection-action.btn-add:hover {
+    background: #0a58ca;
+    transform: scale(1.15);
+    box-shadow: 0 3px 8px rgba(13, 110, 253, 0.4);
+}
+
+.flow-container .btn-connection-action i {
+    width: 14px;
+    height: 14px;
+}
+
+@keyframes connectionMenuFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* Sélecteur de type de nœud */
+.flow-container .node-type-selector {
+    position: absolute;
+    background: white;
+    border: 3px solid #0d6efd;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(13, 110, 253, 0.4);
+    z-index: 10000 !important;
+    animation: nodeSelectorFadeIn 0.2s ease;
+    transform: translate(-50%, -50%);
+    min-width: 220px;
+    pointer-events: auto !important;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.flow-container .node-type-selector-header {
+    padding: 16px;
+    border-bottom: 2px solid #0d6efd;
+    font-weight: 700;
+    font-size: 14px;
+    color: #0d6efd;
+    text-align: center;
+    background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+}
+
+.flow-container .node-type-selector-items {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #fafbfc;
+}
+
+.flow-container .node-type-selector-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    text-align: left;
+    pointer-events: auto !important;
+}
+
+.flow-container .node-type-selector-item:hover {
     background: #f8fafc;
+    border-color: #0d6efd;
+    transform: translateX(4px);
+}
+
+.flow-container .node-type-selector-item:active {
+    transform: translateX(4px) scale(0.98);
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.flow-container .node-type-selector-item:active i {
+    color: white;
+}
+
+.flow-container .node-type-selector-item i {
+    width: 16px;
+    height: 16px;
+    color: #0d6efd;
+}
+
+@keyframes nodeSelectorFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* Canvas panning */
+.flow-container .flow-canvas.panning {
+    cursor: grab;
+}
+
+.flow-container .flow-canvas.panning:active {
+    cursor: grabbing;
+}
+
+@keyframes dash {
+    to {
+        stroke-dashoffset: -10;
+    }
+}
+
+/* ANIMATIONS */
+.flow-container .fade-in {
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* PROPRIÉTÉS DU NŒUD */
+.flow-container .node-properties {
+    display: none;
+}
+
+.flow-container .properties-content {
+    padding: 16px;
+}
+
+.flow-container .property-group {
+    margin-bottom: 16px;
+}
+
+.flow-container .property-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.flow-container .property-input {
+    width: 100%;
+}
+
+.flow-container .form-help {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+/* ÉTAT VIDE */
+.flow-container .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: #94a3b8;
+}
+
+.flow-container .empty-state i {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+}
+
+.flow-container .empty-state p {
+    font-size: 15px;
+    font-weight: 500;
+    color: #64748b;
+    margin: 0 0 4px 0;
+}
+
+.flow-container .empty-state small {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* BOUTONS */
+.flow-container .btn-primary,
+.flow-container .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.flow-container .btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+}
+
+.flow-container .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+}
+
+.flow-container .btn-secondary {
+    background: white;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.flow-container .btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.flow-container .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    background: none;
+    color: #64748b;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.flow-container .btn-icon:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+/* MODAL DE TEST */
+#testModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+#testModal.show {
+    display: flex;
+}
+
+#testModal .modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#testModal .modal-header {
+    padding: 20px 24px;
     border-bottom: 1px solid #e2e8f0;
-    border-radius: 6px 6px 0 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.node-content {
-    padding: 15px;
+#testModal .modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
 }
 
-.node-ports {
-    display: flex;
-    justify-content: space-between;
-    padding: 5px;
-}
-
-.port {
-    width: 12px;
-    height: 12px;
-    background: #0d6efd;
-    border-radius: 50%;
+#testModal .modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #94a3b8;
     cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
 }
 
-/* Types de nœuds spécifiques */
-.message-node { border-left: 4px solid #10b981; }
-.condition-node { border-left: 4px solid #f59e0b; }
-.input-node { border-left: 4px solid #3b82f6; }
-.action-node { border-left: 4px solid #ef4444; }
-.api-node { border-left: 4px solid #8b5cf6; }
-
-/* Connexions */
-.flow-connection {
-    position: absolute;
-    pointer-events: none;
-    z-index: 0;
+#testModal .modal-close:hover {
+    color: #1e293b;
 }
 
-.flow-connection path {
-    stroke: #64748b;
-    stroke-width: 2;
-    fill: none;
-}
-
-/* Panneau de propriétés */
-.node-properties {
-    padding: 15px;
-    border-left: 1px solid #e2e8f0;
+#testModal .modal-body {
+    padding: 24px;
+    flex: 1;
     overflow-y: auto;
-}
-
-.properties-content {
-    padding: 10px;
-}
-
-/* Styles des formulaires dans les nœuds */
-.flow-node input,
-.flow-node textarea,
-.flow-node select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    margin-bottom: 8px;
-}
-
-.flow-node textarea {
-    resize: vertical;
-    min-height: 80px;
-}
-
-/* Modal de test */
-.test-conversation {
-    height: 300px;
-    overflow-y: auto;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    margin-bottom: 15px;
-    padding: 10px;
-}
-
-.test-input {
     display: flex;
-    gap: 10px;
+    flex-direction: column;
+    gap: 16px;
 }
 
-/* Responsive */
-@media (max-width: 1200px) {
-    .flow-builder {
-        grid-template-columns: 150px 1fr 200px;
+#testModal .test-conversation {
+    flex: 1;
+    min-height: 300px;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+#testModal .test-input-area {
+    display: flex;
+    gap: 12px;
+}
+
+#testModal .test-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+#testModal .test-input:focus {
+    outline: none;
+    border-color: #0d6efd;
+}
+
+#testModal .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+/* Messages de test */
+.test-message {
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    max-width: 80%;
+}
+
+.test-message.user {
+    background: #dbeafe;
+    margin-left: auto;
+}
+
+.test-message.bot {
+    background: white;
+    border: 1px solid #e2e8f0;
+}
+
+.test-message-content {
+    font-size: 14px;
+    color: #1e293b;
+}
+
+.test-message-time {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+    .flow-container .editor-workspace {
+        grid-template-rows: auto 1fr;
     }
 }
 
-@media (max-width: 992px) {
-    .flow-workspace {
+@media (max-width: 768px) {
+    .flow-container {
+        padding: 16px;
+    }
+
+    .flow-container .quick-actions {
+        flex-wrap: wrap;
+    }
+
+    .flow-container .editor-workspace {
         grid-template-columns: 1fr;
     }
 
-    .flow-list {
-        display: none;
+    .flow-container .node-palette {
+        border: none;
+        border-bottom: 1px solid #e2e8f0;
     }
 
-    .flow-builder {
+    .flow-container .flows {
         grid-template-columns: 1fr;
-    }
-
-    .node-palette,
-    .node-properties {
-        position: fixed;
-        top: 0;
-        height: 100vh;
-        background: white;
-        z-index: 1000;
-        transform: translateX(-100%);
-        transition: transform 0.3s;
-    }
-
-    .node-palette.show,
-    .node-properties.show {
-        transform: translateX(0);
     }
 }
