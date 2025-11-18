@@ -50,11 +50,13 @@ class ActionsManager {
         console.log('Found trigger buttons:', this.addTriggerBtns.length);
         this.addTriggerBtns.forEach(button => {
             console.log('Attaching listener to button with type:', button.dataset.triggerType);
-            button.addEventListener('click', () => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 const triggerType = button.dataset.triggerType || 'email';
                 console.log('Trigger button clicked, type:', triggerType);
                 this.showTriggerModal(triggerType);
-            });
+            }, { once: false });
         });
 
         if (this.addRedirectionBtn) {
@@ -430,6 +432,15 @@ class ActionsManager {
     }
 
     showTriggerModal(triggerType = 'email') {
+        // Vérifier si une modale existe déjà
+        const existingModal = document.getElementById('triggerModalDynamic');
+        if (existingModal) {
+            console.log('Modal already exists, removing...');
+            existingModal.remove();
+        }
+
+        console.log('Creating modal for type:', triggerType);
+
         // Créer la modale dynamiquement
         const modal = document.createElement('div');
         modal.className = 'modal show';

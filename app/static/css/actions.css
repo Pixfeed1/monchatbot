@@ -399,20 +399,60 @@ textarea.form-control {
     background-color: rgba(0, 0, 0, 0.5);
 }
 
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .modal-content {
     background-color: white;
-    margin: 10% auto;
+    margin: 0;
     padding: 32px;
     border-radius: 12px;
     max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    position: relative;
 }
 
-.modal-content h3 {
-    color: #1e293b;
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 24px;
+}
+
+.modal-header h3 {
+    color: #1e293b;
+    margin: 0;
     font-size: 20px;
     font-weight: 600;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: #64748b;
+    transition: color 0.2s;
+}
+
+.close-modal:hover {
+    color: #1e293b;
+}
+
+.modal-body {
+    margin-bottom: 24px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
 }
 
 /* Cartes de redirection */
