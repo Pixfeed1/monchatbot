@@ -3,104 +3,156 @@
 {% block title %}Flux de Conversation{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/flux_conversation.css') }}">
 {% endblock %}
 
 {% block content %}
 <div class="flow-container">
-    <h1>Configuration des Flux de Conversation</h1>
+    <!-- Bannière -->
+    <div class="banner">
+        <div class="banner-content">
+            <h1>Flux de Conversation</h1>
+            <p>Créez des parcours conversationnels intelligents pour votre bot</p>
+        </div>
+    </div>
 
-    <!-- Barre d'outils -->
-    <div class="flow-toolbar">
-        <button class="btn btn-primary" id="newFlowBtn">
-            <i class="fas fa-plus"></i> Nouveau Flux
+    <!-- Actions rapides -->
+    <div class="quick-actions">
+        <button class="btn-primary" id="newFlowBtn">
+            <i data-lucide="plus"></i>
+            Nouveau Flux
         </button>
-        <button class="btn btn-secondary" id="importFlowBtn">
-            <i class="fas fa-file-import"></i> Importer
+        <button class="btn-secondary" id="importFlowBtn">
+            <i data-lucide="upload"></i>
+            Importer
         </button>
-        <button class="btn btn-secondary" id="exportFlowBtn">
-            <i class="fas fa-file-export"></i> Exporter
+        <button class="btn-secondary" id="exportFlowBtn">
+            <i data-lucide="download"></i>
+            Exporter
         </button>
     </div>
 
-    <!-- Zone principale -->
-    <div class="flow-workspace">
-        <!-- Liste des flux -->
-        <div class="flow-list">
-            <div class="list-header">
-                <h3>Mes Flux</h3>
-                <input type="text" placeholder="Rechercher un flux..." class="flow-search">
-            </div>
-            <div class="flows">
-                <!-- Les flux seront injectés ici -->
+    <!-- Liste des flux -->
+    <section class="config-section">
+        <div class="section-header-with-actions">
+            <h2 class="section-title">
+                <i data-lucide="git-branch"></i>
+                Mes Flux
+            </h2>
+            <div class="header-actions">
+                <input type="text" class="flow-search" placeholder="Rechercher un flux...">
+                <button class="btn-icon" id="refreshFlows">
+                    <i data-lucide="refresh-cw"></i>
+                </button>
             </div>
         </div>
 
-        <!-- Éditeur de flux -->
-        <div class="flow-editor">
-            <div class="editor-header">
-                <input type="text" class="flow-name" placeholder="Nom du flux">
-                <div class="editor-actions">
-                    <button class="btn btn-primary" id="saveFlowBtn">Enregistrer</button>
-                    <button class="btn btn-secondary" id="testFlowBtn">Tester</button>
-                </div>
-            </div>
+        <!-- FIX: ID correct pour la grille -->
+        <div class="flows" id="flowsGrid">
+            <!-- Les cartes de flux seront ajoutées ici dynamiquement -->
+        </div>
+    </section>
 
-            <!-- Zone de construction du flux -->
-            <div class="flow-builder">
-                <div class="node-palette">
-                    <h4>Éléments</h4>
+    <!-- Éditeur de flux (affiché uniquement quand un flux est sélectionné) -->
+    <div class="flow-editor" id="flowEditor" style="display: block;">
+        <div class="editor-header">
+            <input type="text" class="flow-name" placeholder="Nom du flux">
+            <div class="editor-actions">
+                <button class="btn-icon" id="fullscreenBtn" title="Plein écran">
+                    <i data-lucide="maximize-2"></i>
+                </button>
+                <button class="btn-secondary" id="testFlowBtn">
+                    <i data-lucide="play"></i>
+                    Tester
+                </button>
+                <button class="btn-primary" id="saveFlowBtn">
+                    <i data-lucide="save"></i>
+                    Enregistrer
+                </button>
+                <button class="btn-icon" id="closeEditorBtn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="editor-workspace">
+            <!-- Palette d'éléments - Horizontale en haut -->
+            <div class="node-palette">
+                <h3>Éléments</h3>
+                <div class="node-items">
                     <div class="node-item" draggable="true" data-type="message">
-                        <i class="fas fa-comment"></i>
-                        Message
+                        <i data-lucide="message-circle"></i>
+                        <span>Message</span>
                     </div>
                     <div class="node-item" draggable="true" data-type="condition">
-                        <i class="fas fa-code-branch"></i>
-                        Condition
+                        <i data-lucide="git-branch"></i>
+                        <span>Condition</span>
                     </div>
                     <div class="node-item" draggable="true" data-type="input">
-                        <i class="fas fa-keyboard"></i>
-                        Saisie
+                        <i data-lucide="type"></i>
+                        <span>Saisie</span>
                     </div>
                     <div class="node-item" draggable="true" data-type="action">
-                        <i class="fas fa-bolt"></i>
-                        Action
+                        <i data-lucide="zap"></i>
+                        <span>Action</span>
                     </div>
                     <div class="node-item" draggable="true" data-type="api">
-                        <i class="fas fa-plug"></i>
-                        API
+                        <i data-lucide="plug"></i>
+                        <span>API</span>
                     </div>
                 </div>
+            </div>
 
-                <div class="flow-canvas">
-                    <!-- Le canvas de construction du flux -->
-                    <div class="flow-nodes" id="flowNodes">
-                        <!-- Les nœuds seront ajoutés ici -->
-                    </div>
+            <!-- Canvas de construction -->
+            <div class="flow-canvas" id="flowCanvas">
+                <!-- Conteneur pour les connexions (en dessous) -->
+                <div class="flow-connections" id="flowConnections"></div>
+                <!-- Conteneur pour les nœuds (au-dessus) -->
+                <div class="flow-nodes" id="flowNodes">
+                    <!-- Les nœuds seront ajoutés ici par glisser-déposer -->
                 </div>
+            </div>
 
-                <div class="node-properties">
-                    <h4>Propriétés</h4>
-                    <div class="properties-content">
-                        <!-- Les propriétés du nœud sélectionné seront affichées ici -->
+            <!-- Propriétés du nœud sélectionné (optionnel, caché par défaut) -->
+            <div class="node-properties" id="nodeProperties" style="display: none;">
+                <h3>Propriétés</h3>
+                <div class="properties-content" id="propertiesContent">
+                    <div class="empty-state">
+                        <i data-lucide="info"></i>
+                        <small>Sélectionnez un élément pour modifier ses propriétés</small>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Modal de test -->
-    <div class="modal" id="testModal">
-        <div class="modal-content">
+<!-- Modal de test - FIX: IDs corrigés -->
+<div class="modal" id="testModal">
+    <div class="modal-content">
+        <div class="modal-header">
             <h3>Test du Flux</h3>
-            <div class="test-conversation">
-                <!-- La conversation de test sera affichée ici -->
+            <button class="modal-close" id="closeTestModal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="test-conversation" id="testConversation">
+                <!-- Les messages de test s'afficheront ici -->
             </div>
-            <div class="test-input">
-                <input type="text" placeholder="Entrez votre message...">
-                <button class="btn btn-primary">Envoyer</button>
+            <div class="test-input-area">
+                <input type="text" id="testInput" class="test-input" placeholder="Tapez votre message...">
+                <button class="btn-primary" id="testSendBtn">
+                    <i data-lucide="send"></i>
+                </button>
             </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" id="resetTest">
+                <i data-lucide="rotate-ccw"></i>
+                Recommencer
+            </button>
+            <button class="btn-secondary" id="closeTest">Fermer</button>
         </div>
     </div>
 </div>
