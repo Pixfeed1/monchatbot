@@ -364,7 +364,6 @@ class FlowBuilder {
             document.querySelectorAll('.flow-card').forEach(item => {
                 item.classList.toggle('active', item.dataset.flowId == flowId);
             });
-
         } catch (error) {
             console.error('Erreur loadFlow:', error);
         }
@@ -533,7 +532,6 @@ class FlowBuilder {
 
             const data = await response.json();
             this.renderNode(data.id, data);
-            
         } catch (error) {
             console.error('Erreur createNode:', error);
         }
