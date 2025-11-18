@@ -926,6 +926,8 @@ class FlowBuilder {
      * Affiche le menu de connexion (supprimer + ajouter nœud)
      */
     showConnectionMenu(e, connectionId, sourceId, targetId, connectionElement) {
+        console.log('showConnectionMenu appelé:', { connectionId, sourceId, targetId });
+
         // Supprimer tout menu existant
         this.hideConnectionMenu();
 
@@ -965,7 +967,9 @@ class FlowBuilder {
 
         // Bouton ajouter nœud
         const addBtn = menu.querySelector('[data-action="add"]');
+        console.log('Bouton add trouvé:', addBtn);
         addBtn.addEventListener('click', async (e) => {
+            console.log('Click sur bouton ADD détecté !');
             e.stopPropagation();
             await this.addNodeBetween(sourceId, targetId, connectionId);
             this.hideConnectionMenu();
@@ -992,9 +996,12 @@ class FlowBuilder {
      * Affiche un menu pour choisir le type de nœud à ajouter entre deux nœuds
      */
     async addNodeBetween(sourceId, targetId, connectionId) {
+        console.log('addNodeBetween appelé:', { sourceId, targetId, connectionId });
+
         // Calculer la position au milieu entre les deux nœuds
         const sourceNode = this.nodesContainer.querySelector(`[data-node-id="${sourceId}"]`);
         const targetNode = this.nodesContainer.querySelector(`[data-node-id="${targetId}"]`);
+        console.log('Nœuds trouvés:', { sourceNode, targetNode });
 
         if (!sourceNode || !targetNode) {
             this.showError('Nœuds introuvables');
@@ -1048,6 +1055,8 @@ class FlowBuilder {
      * Affiche un sélecteur de type de nœud
      */
     showNodeTypeSelector(x, y, callback) {
+        console.log('showNodeTypeSelector appelé à position:', { x, y });
+
         // Supprimer tout sélecteur existant
         this.hideNodeTypeSelector();
 
