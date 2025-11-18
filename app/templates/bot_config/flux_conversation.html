@@ -47,12 +47,9 @@
             </div>
         </div>
 
+        <!-- FIX: ID correct pour la grille -->
         <div class="flows" id="flowsGrid">
-            <div class="empty-state">
-                <i data-lucide="git-branch"></i>
-                <p>Aucun flux créé</p>
-                <small>Commencez par créer votre premier flux de conversation</small>
-            </div>
+            <!-- Les cartes de flux seront ajoutées ici dynamiquement -->
         </div>
     </section>
 
@@ -116,8 +113,8 @@
                 </div>
             </div>
 
-            <!-- Propriétés du nœud sélectionné -->
-            <div class="node-properties" id="nodeProperties">
+            <!-- Propriétés du nœud sélectionné (optionnel, caché par défaut) -->
+            <div class="node-properties" id="nodeProperties" style="display: none;">
                 <h3>Propriétés</h3>
                 <div class="properties-content" id="propertiesContent">
                     <div class="empty-state">
@@ -130,7 +127,7 @@
     </div>
 </div>
 
-<!-- Modal de test -->
+<!-- Modal de test - FIX: IDs corrigés -->
 <div class="modal" id="testModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -145,7 +142,7 @@
             </div>
             <div class="test-input-area">
                 <input type="text" id="testInput" class="test-input" placeholder="Tapez votre message...">
-                <button class="btn-primary" id="sendTestMessage">
+                <button class="btn-primary" id="testSendBtn">
                     <i data-lucide="send"></i>
                 </button>
             </div>
