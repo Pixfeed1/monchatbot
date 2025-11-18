@@ -253,207 +253,125 @@
 
 .flow-container .editor-workspace {
     display: grid;
-    grid-template-columns: 220px 1fr 270px;
-    min-height: 600px;
+    grid-template-columns: 180px 1fr;
+    min-height: 700px;
     background: white;
 }
 
-/* PALETTE D'ÉLÉMENTS - Style n8n avec icônes colorées */
+/* PALETTE D'ÉLÉMENTS - Épurée */
 .flow-container .node-palette {
     border-right: 1px solid #e2e8f0;
-    padding: 20px;
-    background: #fafbfc;
+    padding: 16px;
+    background: white;
 }
 
 .flow-container .node-palette h3 {
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
     color: #64748b;
-    margin: 0 0 16px 0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    margin: 0 0 12px 0;
 }
 
 .flow-container .node-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
+    gap: 10px;
+    padding: 10px 12px;
     background: white;
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    margin-bottom: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
     cursor: grab;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.flow-container .node-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    transition: all 0.25s ease;
-}
-
-.flow-container .node-item[data-type="message"]::before {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-}
-
-.flow-container .node-item[data-type="condition"]::before {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-}
-
-.flow-container .node-item[data-type="input"]::before {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-}
-
-.flow-container .node-item[data-type="action"]::before {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-}
-
-.flow-container .node-item[data-type="api"]::before {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    transition: all 0.2s ease;
 }
 
 .flow-container .node-item:hover {
-    border-color: #cbd5e1;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transform: translateX(4px);
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #0d6efd;
 }
 
 .flow-container .node-item:active {
     cursor: grabbing;
-    transform: scale(0.98);
 }
 
 .flow-container .node-item i {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-}
-
-.flow-container .node-item[data-type="message"] i {
-    color: #3b82f6;
-}
-
-.flow-container .node-item[data-type="condition"] i {
-    color: #8b5cf6;
-}
-
-.flow-container .node-item[data-type="input"] i {
-    color: #10b981;
-}
-
-.flow-container .node-item[data-type="action"] i {
-    color: #f59e0b;
-}
-
-.flow-container .node-item[data-type="api"] i {
-    color: #ef4444;
+    width: 16px;
+    height: 16px;
+    color: #0d6efd;
 }
 
 .flow-container .node-item span {
     font-size: 13px;
-    font-weight: 500;
     color: #1e293b;
 }
 
-/* CANVAS DE FLUX - Style n8n avec grille */
+/* CANVAS DE FLUX - Épuré */
 .flow-container .flow-canvas {
     padding: 0;
-    background: #fafbfc;
+    background: #f8fafc;
     background-image:
-        linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
-    background-size: 20px 20px;
+        linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
     position: relative;
     overflow: auto;
-    min-height: 600px;
+    min-height: 700px;
 }
 
 .flow-container .flow-nodes {
     min-height: 100%;
     min-width: 100%;
     position: relative;
-    padding: 40px;
+    padding: 50px;
 }
 
-/* NŒUDS - Style n8n avec couleurs par type */
+/* NŒUDS - Simplifié avec charte bleue */
 .flow-container .flow-node {
     position: absolute;
     background: white;
-    border-radius: 12px;
-    min-width: 240px;
+    border-radius: 10px;
+    min-width: 200px;
+    max-width: 300px;
     cursor: move;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
     overflow: hidden;
 }
 
 .flow-container .flow-node:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .flow-container .flow-node.selected {
-    box-shadow: 0 8px 32px rgba(13, 110, 253, 0.25);
-    transform: translateY(-2px);
+    box-shadow: 0 0 0 2px #0d6efd;
 }
 
 .flow-container .flow-node.dragging {
-    opacity: 0.8;
+    opacity: 0.7;
     cursor: grabbing;
 }
 
-/* En-tête du nœud avec couleur par type */
+/* En-tête du nœud - une seule couleur bleue */
 .flow-container .node-header {
-    padding: 14px 16px;
+    padding: 12px 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
-}
-
-.flow-container .message-node .node-header {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: white;
-}
-
-.flow-container .condition-node .node-header {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-    color: white;
-}
-
-.flow-container .input-node .node-header {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-}
-
-.flow-container .action-node .node-header {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    color: white;
-}
-
-.flow-container .api-node .node-header {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
     color: white;
 }
 
 .flow-container .node-type {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 13px;
+    gap: 6px;
+    font-size: 12px;
     font-weight: 600;
 }
 
 .flow-container .node-type i {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
 }
 
 .flow-container .node-actions {
@@ -461,42 +379,40 @@
     gap: 4px;
 }
 
-.flow-container .btn-icon {
+.flow-container .node-header .btn-icon {
     background: rgba(255, 255, 255, 0.2);
     border: none;
-    border-radius: 6px;
-    padding: 6px;
+    border-radius: 4px;
+    padding: 4px;
     cursor: pointer;
     color: white;
-    transition: all 0.2s ease;
+    transition: background 0.2s;
 }
 
 .flow-container .node-header .btn-icon:hover {
     background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
 }
 
 .flow-container .node-header .btn-icon i {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
 }
 
 /* Contenu du nœud */
 .flow-container .node-content {
-    padding: 16px;
-    min-height: 60px;
+    padding: 12px;
+    min-height: 50px;
     font-size: 13px;
     color: #1e293b;
 }
 
 .flow-container .node-content .form-control {
     width: 100%;
-    padding: 8px 10px;
+    padding: 6px 8px;
     border: 1px solid #e2e8f0;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 12px;
     font-family: inherit;
-    transition: border-color 0.2s ease;
 }
 
 .flow-container .node-content .form-control:focus {
@@ -506,7 +422,7 @@
 
 .flow-container .node-content textarea.form-control {
     resize: vertical;
-    min-height: 60px;
+    min-height: 50px;
 }
 
 /* Ports de connexion */
@@ -522,28 +438,28 @@
 
 .flow-container .port {
     position: absolute;
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     background: white;
-    border: 3px solid #3b82f6;
+    border: 2px solid #0d6efd;
     cursor: crosshair;
     pointer-events: all;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
     z-index: 10;
 }
 
 .flow-container .port:hover {
-    transform: scale(1.3);
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    transform: scale(1.2);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2);
 }
 
 .flow-container .port-in {
-    left: -7px;
+    left: -6px;
 }
 
 .flow-container .port-out {
-    right: -7px;
+    right: -6px;
 }
 
 /* Connexions entre nœuds */
@@ -556,14 +472,12 @@
     stroke: #94a3b8;
     stroke-width: 2;
     fill: none;
-    transition: all 0.2s ease;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    transition: stroke 0.2s;
 }
 
 .flow-container .flow-connection:hover path {
-    stroke: #3b82f6;
-    stroke-width: 3;
-    filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3));
+    stroke: #0d6efd;
+    stroke-width: 2.5;
 }
 
 .flow-container .flow-connection.selected path {
@@ -572,7 +486,7 @@
 }
 
 .flow-container .temp-connection path {
-    stroke: #5a9eff;
+    stroke: #0d6efd;
     stroke-width: 2;
     stroke-dasharray: 5,5;
     animation: dash 0.5s linear infinite;
@@ -584,122 +498,23 @@
     }
 }
 
-/* ANIMATIONS */
+/* ANIMATIONS - Minimaliste */
 .flow-container .fade-in {
-    animation: fadeIn 0.3s ease forwards;
+    animation: fadeIn 0.2s ease;
 }
 
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
     }
 }
 
-/* Animation pour les nœuds qui apparaissent */
-.flow-container .flow-node {
-    animation: nodeAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-@keyframes nodeAppear {
-    from {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* Pulse pour les ports au hover */
-@keyframes portPulse {
-    0%, 100% {
-        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
-    }
-    50% {
-        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
-    }
-}
-
-/* PROPRIÉTÉS DU NŒUD - Style n8n amélioré */
+/* PROPRIÉTÉS DU NŒUD - Caché pour interface épurée */
 .flow-container .node-properties {
-    border-left: 1px solid #e2e8f0;
-    padding: 20px;
-    background: #fafbfc;
-}
-
-.flow-container .node-properties h3 {
-    font-size: 13px;
-    font-weight: 700;
-    color: #64748b;
-    margin: 0 0 20px 0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.flow-container .properties-content {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.flow-container .properties-empty {
-    text-align: center;
-    padding: 40px 20px;
-    color: #94a3b8;
-    font-size: 13px;
-}
-
-.flow-container .property-group {
-    background: white;
-    padding: 16px;
-    border-radius: 10px;
-    border: 1px solid #e2e8f0;
-}
-
-.flow-container .property-label {
-    display: block;
-    font-size: 12px;
-    font-weight: 600;
-    color: #64748b;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.flow-container .property-input {
-    width: 100%;
-    padding: 8px 12px;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 13px;
-    transition: all 0.2s ease;
-    background: white;
-}
-
-.flow-container .property-input:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.flow-container .property-input:disabled {
-    background: #f1f5f9;
-    color: #94a3b8;
-    cursor: not-allowed;
-}
-
-.flow-container .form-help {
-    display: block;
-    font-size: 11px;
-    color: #94a3b8;
-    margin-top: 6px;
-    font-style: italic;
+    display: none;
 }
 
 /* ÉTAT VIDE */
@@ -727,64 +542,41 @@
     color: #94a3b8;
 }
 
-/* BOUTONS - Style n8n moderne */
+/* BOUTONS - Charte bleue */
 .flow-container .btn-primary,
 .flow-container .btn-secondary {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 20px;
+    padding: 10px 18px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
     border: none;
-    position: relative;
-    overflow: hidden;
 }
 
 .flow-container .btn-primary {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
     color: white;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
-}
-
-.flow-container .btn-primary::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
-    opacity: 0;
-    transition: opacity 0.25s ease;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
 }
 
 .flow-container .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
-}
-
-.flow-container .btn-primary:hover::before {
-    opacity: 1;
-}
-
-.flow-container .btn-primary:active {
-    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
 }
 
 .flow-container .btn-secondary {
     background: white;
     color: #64748b;
-    border: 2px solid #e2e8f0;
+    border: 1px solid #e2e8f0;
 }
 
 .flow-container .btn-secondary:hover {
     background: #f8fafc;
     border-color: #cbd5e1;
-    transform: translateY(-1px);
 }
 
 .flow-container .btn-icon {
@@ -797,20 +589,12 @@
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
 }
 
 .flow-container .btn-icon:hover {
     background: #f1f5f9;
     color: #1e293b;
-}
-
-.flow-container .quick-actions .btn-primary {
-    box-shadow: 0 2px 12px rgba(59, 130, 246, 0.3);
-}
-
-.flow-container .quick-actions .btn-primary:hover {
-    box-shadow: 0 6px 24px rgba(59, 130, 246, 0.4);
 }
 
 /* MODAL DE TEST */
