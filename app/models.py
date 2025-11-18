@@ -856,6 +856,87 @@ class Widget(db.Model):
         return secrets.token_urlsafe(32)
 
 
+class Recommendation(db.Model):
+    """Recommandations pour améliorer le bot basées sur l'analyse des conversations"""
+    __tablename__ = 'recommendation'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)  # Titre de la recommandation
+    description = db.Column(db.Text, nullable=False)  # Description détaillée
+
+    # Type de recommandation
+    recommendation_type = db.Column(db.String(50), default='manual')  # manual, auto, ai_suggested
+
+    # Catégorie
+    category = db.Column(db.String(50), nullable=True)  # faq, flow, response, knowledge_base, etc.
+
+    # Priorité
+    priority = db.Column(db.String(20), default='medium')  # low, medium, high, critical
+
+    # Statut
+    status = db.Column(db.String(20), default='pending')  # pending, in_progress, implemented, dismissed
+
+    # Source de la recommandation
+    source = db.Column(db.Text, nullable=True)  # D'où vient cette recommandation (queries, analytics, etc.)
+    source_data = db.Column(db.Text, nullable=True)  # Données JSON de source (IDs de queries, etc.)
+
+    # Impact estimé
+    estimated_impact = db.Column(db.String(20), nullable=True)  # low, medium, high
+    affected_users_count = db.Column(db.Integer, default=0)  # Nombre d'utilisateurs potentiellement affectés
+
+    # Action suggérée
+    suggested_action = db.Column(db.Text, nullable=True)  # Action concrète à prendre
+
+    # Notes
+    notes = db.Column(db.Text, nullable=True)  # Notes supplémentaires
+
+    # Métadonnées
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    implemented_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    implemented_at = db.Column(db.DateTime, nullable=True)
+
+    # Relations
+    creator = db.relationship('User', foreign_keys=[created_by], backref=db.backref('created_recommendations', lazy=True))
+    implementer = db.relationship('User', foreign_keys=[implemented_by], backref=db.backref('implemented_recommendations', lazy=True))
+
+    @property
+    def source_data_dict(self):
+        """Retourne les données source comme dictionnaire"""
+        if self.source_data:
+            try:
+                return json.loads(self.source_data)
+            except:
+                return {}
+        return {}
+
+    @source_data_dict.setter
+    def source_data_dict(self, value):
+        """Définit les données source depuis un dictionnaire"""
+        self.source_data = json.dumps(value) if value else None
+
+    def to_dict(self):
+        """Convertit la recommandation en dictionnaire"""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'recommendation_type': self.recommendation_type,
+            'category': self.category,
+            'priority': self.priority,
+            'status': self.status,
+            'source': self.source,
+            'estimated_impact': self.estimated_impact,
+            'affected_users_count': self.affected_users_count,
+            'suggested_action': self.suggested_action,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'implemented_at': self.implemented_at.isoformat() if self.implemented_at else None
+        }
+
+
 ###############################################
 # Chargeur d'utilisateur Flask-Login
 ###############################################
