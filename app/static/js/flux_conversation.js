@@ -895,9 +895,8 @@ class FlowBuilder {
         const tooltip = document.createElement('div');
         tooltip.className = 'connection-tooltip';
         tooltip.innerHTML = `
-            <button class="btn-danger-small" data-action="delete">
+            <button class="btn-delete-tiny" data-action="delete" title="Supprimer">
                 <i data-lucide="trash-2"></i>
-                Supprimer
             </button>
         `;
 
