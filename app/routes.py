@@ -2764,7 +2764,8 @@ def list_flows():
            'name': flow.name,
            'description': flow.description,
            'is_active': flow.is_active,
-           'updated_at': flow.updated_at.isoformat()
+           'updated_at': flow.updated_at.isoformat(),
+           'nodes_count': len(flow.nodes)
        } for flow in flows]
    })
 
