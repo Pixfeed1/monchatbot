@@ -3,7 +3,7 @@
 {% block title %}Métriques et Analyses{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/metrics.css') }}?v=20251118i">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/metrics.css') }}?v=20251118j">
 {% endblock %}
 
 {% block content %}
@@ -33,63 +33,75 @@
         Indicateurs Clés
     </h2>
     <div class="kpi-grid" id="kpi-grid">
-        <div class="kpi-card conversations" draggable="true" data-kpi="conversations">
-            <div class="kpi-icon">
-                <i data-lucide="message-circle"></i>
+        <div class="kpi-card" draggable="true" data-kpi="conversations">
+            <div class="kpi-header">
+                <div class="kpi-icon">
+                    <i data-lucide="message-circle"></i>
+                </div>
+                <div class="kpi-label">Conversations totales</div>
             </div>
             <div class="kpi-content">
                 <h3 id="total-conversations">0</h3>
-                <p>Conversations totales</p>
                 <span class="kpi-trend positive" id="conversations-trend">+0%</span>
             </div>
         </div>
-        <div class="kpi-card messages" draggable="true" data-kpi="messages">
-            <div class="kpi-icon">
-                <i data-lucide="messages-square"></i>
+        <div class="kpi-card" draggable="true" data-kpi="messages">
+            <div class="kpi-header">
+                <div class="kpi-icon">
+                    <i data-lucide="messages-square"></i>
+                </div>
+                <div class="kpi-label">Messages échangés</div>
             </div>
             <div class="kpi-content">
                 <h3 id="total-messages">0</h3>
-                <p>Messages échangés</p>
                 <span class="kpi-trend positive" id="messages-trend">+0%</span>
             </div>
         </div>
-        <div class="kpi-card users" draggable="true" data-kpi="users">
-            <div class="kpi-icon">
-                <i data-lucide="users"></i>
+        <div class="kpi-card" draggable="true" data-kpi="users">
+            <div class="kpi-header">
+                <div class="kpi-icon">
+                    <i data-lucide="users"></i>
+                </div>
+                <div class="kpi-label">Utilisateurs actifs</div>
             </div>
             <div class="kpi-content">
                 <h3 id="active-users">0</h3>
-                <p>Utilisateurs actifs</p>
                 <span class="kpi-trend positive" id="users-trend">+0%</span>
             </div>
         </div>
-        <div class="kpi-card resolution" draggable="true" data-kpi="resolution">
-            <div class="kpi-icon">
-                <i data-lucide="check-circle"></i>
+        <div class="kpi-card" draggable="true" data-kpi="resolution">
+            <div class="kpi-header">
+                <div class="kpi-icon">
+                    <i data-lucide="check-circle"></i>
+                </div>
+                <div class="kpi-label">Taux de résolution</div>
             </div>
             <div class="kpi-content">
                 <h3 id="resolution-rate">0%</h3>
-                <p>Taux de résolution</p>
                 <span class="kpi-trend positive" id="resolution-trend">+0%</span>
             </div>
         </div>
-        <div class="kpi-card response-time" draggable="true" data-kpi="response-time">
-            <div class="kpi-icon">
-                <i data-lucide="clock"></i>
+        <div class="kpi-card" draggable="true" data-kpi="response-time">
+            <div class="kpi-header">
+                <div class="kpi-icon">
+                    <i data-lucide="clock"></i>
+                </div>
+                <div class="kpi-label">Temps de réponse moyen</div>
             </div>
             <div class="kpi-content">
                 <h3 id="avg-response-time">0s</h3>
-                <p>Temps de réponse moyen</p>
                 <span class="kpi-trend negative" id="response-time-trend">+0%</span>
             </div>
         </div>
-        <div class="kpi-card satisfaction" draggable="true" data-kpi="satisfaction">
-            <div class="kpi-icon">
-                <i data-lucide="smile"></i>
+        <div class="kpi-card" draggable="true" data-kpi="satisfaction">
+            <div class="kpi-header">
+                <div class="kpi-icon">
+                    <i data-lucide="smile"></i>
+                </div>
+                <div class="kpi-label">Satisfaction client</div>
             </div>
             <div class="kpi-content">
                 <h3 id="satisfaction-score">0%</h3>
-                <p>Satisfaction client</p>
                 <span class="kpi-trend positive" id="satisfaction-trend">+0%</span>
             </div>
         </div>
