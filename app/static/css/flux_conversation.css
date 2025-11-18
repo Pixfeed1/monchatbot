@@ -334,7 +334,7 @@
     color: #1e293b;
 }
 
-/* CANVAS DE FLUX - Épuré */
+/* CANVAS DE FLUX - Épuré avec zoom */
 .flow-container .flow-canvas {
     padding: 0;
     background: #f8fafc;
@@ -352,6 +352,8 @@
     min-width: 100%;
     position: relative;
     padding: 50px;
+    transform-origin: 0 0;
+    transition: transform 0.1s ease-out;
 }
 
 /* NŒUDS - Simplifié avec charte bleue */

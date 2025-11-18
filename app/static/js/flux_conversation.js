@@ -144,12 +144,16 @@ class FlowBuilder {
     }
 
     /**
-     * Setup pan avec molette souris
+     * Setup pan avec molette souris + zoom
      */
     setupCanvasPan() {
         let isPanning = false;
         let startX, startY, scrollLeft, scrollTop;
+        let scale = 1;
+        const minScale = 0.3;
+        const maxScale = 2;
 
+        // Pan avec molette maintenue (middle-click + drag)
         this.flowCanvas.addEventListener('mousedown', (e) => {
             // Middle click (button 1)
             if (e.button === 1) {
@@ -181,6 +185,26 @@ class FlowBuilder {
                 this.flowCanvas.classList.remove('panning');
             }
         });
+
+        // Zoom avec molette (scroll)
+        this.flowCanvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            const newScale = Math.max(minScale, Math.min(maxScale, scale + delta));
+
+            if (newScale !== scale) {
+                scale = newScale;
+                this.nodesContainer.style.transform = `scale(${scale})`;
+                this.nodesContainer.style.transformOrigin = '0 0';
+
+                // Mettre à jour toutes les connexions après zoom
+                this.updateAllConnections();
+            }
+        }, { passive: false });
+
+        // Stocker le scale pour utilisation ailleurs
+        this.currentScale = () => scale;
     }
 
     /**
@@ -754,7 +778,7 @@ class FlowBuilder {
     }
 
     /**
-     * Met à jour le chemin d'une connexion
+     * Met à jour le chemin d'une connexion (méthode robuste)
      */
     updateConnectionPath(connectionEl) {
         const sourceId = connectionEl.dataset.sourceId;
@@ -763,22 +787,35 @@ class FlowBuilder {
         const sourceNode = this.nodesContainer.querySelector(`[data-node-id="${sourceId}"]`);
         const targetNode = this.nodesContainer.querySelector(`[data-node-id="${targetId}"]`);
 
-        if (!sourceNode || !targetNode) return;
+        // Si un des nœuds n'existe plus, supprimer la connexion
+        if (!sourceNode || !targetNode) {
+            console.warn(`Connexion orpheline détectée: source=${sourceId}, target=${targetId}`);
+            connectionEl.remove();
+            return;
+        }
 
-        const sourcePort = sourceNode.querySelector('.port-out');
-        const targetPort = targetNode.querySelector('.port-in');
+        // Utiliser les positions directes des nœuds (plus fiable)
+        const sourceLeft = parseFloat(sourceNode.style.left) || 0;
+        const sourceTop = parseFloat(sourceNode.style.top) || 0;
+        const sourceWidth = sourceNode.offsetWidth;
+        const sourceHeight = sourceNode.offsetHeight;
 
-        const sourceRect = sourcePort.getBoundingClientRect();
-        const targetRect = targetPort.getBoundingClientRect();
-        const canvasRect = this.flowCanvas.getBoundingClientRect();
+        const targetLeft = parseFloat(targetNode.style.left) || 0;
+        const targetTop = parseFloat(targetNode.style.top) || 0;
+        const targetHeight = targetNode.offsetHeight;
 
-        const x1 = sourceRect.left + sourceRect.width / 2 - canvasRect.left + this.flowCanvas.scrollLeft;
-        const y1 = sourceRect.top + sourceRect.height / 2 - canvasRect.top + this.flowCanvas.scrollTop;
-        const x2 = targetRect.left + targetRect.width / 2 - canvasRect.left + this.flowCanvas.scrollLeft;
-        const y2 = targetRect.top + targetRect.height / 2 - canvasRect.top + this.flowCanvas.scrollTop;
+        // Position du port de sortie (milieu droit du nœud source)
+        const x1 = sourceLeft + sourceWidth;
+        const y1 = sourceTop + sourceHeight / 2;
+
+        // Position du port d'entrée (milieu gauche du nœud cible)
+        const x2 = targetLeft;
+        const y2 = targetTop + targetHeight / 2;
 
         const path = connectionEl.querySelector('path');
-        path.setAttribute('d', this.createBezierPath(x1, y1, x2, y2));
+        if (path) {
+            path.setAttribute('d', this.createBezierPath(x1, y1, x2, y2));
+        }
     }
 
     /**
@@ -806,6 +843,14 @@ class FlowBuilder {
             `[data-source-id="${nodeId}"], [data-target-id="${nodeId}"]`
         );
 
+        connections.forEach(conn => this.updateConnectionPath(conn));
+    }
+
+    /**
+     * Met à jour TOUTES les connexions (utile après zoom)
+     */
+    updateAllConnections() {
+        const connections = this.nodesContainer.querySelectorAll('.flow-connection');
         connections.forEach(conn => this.updateConnectionPath(conn));
     }
 
