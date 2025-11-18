@@ -186,6 +186,13 @@ class FlowBuilder {
             }
         });
 
+        // Empêcher le menu contextuel sur middle-click
+        this.flowCanvas.addEventListener('contextmenu', (e) => {
+            if (e.button === 1 || isPanning) {
+                e.preventDefault();
+            }
+        });
+
         // Zoom avec molette (scroll)
         this.flowCanvas.addEventListener('wheel', (e) => {
             e.preventDefault();
@@ -765,12 +772,10 @@ class FlowBuilder {
         path.setAttribute('fill', 'none');
         svg.appendChild(path);
 
-        // Click pour sélectionner/supprimer
+        // Click pour afficher tooltip de suppression
         svg.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (confirm('Supprimer cette connexion ?')) {
-                this.deleteConnection(id);
-            }
+            this.showConnectionTooltip(e, id, svg);
         });
 
         this.nodesContainer.insertBefore(svg, this.nodesContainer.firstChild);
@@ -877,6 +882,59 @@ class FlowBuilder {
         } catch (error) {
             console.error('Erreur deleteConnection:', error);
             this.showError('Impossible de supprimer la connexion');
+        }
+    }
+
+    /**
+     * Affiche une tooltip pour supprimer une connexion
+     */
+    showConnectionTooltip(e, connectionId, connectionElement) {
+        // Supprimer toute tooltip existante
+        this.hideConnectionTooltip();
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'connection-tooltip';
+        tooltip.innerHTML = `
+            <button class="btn-danger-small" data-action="delete">
+                <i data-lucide="trash-2"></i>
+                Supprimer
+            </button>
+        `;
+
+        // Positionner la tooltip au point de clic
+        const canvasRect = this.flowCanvas.getBoundingClientRect();
+        tooltip.style.left = `${e.clientX - canvasRect.left + this.flowCanvas.scrollLeft}px`;
+        tooltip.style.top = `${e.clientY - canvasRect.top + this.flowCanvas.scrollTop}px`;
+
+        this.nodesContainer.appendChild(tooltip);
+        this.currentTooltip = tooltip;
+
+        // Rafraîchir les icônes
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        // Bouton supprimer
+        const deleteBtn = tooltip.querySelector('[data-action="delete"]');
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.deleteConnection(connectionId);
+            this.hideConnectionTooltip();
+        });
+
+        // Fermer au clic ailleurs
+        setTimeout(() => {
+            document.addEventListener('click', this.hideConnectionTooltip.bind(this), { once: true });
+        }, 100);
+    }
+
+    /**
+     * Cache la tooltip de connexion
+     */
+    hideConnectionTooltip() {
+        if (this.currentTooltip) {
+            this.currentTooltip.remove();
+            this.currentTooltip = null;
         }
     }
 
@@ -1207,6 +1265,9 @@ class FlowBuilder {
      * Nettoyage à la destruction
      */
     destroy() {
+        // Cleanup de la tooltip si elle existe
+        this.hideConnectionTooltip();
+
         // Cleanup des event listeners si nécessaire
         console.log('FlowBuilder destroyed');
     }
