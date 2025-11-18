@@ -27,7 +27,7 @@ from .models import (
     ConversationFlow, FlowNode, NodeConnection, FlowVariable,
     ActionTrigger, EmailTemplate, CalendarConfig,
     TicketConfig, FormRedirection, DefaultMessage,
-    APIUsageLog,
+    APIUsageLog, UnhandledQuery,
     Integration, IntegrationLog, ChannelConfig
 )
 from . import db
@@ -5998,6 +5998,168 @@ def calculate_trend(current, previous):
         return 100 if current > 0 else 0
     trend = ((current - previous) / previous) * 100
     return round(trend, 1)
+
+
+###############################################
+# ROUTES - REQUÊTES NON COMPRISES
+###############################################
+
+@main_bp.route('/bot-config/requetes-non-comprises')
+@login_required
+def unhandled_queries_page():
+    """Page de gestion des requêtes non comprises"""
+    return render_template('bot_config/unhandled_queries.html')
+
+
+@main_bp.route('/api/unhandled-queries', methods=['GET'])
+@login_required
+def get_unhandled_queries():
+    """Récupère la liste des requêtes non comprises"""
+    try:
+        queries = UnhandledQuery.query.order_by(UnhandledQuery.created_at.desc()).all()
+
+        queries_data = []
+        for query in queries:
+            queries_data.append({
+                'id': query.id,
+                'user_message': query.user_message,
+                'user_identifier': query.user_identifier,
+                'channel': query.channel,
+                'confidence_score': query.confidence_score,
+                'bot_response': query.bot_response,
+                'reformulation_count': query.reformulation_count,
+                'context': query.context,
+                'resolved': query.resolved,
+                'resolver_name': query.resolver.username if query.resolver else None,
+                'resolution_notes': query.resolution_notes,
+                'created_at': query.created_at.isoformat(),
+                'updated_at': query.updated_at.isoformat() if query.updated_at else None
+            })
+
+        return jsonify({
+            'success': True,
+            'queries': queries_data
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_unhandled_queries: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/api/unhandled-queries/stats', methods=['GET'])
+@login_required
+def get_unhandled_queries_stats():
+    """Récupère les statistiques des requêtes non comprises"""
+    try:
+        total = UnhandledQuery.query.count()
+        pending = UnhandledQuery.query.filter_by(resolved=False).count()
+        resolved = UnhandledQuery.query.filter_by(resolved=True).count()
+
+        resolution_rate = round((resolved / total * 100) if total > 0 else 0, 1)
+
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total': total,
+                'pending': pending,
+                'resolved': resolved,
+                'resolution_rate': resolution_rate
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_unhandled_queries_stats: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/api/unhandled-queries/<int:query_id>/resolve', methods=['POST'])
+@login_required
+def resolve_unhandled_query(query_id):
+    """Marque une requête comme résolue"""
+    try:
+        query = UnhandledQuery.query.get_or_404(query_id)
+        data = request.get_json()
+
+        resolution_notes = data.get('resolution_notes')
+        if not resolution_notes:
+            return jsonify({
+                'success': False,
+                'error': 'Les notes de résolution sont requises'
+            }), 400
+
+        query.resolved = True
+        query.resolved_by = current_user.id
+        query.resolution_notes = resolution_notes
+        query.updated_at = datetime.utcnow()
+
+        db.session.commit()
+
+        logger.info(f"Requête {query_id} marquée comme résolue par {current_user.username}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Requête marquée comme traitée avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur resolve_unhandled_query: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/api/unhandled-queries/track', methods=['POST'])
+def track_unhandled_query():
+    """Enregistre une nouvelle requête non comprise (utilisé par le bot)"""
+    try:
+        data = request.get_json()
+
+        user_message = data.get('user_message')
+        if not user_message:
+            return jsonify({
+                'success': False,
+                'error': 'Message utilisateur requis'
+            }), 400
+
+        query = UnhandledQuery(
+            user_message=user_message,
+            user_identifier=data.get('user_identifier'),
+            channel=data.get('channel'),
+            confidence_score=data.get('confidence_score'),
+            bot_response=data.get('bot_response'),
+            reformulation_count=data.get('reformulation_count', 1)
+        )
+
+        # Sauvegarder le contexte s'il existe
+        if data.get('context'):
+            query.context_dict = data.get('context')
+
+        db.session.add(query)
+        db.session.commit()
+
+        logger.info(f"Nouvelle requête non comprise enregistrée: {user_message[:50]}...")
+
+        return jsonify({
+            'success': True,
+            'message': 'Requête enregistrée',
+            'query_id': query.id
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur track_unhandled_query: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
 
 
 # ========================

@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Requêtes non comprises{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/unhandled_queries.css') }}?v=20251118a">
+{% endblock %}
+
+{% block content %}
+<!-- Bannière -->
+<div class="banner">
+    <div class="banner-content">
+        <h1>Requêtes non comprises</h1>
+        <p>Identifiez et traitez les questions que votre bot n'a pas comprises pour améliorer ses performances</p>
+    </div>
+</div>
+
+<!-- KPI Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i data-lucide="message-square-warning"></i>
+        </div>
+        <div class="stat-content">
+            <h3 id="total-unhandled">0</h3>
+            <p>Requêtes non comprises</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon pending">
+            <i data-lucide="alert-circle"></i>
+        </div>
+        <div class="stat-content">
+            <h3 id="pending-queries">0</h3>
+            <p>En attente de traitement</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon resolved">
+            <i data-lucide="check-circle-2"></i>
+        </div>
+        <div class="stat-content">
+            <h3 id="resolved-queries">0</h3>
+            <p>Traitées</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i data-lucide="trending-up"></i>
+        </div>
+        <div class="stat-content">
+            <h3 id="resolution-rate">0%</h3>
+            <p>Taux de traitement</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres et recherche -->
+<section class="config-section">
+    <div class="filters-container">
+        <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="search-input" placeholder="Rechercher dans les requêtes...">
+        </div>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">
+                <i data-lucide="list"></i> Toutes
+            </button>
+            <button class="filter-btn" data-filter="pending">
+                <i data-lucide="clock"></i> En attente
+            </button>
+            <button class="filter-btn" data-filter="resolved">
+                <i data-lucide="check"></i> Traitées
+            </button>
+        </div>
+        <select id="channel-filter" class="select-filter">
+            <option value="">Tous les canaux</option>
+            <option value="web">Web</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="messenger">Messenger</option>
+            <option value="instagram">Instagram</option>
+            <option value="telegram">Telegram</option>
+        </select>
+    </div>
+</section>
+
+<!-- Table des requêtes -->
+<section class="config-section">
+    <h2 class="section-title">
+        <i data-lucide="message-circle-question"></i>
+        Historique des requêtes
+    </h2>
+
+    <div class="table-container">
+        <table class="queries-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Message utilisateur</th>
+                    <th>Canal</th>
+                    <th>Reformulations</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="queries-tbody">
+                <tr class="empty-row">
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i data-lucide="inbox"></i>
+                            <p>Aucune requête non comprise pour le moment</p>
+                            <small>Les requêtes que le bot ne comprend pas apparaîtront ici</small>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination" style="display: none;">
+        <button class="btn btn-sm" id="prev-page">
+            <i data-lucide="chevron-left"></i> Précédent
+        </button>
+        <span class="page-info">Page <span id="current-page">1</span> sur <span id="total-pages">1</span></span>
+        <button class="btn btn-sm" id="next-page">
+            Suivant <i data-lucide="chevron-right"></i>
+        </button>
+    </div>
+</section>
+
+<!-- Modal de détails -->
+<div class="modal" id="query-modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>Détails de la requête</h3>
+            <button class="close-modal" id="close-query-modal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="query-details">
+                <div class="detail-section">
+                    <h4><i data-lucide="user"></i> Informations utilisateur</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Identifiant</label>
+                            <span id="detail-user-id">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Canal</label>
+                            <span id="detail-channel">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Date</label>
+                            <span id="detail-date">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Reformulations</label>
+                            <span id="detail-reformulations">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4><i data-lucide="message-square"></i> Message utilisateur</h4>
+                    <div class="message-box user-message" id="detail-user-message">
+                        -
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4><i data-lucide="bot"></i> Réponse du bot</h4>
+                    <div class="message-box bot-message" id="detail-bot-response">
+                        -
+                    </div>
+                    <div class="confidence-score">
+                        <label>Score de confiance</label>
+                        <div class="score-bar">
+                            <div class="score-fill" id="detail-confidence-bar"></div>
+                        </div>
+                        <span id="detail-confidence-text">-</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4><i data-lucide="code"></i> Contexte de conversation</h4>
+                    <pre class="context-code" id="detail-context">-</pre>
+                </div>
+
+                <div class="detail-section" id="resolution-section" style="display: none;">
+                    <h4><i data-lucide="check-circle"></i> Résolution</h4>
+                    <div class="resolution-info">
+                        <p><strong>Traité par:</strong> <span id="detail-resolver">-</span></p>
+                        <p><strong>Notes:</strong></p>
+                        <p id="detail-resolution-notes">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="close-modal-btn">Fermer</button>
+            <button class="btn btn-primary" id="mark-resolved-btn">
+                <i data-lucide="check"></i> Marquer comme traitée
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de résolution -->
+<div class="modal" id="resolve-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Marquer comme traitée</h3>
+            <button class="close-modal" id="close-resolve-modal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="resolve-form">
+                <div class="form-group">
+                    <label class="form-label">Notes de résolution <span class="required">*</span></label>
+                    <textarea class="form-control" id="resolution-notes" rows="4" required placeholder="Décrivez comment cette requête a été traitée (ajout à la FAQ, amélioration du flow, etc.)"></textarea>
+                    <small class="help-text">Expliquez les actions prises pour améliorer la compréhension du bot</small>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancel-resolve-btn">Annuler</button>
+            <button class="btn btn-primary" id="submit-resolve-btn">
+                <i data-lucide="save"></i> Enregistrer
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/unhandled_queries.js') }}?v=20251118a"></script>
+{% endblock %}
