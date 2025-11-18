@@ -365,7 +365,7 @@
     max-width: 300px;
     cursor: move;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
+    transition: box-shadow 0.2s ease;
     overflow: hidden;
 }
 
@@ -378,8 +378,10 @@
 }
 
 .flow-container .flow-node.dragging {
-    opacity: 0.7;
+    opacity: 0.9;
     cursor: grabbing;
+    transition: none !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* En-tête du nœud - une seule couleur bleue */
