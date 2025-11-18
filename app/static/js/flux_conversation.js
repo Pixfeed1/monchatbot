@@ -849,11 +849,15 @@ class FlowBuilder {
         const targetTop = parseFloat(targetNode.style.top) || 0;
         const targetHeight = targetNode.offsetHeight;
 
-        // Position du port de sortie (milieu droit du nœud source)
+        // Position du port de sortie (centre du port-out)
+        // Le port fait 16px et est positionné à right: -8px
+        // Son centre est donc à sourceWidth + 0px (car il dépasse de 8px mais son centre est au bord)
         const x1 = sourceLeft + sourceWidth;
         const y1 = sourceTop + sourceHeight / 2;
 
-        // Position du port d'entrée (milieu gauche du nœud cible)
+        // Position du port d'entrée (centre du port-in)
+        // Le port fait 16px et est positionné à left: -8px
+        // Son centre est donc à 0px (car -8px + 8px)
         const x2 = targetLeft;
         const y2 = targetTop + targetHeight / 2;
 
@@ -971,11 +975,13 @@ class FlowBuilder {
         // Bouton ajouter nœud
         const addBtn = menu.querySelector('[data-action="add"]');
         console.log('Bouton add trouvé:', addBtn);
-        addBtn.addEventListener('click', async (e) => {
+        addBtn.addEventListener('click', (e) => {
             console.log('Click sur bouton ADD détecté !');
             e.stopPropagation();
-            await this.addNodeBetween(sourceId, targetId, connectionId);
+            // Cacher le menu AVANT d'afficher le sélecteur
             this.hideConnectionMenu();
+            // Puis afficher le sélecteur
+            this.addNodeBetween(sourceId, targetId, connectionId);
         });
 
         // Fermer au clic ailleurs
@@ -1018,6 +1024,8 @@ class FlowBuilder {
 
         const midX = (sourceLeft + targetLeft) / 2;
         const midY = (sourceTop + targetTop) / 2;
+
+        console.log('📍 Position calculée pour sélecteur:', { midX, midY, sourceLeft, targetLeft, sourceTop, targetTop });
 
         // Afficher menu de sélection du type de nœud
         this.showNodeTypeSelector(midX, midY, async (selectedType) => {
@@ -1090,7 +1098,9 @@ class FlowBuilder {
         ];
 
         selector.innerHTML = `
-            <div class="node-type-selector-header">Choisir un type</div>
+            <div class="node-type-selector-header">
+                ⚡ CHOISIR UN TYPE DE NŒUD ⚡
+            </div>
             <div class="node-type-selector-items">
                 ${nodeTypes.map(nt => `
                     <button class="node-type-selector-item" data-type="${nt.type}">
