@@ -262,6 +262,10 @@ class IntegrationsManager {
                 return this.getTeamsConfigForm(config);
             case 'web':
                 return this.getWebConfigForm(config);
+            case 'zendesk':
+                return this.getZendeskConfigForm(config);
+            case 'freshdesk':
+                return this.getFreshdeskConfigForm(config);
             default:
                 return '<p>Configuration non disponible</p>';
         }
@@ -506,6 +510,102 @@ class IntegrationsManager {
 &lt;/script&gt;
                     </div>
                     <small class="help-text">Copiez ce code avant la balise &lt;/body&gt; de votre site</small>
+                </div>
+            </form>
+        `;
+    }
+
+    getZendeskConfigForm(config) {
+        return `
+            <form class="config-form" id="channel-config-form">
+                <div class="form-section">
+                    <h4>Configuration Zendesk</h4>
+                    <div class="form-group">
+                        <label class="form-label">Subdomain Zendesk</label>
+                        <input type="text" class="form-control" name="subdomain" value="${config.subdomain || ''}" placeholder="example" required>
+                        <small class="help-text">Votre sous-domaine Zendesk (ex: example.zendesk.com → "example")</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email de l'agent</label>
+                        <input type="email" class="form-control" name="agent_email" value="${config.agent_email || ''}" placeholder="agent@example.com" required>
+                        <small class="help-text">Adresse email de votre agent Zendesk</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API Token</label>
+                        <input type="password" class="form-control" name="api_token" value="${config.api_token || ''}" required>
+                        <small class="help-text">Générez un token API dans Admin > Canaux > API</small>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h4>Options de tickets</h4>
+                    <div class="form-group">
+                        <label class="form-label">Priorité par défaut</label>
+                        <select class="form-control" name="default_priority">
+                            <option value="low" ${config.default_priority === 'low' ? 'selected' : ''}>Basse</option>
+                            <option value="normal" ${config.default_priority === 'normal' ? 'selected' : ''}>Normale</option>
+                            <option value="high" ${config.default_priority === 'high' ? 'selected' : ''}>Haute</option>
+                            <option value="urgent" ${config.default_priority === 'urgent' ? 'selected' : ''}>Urgente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Type de ticket par défaut</label>
+                        <select class="form-control" name="default_type">
+                            <option value="question" ${config.default_type === 'question' ? 'selected' : ''}>Question</option>
+                            <option value="incident" ${config.default_type === 'incident' ? 'selected' : ''}>Incident</option>
+                            <option value="problem" ${config.default_type === 'problem' ? 'selected' : ''}>Problème</option>
+                            <option value="task" ${config.default_type === 'task' ? 'selected' : ''}>Tâche</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        `;
+    }
+
+    getFreshdeskConfigForm(config) {
+        return `
+            <form class="config-form" id="channel-config-form">
+                <div class="form-section">
+                    <h4>Configuration Freshdesk</h4>
+                    <div class="form-group">
+                        <label class="form-label">Domain Freshdesk</label>
+                        <input type="text" class="form-control" name="domain" value="${config.domain || ''}" placeholder="example.freshdesk.com" required>
+                        <small class="help-text">Votre domaine Freshdesk complet</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API Key</label>
+                        <input type="password" class="form-control" name="api_key" value="${config.api_key || ''}" required>
+                        <small class="help-text">Trouvez votre API Key dans Profile Settings > API Key</small>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h4>Options de tickets</h4>
+                    <div class="form-group">
+                        <label class="form-label">Priorité par défaut</label>
+                        <select class="form-control" name="default_priority">
+                            <option value="1" ${config.default_priority === '1' ? 'selected' : ''}>Basse</option>
+                            <option value="2" ${config.default_priority === '2' ? 'selected' : ''}>Moyenne</option>
+                            <option value="3" ${config.default_priority === '3' ? 'selected' : ''}>Haute</option>
+                            <option value="4" ${config.default_priority === '4' ? 'selected' : ''}>Urgente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Source par défaut</label>
+                        <select class="form-control" name="default_source">
+                            <option value="1" ${config.default_source === '1' ? 'selected' : ''}>Email</option>
+                            <option value="2" ${config.default_source === '2' ? 'selected' : ''}>Portail</option>
+                            <option value="3" ${config.default_source === '3' ? 'selected' : ''}>Téléphone</option>
+                            <option value="7" ${config.default_source === '7' ? 'selected' : ''}>Chat</option>
+                            <option value="9" ${config.default_source === '9' ? 'selected' : ''}>Chatbot</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Statut par défaut</label>
+                        <select class="form-control" name="default_status">
+                            <option value="2" ${config.default_status === '2' ? 'selected' : ''}>Ouvert</option>
+                            <option value="3" ${config.default_status === '3' ? 'selected' : ''}>En attente</option>
+                            <option value="4" ${config.default_status === '4' ? 'selected' : ''}>Résolu</option>
+                        </select>
+                    </div>
                 </div>
             </form>
         `;

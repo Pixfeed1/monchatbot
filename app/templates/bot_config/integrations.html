@@ -3,7 +3,7 @@
 {% block title %}Canaux de Communication{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/integrations.css') }}?v=20251118b">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/integrations.css') }}?v=20251118e">
 <!-- Font Awesome pour les logos de marques -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 {% endblock %}
@@ -246,6 +246,46 @@
                 </button>
             </div>
         </div>
+
+        <!-- Zendesk -->
+        <div class="channel-card" data-channel="zendesk">
+            <div class="channel-header">
+                <div class="channel-icon zendesk">
+                    <i class="fa-solid fa-ticket"></i>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" data-channel-type="zendesk">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="channel-content">
+                <h3>Zendesk</h3>
+                <p class="channel-status">Non connecté</p>
+                <button class="btn btn-primary btn-sm config-btn" data-channel="zendesk">
+                    <i data-lucide="settings"></i> Configurer
+                </button>
+            </div>
+        </div>
+
+        <!-- Freshdesk -->
+        <div class="channel-card" data-channel="freshdesk">
+            <div class="channel-header">
+                <div class="channel-icon freshdesk">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" data-channel-type="freshdesk">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="channel-content">
+                <h3>Freshdesk</h3>
+                <p class="channel-status">Non connecté</p>
+                <button class="btn btn-primary btn-sm config-btn" data-channel="freshdesk">
+                    <i data-lucide="settings"></i> Configurer
+                </button>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -308,5 +348,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/integrations.js') }}"></script>
+<script src="{{ url_for('static', filename='js/integrations.js') }}?v=20251118e"></script>
 {% endblock %}
