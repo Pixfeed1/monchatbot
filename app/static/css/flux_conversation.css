@@ -1,683 +1,577 @@
-/* ========================================
-   FLUX_CONVERSATION.CSS - Styles pour l'éditeur de flux de conversation
-   Note: Utilise les classes communes de common.css
-   ======================================== */
+/**
+ * Flux de Conversation - Style simplifié et scopé
+ * Design cohérent avec reponses.css et base_connaissances.css
+ */
 
-/* Container principal */
+/* CONTAINER */
 .flow-container {
+    padding: 24px;
+}
+
+/* BANNIÈRE */
+.flow-container .banner {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 32px;
+}
+
+.flow-container .banner-content h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e40af;
+    margin: 0 0 8px 0;
+}
+
+.flow-container .banner-content p {
+    font-size: 15px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* ACTIONS RAPIDES */
+.flow-container .quick-actions {
     display: flex;
-    flex-direction: column;
-    height: calc(100vh - 200px);
-    gap: 20px;
+    gap: 12px;
+    margin-bottom: 32px;
 }
 
-/* Espace de travail divisé en 2 colonnes */
-.flow-workspace {
-    display: grid;
-    grid-template-columns: 250px 1fr;
-    gap: 20px;
-    flex: 1;
-    min-height: 0;
+/* SECTIONS */
+.flow-container .config-section {
+    margin-bottom: 32px;
 }
 
-/* ========================================
-   LISTE DES FLUX (Sidebar gauche)
-   ======================================== */
-.flow-list {
-    /* Utilise les classes .sidebar de common.css */
+.flow-container .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 20px;
     display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    align-items: center;
+    gap: 8px;
 }
 
-.flow-search {
-    width: 100%;
-    /* Utilise .form-control de common.css */
-    margin-top: 10px;
-}
-
-.flows {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--spacing-sm);
-}
-
-.flow-list-item {
-    /* Utilise .list-item de common.css */
-}
-
-/* ========================================
-   ÉDITEUR DE FLUX (Zone principale)
-   ======================================== */
-.flow-editor {
-    /* Utilise .card de common.css */
-    display: flex;
-    flex-direction: column;
-}
-
-.editor-header {
-    /* Utilise .card-header de common.css */
+.flow-container .section-header-with-actions {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 20px;
 }
 
-.flow-name {
-    font-size: 1.2em;
-    border: none;
-    border-bottom: 2px solid transparent;
-    padding: 5px;
-    width: 300px;
-    background-color: transparent;
-    color: var(--gray-900);
-    transition: border-color var(--transition-normal);
-}
-
-.flow-name:focus {
-    border-bottom-color: var(--primary-color);
-    outline: none;
-}
-
-.editor-actions {
+.flow-container .header-actions {
     display: flex;
-    gap: var(--spacing-sm);
-}
-
-/* ========================================
-   CONSTRUCTEUR DE FLUX (3 colonnes)
-   ======================================== */
-.flow-builder {
-    display: grid;
-    grid-template-columns: 200px 1fr 250px;
-    gap: 10px;
-    flex: 1;
-    min-height: 0;
-}
-
-/* ========================================
-   PALETTE DE NŒUDS (Colonne gauche)
-   ======================================== */
-.node-palette {
-    padding: 15px;
-    border-right: 1px solid var(--border-color);
-    overflow-y: auto;
-    background-color: var(--white);
-}
-
-.node-palette h4 {
-    margin: 0 0 var(--spacing-md) 0;
-    color: var(--gray-900);
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.node-item {
-    display: flex;
+    gap: 8px;
     align-items: center;
-    gap: 10px;
-    padding: 10px;
-    margin-bottom: 8px;
-    background-color: var(--white);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    cursor: move;
-    transition: all var(--transition-normal);
-    user-select: none;
 }
 
-.node-item:hover {
-    background-color: var(--gray-50);
-    border-color: var(--border-color-dark);
-    transform: translateX(3px);
-    box-shadow: var(--shadow-sm);
+.flow-container .search-input {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 250px;
 }
 
-.node-item:active {
-    cursor: grabbing;
+.flow-container .search-input:focus {
+    outline: none;
+    border-color: #0d6efd;
 }
 
-.node-item i {
-    font-size: 1.2em;
-    width: 20px;
-    text-align: center;
-    color: var(--gray-600);
+/* GRID DE FLUX */
+.flow-container .flows-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
 }
 
-.node-item span {
-    color: var(--gray-700);
-    font-size: 13px;
+.flow-container .flow-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.flow-container .flow-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+}
+
+.flow-container .flow-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.flow-container .flow-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.flow-container .flow-card-status {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
     font-weight: 500;
 }
 
-/* Couleurs par type de nœud dans la palette */
-.node-item[data-type="message"] i { color: #10b981; }
-.node-item[data-type="condition"] i { color: #f59e0b; }
-.node-item[data-type="input"] i { color: #3b82f6; }
-.node-item[data-type="action"] i { color: #ef4444; }
-.node-item[data-type="api"] i { color: #8b5cf6; }
-
-/* ========================================
-   CANVAS DE FLUX (Zone centrale)
-   ======================================== */
-.flow-canvas {
-    position: relative;
-    overflow: auto;
-    background-color: var(--gray-50);
-    background-image:
-        linear-gradient(var(--border-color) 1px, transparent 1px),
-        linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
-    background-size: 20px 20px;
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
-    min-height: 500px;
+.flow-container .flow-card-status.active {
+    background: #dcfce7;
+    color: #15803d;
 }
 
-.flow-nodes {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    min-height: 500px;
+.flow-container .flow-card-status.inactive {
+    background: #fee2e2;
+    color: #b91c1c;
 }
 
-/* ========================================
-   NŒUDS DU FLUX
-   ======================================== */
-.flow-node {
-    position: absolute;
-    min-width: 200px;
-    max-width: 300px;
-    background-color: var(--white);
-    border: 2px solid var(--border-color);
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-md);
-    z-index: 1;
-    cursor: move;
-    transition: box-shadow var(--transition-normal);
+.flow-container .flow-card-description {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 12px;
+    line-height: 1.5;
 }
 
-.flow-node:hover {
-    box-shadow: var(--shadow-lg);
+.flow-container .flow-card-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #94a3b8;
 }
 
-.flow-node.selected {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2);
+/* ÉDITEUR DE FLUX */
+.flow-container .flow-editor {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-top: 32px;
 }
 
-.flow-node.dragging {
-    opacity: 0.8;
-    cursor: grabbing;
-    z-index: 100;
-}
-
-.node-header {
-    padding: 10px;
-    background-color: var(--gray-100);
-    border-bottom: 1px solid var(--border-color);
-    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+.flow-container .editor-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: move;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
 }
 
-.node-type {
+.flow-container .flow-name-input {
+    font-size: 18px;
     font-weight: 600;
-    font-size: 13px;
-    color: var(--gray-700);
+    border: 1px solid transparent;
+    padding: 8px 12px;
+    border-radius: 6px;
+    flex: 1;
+    max-width: 400px;
+}
+
+.flow-container .flow-name-input:hover {
+    border-color: #e2e8f0;
+}
+
+.flow-container .flow-name-input:focus {
+    outline: none;
+    border-color: #0d6efd;
+}
+
+.flow-container .editor-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.flow-container .editor-workspace {
+    display: grid;
+    grid-template-columns: 200px 1fr 250px;
+    min-height: 600px;
+}
+
+/* PALETTE D'ÉLÉMENTS */
+.flow-container .elements-palette {
+    border-right: 1px solid #e2e8f0;
+    padding: 20px;
+}
+
+.flow-container .elements-palette h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    margin: 0 0 16px 0;
+}
+
+.flow-container .element-item {
     display: flex;
     align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: move;
+    transition: all 0.2s ease;
+}
+
+.flow-container .element-item:hover {
+    background: #f8fafc;
+    border-color: #0d6efd;
+}
+
+.flow-container .element-item i {
+    width: 18px;
+    height: 18px;
+    color: #3b82f6;
+}
+
+.flow-container .element-item span {
+    font-size: 13px;
+    color: #1e293b;
+}
+
+/* CANVAS DE FLUX */
+.flow-container .flow-canvas {
+    padding: 24px;
+    background: #f8fafc;
+    position: relative;
+    overflow: auto;
+}
+
+.flow-container .flow-nodes {
+    min-height: 100%;
+    position: relative;
+}
+
+.flow-container .flow-node {
+    position: absolute;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    min-width: 200px;
+    cursor: move;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.flow-container .flow-node.selected {
+    border-color: #0d6efd;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.flow-container .flow-node-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.flow-container .flow-node-type {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.flow-container .flow-node-delete {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.flow-container .flow-node-content {
+    font-size: 13px;
+    color: #1e293b;
+}
+
+/* PROPRIÉTÉS DU NŒUD */
+.flow-container .node-properties {
+    border-left: 1px solid #e2e8f0;
+    padding: 20px;
+}
+
+.flow-container .node-properties h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    margin: 0 0 16px 0;
+}
+
+.flow-container .properties-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.flow-container .property-field {
+    display: flex;
+    flex-direction: column;
     gap: 6px;
 }
 
-.node-actions {
-    display: flex;
-    gap: 4px;
-}
-
-.node-content {
-    padding: 15px;
-    background-color: var(--white);
-}
-
-.node-content input,
-.node-content textarea,
-.node-content select {
-    /* Utilise .form-control de common.css */
-    width: 100%;
-    padding: 8px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    margin-bottom: 8px;
+.flow-container .property-field label {
     font-size: 13px;
+    font-weight: 500;
+    color: #475569;
 }
 
-.node-content textarea {
+.flow-container .property-field input,
+.flow-container .property-field textarea,
+.flow-container .property-field select {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.flow-container .property-field input:focus,
+.flow-container .property-field textarea:focus,
+.flow-container .property-field select:focus {
+    outline: none;
+    border-color: #0d6efd;
+}
+
+.flow-container .property-field textarea {
     resize: vertical;
     min-height: 80px;
 }
 
-.node-ports {
-    display: flex;
-    justify-content: space-between;
-    padding: 5px;
-    background-color: var(--white);
+/* ÉTAT VIDE */
+.flow-container .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: #94a3b8;
 }
 
-.port {
-    width: 12px;
-    height: 12px;
-    background-color: var(--primary-color);
-    border: 2px solid var(--white);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    position: relative;
+.flow-container .empty-state i {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
 }
 
-.port:hover {
-    transform: scale(1.3);
-    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.2);
+.flow-container .empty-state p {
+    font-size: 15px;
+    font-weight: 500;
+    color: #64748b;
+    margin: 0 0 4px 0;
 }
 
-.port-in {
-    margin-left: 5px;
+.flow-container .empty-state small {
+    font-size: 13px;
+    color: #94a3b8;
 }
 
-.port-out {
-    margin-right: 5px;
-}
-
-/* Types de nœuds avec bordures de couleur */
-.message-node {
-    border-left: 4px solid #10b981;
-}
-
-.message-node .node-header {
-    background-color: rgba(16, 185, 129, 0.1);
-}
-
-.condition-node {
-    border-left: 4px solid #f59e0b;
-}
-
-.condition-node .node-header {
-    background-color: rgba(245, 158, 11, 0.1);
-}
-
-.input-node {
-    border-left: 4px solid #3b82f6;
-}
-
-.input-node .node-header {
-    background-color: rgba(59, 130, 246, 0.1);
-}
-
-.action-node {
-    border-left: 4px solid #ef4444;
-}
-
-.action-node .node-header {
-    background-color: rgba(239, 68, 68, 0.1);
-}
-
-.api-node {
-    border-left: 4px solid #8b5cf6;
-}
-
-.api-node .node-header {
-    background-color: rgba(139, 92, 246, 0.1);
-}
-
-/* Éditeur de condition dans le nœud */
-.condition-editor {
-    display: flex;
-    flex-direction: column;
+/* BOUTONS - Scopés */
+.flow-container .btn-primary,
+.flow-container .btn-secondary,
+.flow-container .btn-icon {
+    display: inline-flex;
+    align-items: center;
     gap: 8px;
-}
-
-.condition-editor select,
-.condition-editor input {
-    width: 100%;
-}
-
-/* ========================================
-   CONNEXIONS ENTRE NŒUDS
-   ======================================== */
-.flow-connections {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 0;
-}
-
-.flow-connection {
-    position: absolute;
-    pointer-events: none;
-}
-
-.flow-connection path {
-    stroke: var(--gray-400);
-    stroke-width: 2;
-    fill: none;
-    transition: stroke var(--transition-normal);
-}
-
-.flow-connection:hover path,
-.flow-connection.selected path {
-    stroke: var(--primary-color);
-    stroke-width: 3;
-}
-
-/* Connexion en cours de création */
-.temp-connection {
-    position: absolute;
-    pointer-events: none;
-    z-index: 50;
-}
-
-.temp-connection path {
-    stroke: var(--primary-light);
-    stroke-width: 2;
-    stroke-dasharray: 5, 5;
-    fill: none;
-    animation: dashMove 0.5s linear infinite;
-}
-
-@keyframes dashMove {
-    to {
-        stroke-dashoffset: -10;
-    }
-}
-
-/* ========================================
-   PANNEAU DE PROPRIÉTÉS (Colonne droite)
-   ======================================== */
-.node-properties {
-    padding: 15px;
-    border-left: 1px solid var(--border-color);
-    overflow-y: auto;
-    background-color: var(--white);
-}
-
-.node-properties h4 {
-    margin: 0 0 var(--spacing-md) 0;
-    color: var(--gray-900);
+    padding: 10px 20px;
+    border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
 }
 
-.properties-content {
-    padding: 10px;
-    background-color: var(--gray-50);
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
+.flow-container .btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
 }
 
-.properties-empty {
-    text-align: center;
-    color: var(--gray-500);
-    font-size: 13px;
-    padding: var(--spacing-lg);
+.flow-container .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
 }
 
-.property-group {
-    margin-bottom: var(--spacing-md);
+.flow-container .btn-secondary {
+    background: white;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
 }
 
-.property-label {
-    display: block;
-    margin-bottom: var(--spacing-sm);
-    color: var(--gray-700);
-    font-weight: 500;
-    font-size: 13px;
+.flow-container .btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
 }
 
-.property-input {
-    /* Utilise .form-control de common.css */
-    width: 100%;
+.flow-container .btn-icon {
+    padding: 8px;
+    background: none;
+    color: #64748b;
 }
 
-/* ========================================
-   MODAL DE TEST
-   ======================================== */
-.test-conversation {
-    height: 400px;
-    overflow-y: auto;
-    background-color: var(--gray-50);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    margin-bottom: 15px;
-    padding: 15px;
+.flow-container .btn-icon:hover {
+    background: #f1f5f9;
+    color: #1e293b;
 }
 
-.test-message {
-    margin-bottom: var(--spacing-md);
-    display: flex;
-    gap: var(--spacing-sm);
-}
-
-.test-message.user {
-    justify-content: flex-end;
-}
-
-.test-message.bot {
-    justify-content: flex-start;
-}
-
-.test-message-content {
-    max-width: 70%;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--border-radius-lg);
-    font-size: 14px;
-}
-
-.test-message.user .test-message-content {
-    background-color: var(--primary-color);
-    color: var(--white);
-}
-
-.test-message.bot .test-message-content {
-    background-color: var(--white);
-    border: 1px solid var(--border-color);
-    color: var(--gray-900);
-}
-
-.test-input {
-    display: flex;
-    gap: var(--spacing-sm);
-}
-
-.test-input input {
-    flex: 1;
-}
-
-/* État de test en cours */
-.test-status {
-    padding: var(--spacing-sm);
-    background-color: var(--info-color);
-    color: var(--white);
-    border-radius: var(--border-radius);
-    margin-bottom: var(--spacing-md);
-    text-align: center;
-    font-size: 13px;
-}
-
-/* ========================================
-   ÉTATS ET ANIMATIONS
-   ======================================== */
-.node-loading {
-    position: relative;
-}
-
-.node-loading::after {
-    content: '';
-    position: absolute;
+/* MODAL DE TEST */
+#testModal {
+    display: none;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(255, 255, 255, 0.8);
-    display: flex;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
     align-items: center;
     justify-content: center;
-    border-radius: var(--border-radius-lg);
 }
 
-.fade-in {
-    animation: fadeIn var(--transition-normal);
+#testModal.show {
+    display: flex;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+#testModal .modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
 }
 
-/* ========================================
-   RESPONSIVE
-   ======================================== */
-@media (max-width: 1200px) {
-    .flow-builder {
-        grid-template-columns: 150px 1fr 200px;
-    }
-
-    .flow-name {
-        width: 200px;
-    }
+#testModal .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-@media (max-width: 992px) {
-    .flow-workspace {
-        grid-template-columns: 1fr;
-    }
+#testModal .modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
 
-    .flow-list {
-        display: none;
-    }
+#testModal .modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+}
 
-    .flow-builder {
-        grid-template-columns: 1fr;
-    }
+#testModal .modal-close:hover {
+    color: #1e293b;
+}
 
-    .node-palette,
-    .node-properties {
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 100vh;
-        background-color: var(--white);
-        z-index: 1000;
-        transform: translateX(-100%);
-        transition: transform var(--transition-normal);
-        border: 1px solid var(--border-color);
-        box-shadow: var(--shadow-xl);
-        width: 280px;
-    }
+#testModal .modal-body {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
 
-    .node-properties {
-        left: auto;
-        right: 0;
-        transform: translateX(100%);
-    }
+#testModal .test-conversation {
+    flex: 1;
+    min-height: 300px;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 16px;
+    overflow-y: auto;
+}
 
-    .node-palette.show,
-    .node-properties.show {
-        transform: translateX(0);
-    }
+#testModal .test-input-area {
+    display: flex;
+    gap: 12px;
+}
 
-    /* Boutons pour afficher/masquer les panneaux sur mobile */
-    .mobile-toggle-palette,
-    .mobile-toggle-properties {
-        display: block;
-        position: fixed;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 999;
-        background-color: var(--primary-color);
-        color: var(--white);
-        border: none;
-        padding: 12px;
-        border-radius: var(--border-radius);
-        cursor: pointer;
-        box-shadow: var(--shadow-lg);
-    }
+#testModal .test-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+}
 
-    .mobile-toggle-palette {
-        left: 10px;
-    }
+#testModal .test-input:focus {
+    outline: none;
+    border-color: #0d6efd;
+}
 
-    .mobile-toggle-properties {
-        right: 10px;
+#testModal .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+/* Messages de test */
+.test-message {
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    max-width: 80%;
+}
+
+.test-message.user {
+    background: #dbeafe;
+    margin-left: auto;
+}
+
+.test-message.bot {
+    background: white;
+    border: 1px solid #e2e8f0;
+}
+
+.test-message-content {
+    font-size: 14px;
+    color: #1e293b;
+}
+
+.test-message-time {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+    .flow-container .editor-workspace {
+        grid-template-columns: 180px 1fr 220px;
     }
 }
 
 @media (max-width: 768px) {
     .flow-container {
-        height: calc(100vh - 150px);
+        padding: 16px;
     }
 
-    .editor-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--spacing-sm);
+    .flow-container .quick-actions {
+        flex-wrap: wrap;
     }
 
-    .flow-name {
-        width: 100%;
-    }
-
-    .editor-actions {
-        width: 100%;
-        justify-content: flex-end;
-    }
-
-    .flow-node {
-        min-width: 150px;
-        max-width: 250px;
-    }
-
-    .node-palette,
-    .node-properties {
-        width: 90%;
-        max-width: 300px;
-    }
-}
-
-/* ========================================
-   PRINT (pour export PDF)
-   ======================================== */
-@media print {
-    .flow-container {
-        height: auto;
-    }
-
-    .toolbar,
-    .node-palette,
-    .node-properties,
-    .editor-actions {
-        display: none;
-    }
-
-    .flow-builder {
+    .flow-container .editor-workspace {
         grid-template-columns: 1fr;
     }
 
-    .flow-canvas {
+    .flow-container .elements-palette,
+    .flow-container .node-properties {
         border: none;
-        background: white;
-        min-height: auto;
+        border-top: 1px solid #e2e8f0;
     }
 
-    .flow-node {
-        box-shadow: none;
+    .flow-container .flows-grid {
+        grid-template-columns: 1fr;
     }
 }
