@@ -1018,7 +1018,9 @@ class FlowBuilder {
 
         // Afficher menu de sélection du type de nœud
         this.showNodeTypeSelector(midX, midY, async (selectedType) => {
+            console.log('✅ Callback sélecteur appelé avec type:', selectedType);
             try {
+                console.log('1. Création du nœud en cours...');
                 // Créer le nœud du type sélectionné
                 const response = await fetch(`/flow/${this.currentFlow.id}/nodes`, {
                     method: 'POST',
@@ -1033,19 +1035,29 @@ class FlowBuilder {
                     })
                 });
 
-                if (!response.ok) throw new Error('Erreur création nœud');
+                if (!response.ok) {
+                    console.error('❌ Erreur création nœud, status:', response.status);
+                    throw new Error('Erreur création nœud');
+                }
 
                 const newNode = await response.json();
+                console.log('2. Nœud créé avec ID:', newNode.id);
 
                 // Supprimer l'ancienne connexion
+                console.log('3. Suppression ancienne connexion:', connectionId);
                 await this.deleteConnection(connectionId);
 
                 // Créer deux nouvelles connexions : source -> nouveau, nouveau -> target
+                console.log('4. Création connexion source->nouveau:', sourceId, '->', newNode.id);
                 await this.createConnection(sourceId, newNode.id);
+
+                console.log('5. Création connexion nouveau->target:', newNode.id, '->', targetId);
                 await this.createConnection(newNode.id, targetId);
 
+                console.log('✅ Ajout nœud terminé avec succès !');
+
             } catch (error) {
-                console.error('Erreur addNodeBetween:', error);
+                console.error('❌ Erreur addNodeBetween:', error);
                 this.showError('Impossible d\'ajouter le nœud');
             }
         });
@@ -1064,6 +1076,7 @@ class FlowBuilder {
         selector.className = 'node-type-selector';
         selector.style.left = `${x}px`;
         selector.style.top = `${y}px`;
+        console.log('Sélecteur créé et positionné à:', { x, y });
 
         const nodeTypes = [
             { type: 'message', icon: 'message-circle', label: 'Message' },
@@ -1087,6 +1100,7 @@ class FlowBuilder {
 
         this.nodesContainer.appendChild(selector);
         this.currentNodeTypeSelector = selector;
+        console.log('Sélecteur ajouté au DOM, visible:', selector.offsetHeight > 0);
 
         // Rafraîchir les icônes
         if (typeof lucide !== 'undefined') {
@@ -1094,8 +1108,11 @@ class FlowBuilder {
         }
 
         // Gérer les clics sur les types
-        selector.querySelectorAll('.node-type-selector-item').forEach(btn => {
+        const items = selector.querySelectorAll('.node-type-selector-item');
+        console.log('Nombre de boutons de type trouvés:', items.length);
+        items.forEach(btn => {
             btn.addEventListener('click', (e) => {
+                console.log('🖱️ Clic sur type de nœud:', btn.dataset.type);
                 e.stopPropagation();
                 const type = btn.dataset.type;
                 this.hideNodeTypeSelector();
