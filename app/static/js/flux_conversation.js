@@ -486,16 +486,12 @@ class FlowBuilder {
      * Rendu d'un nœud dans le canvas
      */
     renderNode(id, nodeData) {
-        console.log('renderNode appelé - ID:', id, 'Type:', nodeData.type);
-
         const nodeElement = document.createElement('div');
         nodeElement.className = `flow-node ${nodeData.type}-node fade-in`;
         nodeElement.dataset.nodeId = id;
         nodeElement.dataset.nodeType = nodeData.type;
         nodeElement.style.left = `${nodeData.position.x}px`;
         nodeElement.style.top = `${nodeData.position.y}px`;
-
-        console.log('Nœud créé avec data-node-id:', nodeElement.dataset.nodeId);
 
         nodeElement.innerHTML = `
             <div class="node-header">
@@ -528,13 +524,9 @@ class FlowBuilder {
         const header = nodeElement.querySelector('.node-header');
         header.addEventListener('mousedown', (e) => this.startNodeDrag(e, nodeElement));
 
-        // Bouton suppression - récupérer l'ID depuis le DOM pour éviter problèmes de closure
-        const deleteBtn = nodeElement.querySelector('.delete-node');
-        deleteBtn.addEventListener('click', (e) => {
+        nodeElement.querySelector('.delete-node').addEventListener('click', (e) => {
             e.stopPropagation();
-            const nodeId = nodeElement.dataset.nodeId;
-            console.log('Suppression du nœud ID:', nodeId, 'Type:', nodeElement.dataset.nodeType);
-            this.deleteNode(nodeId);
+            this.deleteNode(nodeElement.dataset.nodeId);
         });
 
         // Connexions
@@ -615,17 +607,8 @@ class FlowBuilder {
      * Supprime un nœud
      */
     async deleteNode(nodeId) {
-        console.log('deleteNode appelé avec nodeId:', nodeId);
-
-        // Vérifier que le nœud existe
         const nodeEl = this.nodesContainer.querySelector(`[data-node-id="${nodeId}"]`);
-        if (!nodeEl) {
-            console.error('Nœud introuvable dans le DOM:', nodeId);
-            this.showError('Nœud introuvable');
-            return;
-        }
-
-        console.log('Nœud trouvé:', nodeEl.dataset.nodeType, nodeEl.dataset.nodeId);
+        if (!nodeEl) return;
 
         try {
             const response = await fetch(`/flow/nodes/${nodeId}`, {
@@ -635,22 +618,12 @@ class FlowBuilder {
                 }
             });
 
-            if (!response.ok) {
-                throw new Error('Erreur lors de la suppression');
-            }
+            if (!response.ok) throw new Error('Erreur suppression');
 
-            console.log('Suppression du nœud dans le DOM:', nodeId);
-
-            // Supprimer l'élément du DOM
             nodeEl.remove();
-
-            // Supprimer les connexions associées
-            const connections = this.connectionsContainer.querySelectorAll(`[data-source-id="${nodeId}"], [data-target-id="${nodeId}"]`);
-            console.log('Connexions à supprimer:', connections.length);
-            connections.forEach(el => el.remove());
+            this.connectionsContainer.querySelectorAll(`[data-source-id="${nodeId}"], [data-target-id="${nodeId}"]`).forEach(el => el.remove());
         } catch (error) {
             console.error('Erreur deleteNode:', error);
-            this.showError('Impossible de supprimer le nœud');
         }
     }
 
@@ -933,9 +906,6 @@ class FlowBuilder {
      * Affiche le menu de connexion (supprimer + ajouter nœud)
      */
     showConnectionMenu(e, connectionId, sourceId, targetId, connectionElement) {
-        console.log('showConnectionMenu appelé:', { connectionId, sourceId, targetId });
-
-        // Supprimer tout menu existant
         this.hideConnectionMenu();
 
         const menu = document.createElement('div');
@@ -964,23 +934,15 @@ class FlowBuilder {
             lucide.createIcons();
         }
 
-        // Bouton supprimer
-        const deleteBtn = menu.querySelector('[data-action="delete"]');
-        deleteBtn.addEventListener('click', (e) => {
+        menu.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
             e.stopPropagation();
             this.deleteConnection(connectionId);
             this.hideConnectionMenu();
         });
 
-        // Bouton ajouter nœud
-        const addBtn = menu.querySelector('[data-action="add"]');
-        console.log('Bouton add trouvé:', addBtn);
-        addBtn.addEventListener('click', (e) => {
-            console.log('Click sur bouton ADD détecté !');
+        menu.querySelector('[data-action="add"]').addEventListener('click', (e) => {
             e.stopPropagation();
-            // Cacher le menu AVANT d'afficher le sélecteur
             this.hideConnectionMenu();
-            // Puis afficher le sélecteur
             this.addNodeBetween(sourceId, targetId, connectionId);
         });
 
@@ -1005,17 +967,10 @@ class FlowBuilder {
      * Affiche un menu pour choisir le type de nœud à ajouter entre deux nœuds
      */
     async addNodeBetween(sourceId, targetId, connectionId) {
-        console.log('addNodeBetween appelé:', { sourceId, targetId, connectionId });
-
-        // Calculer la position au milieu entre les deux nœuds
         const sourceNode = this.nodesContainer.querySelector(`[data-node-id="${sourceId}"]`);
         const targetNode = this.nodesContainer.querySelector(`[data-node-id="${targetId}"]`);
-        console.log('Nœuds trouvés:', { sourceNode, targetNode });
 
-        if (!sourceNode || !targetNode) {
-            this.showError('Nœuds introuvables');
-            return;
-        }
+        if (!sourceNode || !targetNode) return;
 
         const sourceLeft = parseFloat(sourceNode.style.left) || 0;
         const sourceTop = parseFloat(sourceNode.style.top) || 0;
@@ -1025,14 +980,8 @@ class FlowBuilder {
         const midX = (sourceLeft + targetLeft) / 2;
         const midY = (sourceTop + targetTop) / 2;
 
-        console.log('📍 Position calculée pour sélecteur:', { midX, midY, sourceLeft, targetLeft, sourceTop, targetTop });
-
-        // Afficher menu de sélection du type de nœud
         this.showNodeTypeSelector(midX, midY, async (selectedType) => {
-            console.log('✅ Callback sélecteur appelé avec type:', selectedType);
             try {
-                console.log('1. Création du nœud en cours...');
-                // Créer le nœud du type sélectionné
                 const response = await fetch(`/flow/${this.currentFlow.id}/nodes`, {
                     method: 'POST',
                     headers: {
@@ -1046,30 +995,16 @@ class FlowBuilder {
                     })
                 });
 
-                if (!response.ok) {
-                    console.error('❌ Erreur création nœud, status:', response.status);
-                    throw new Error('Erreur création nœud');
-                }
+                if (!response.ok) throw new Error('Erreur création nœud');
 
                 const newNode = await response.json();
-                console.log('2. Nœud créé avec ID:', newNode.id);
 
-                // Supprimer l'ancienne connexion
-                console.log('3. Suppression ancienne connexion:', connectionId);
                 await this.deleteConnection(connectionId);
-
-                // Créer deux nouvelles connexions : source -> nouveau, nouveau -> target
-                console.log('4. Création connexion source->nouveau:', sourceId, '->', newNode.id);
                 await this.createConnection(sourceId, newNode.id);
-
-                console.log('5. Création connexion nouveau->target:', newNode.id, '->', targetId);
                 await this.createConnection(newNode.id, targetId);
 
-                console.log('✅ Ajout nœud terminé avec succès !');
-
             } catch (error) {
-                console.error('❌ Erreur addNodeBetween:', error);
-                this.showError('Impossible d\'ajouter le nœud');
+                console.error('Erreur addNodeBetween:', error);
             }
         });
     }
@@ -1078,16 +1013,12 @@ class FlowBuilder {
      * Affiche un sélecteur de type de nœud
      */
     showNodeTypeSelector(x, y, callback) {
-        console.log('showNodeTypeSelector appelé à position:', { x, y });
-
-        // Supprimer tout sélecteur existant
         this.hideNodeTypeSelector();
 
         const selector = document.createElement('div');
         selector.className = 'node-type-selector';
         selector.style.left = `${x}px`;
         selector.style.top = `${y}px`;
-        console.log('Sélecteur créé et positionné à:', { x, y });
 
         const nodeTypes = [
             { type: 'message', icon: 'message-circle', label: 'Message' },
@@ -1113,30 +1044,29 @@ class FlowBuilder {
 
         this.nodesContainer.appendChild(selector);
         this.currentNodeTypeSelector = selector;
-        console.log('Sélecteur ajouté au DOM, visible:', selector.offsetHeight > 0);
 
-        // Rafraîchir les icônes
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
 
-        // Gérer les clics sur les types
-        const items = selector.querySelectorAll('.node-type-selector-item');
-        console.log('Nombre de boutons de type trouvés:', items.length);
-        items.forEach(btn => {
+        selector.querySelectorAll('.node-type-selector-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                console.log('🖱️ Clic sur type de nœud:', btn.dataset.type);
                 e.stopPropagation();
-                const type = btn.dataset.type;
                 this.hideNodeTypeSelector();
-                callback(type);
+                callback(btn.dataset.type);
             });
         });
 
-        // Fermer au clic ailleurs
+        // Fermer au clic en DEHORS du sélecteur uniquement
         setTimeout(() => {
-            document.addEventListener('click', () => this.hideNodeTypeSelector(), { once: true });
-        }, 100);
+            const closeHandler = (e) => {
+                if (!selector.contains(e.target)) {
+                    this.hideNodeTypeSelector();
+                    document.removeEventListener('click', closeHandler);
+                }
+            };
+            document.addEventListener('click', closeHandler);
+        }, 200);
     }
 
     /**
