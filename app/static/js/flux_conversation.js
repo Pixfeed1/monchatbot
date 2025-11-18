@@ -203,8 +203,11 @@ class FlowBuilder {
 
             if (newScale !== scale) {
                 scale = newScale;
+                // Appliquer le zoom aux DEUX conteneurs
                 this.nodesContainer.style.transform = `scale(${scale})`;
                 this.nodesContainer.style.transformOrigin = '0 0';
+                this.connectionsContainer.style.transform = `scale(${scale})`;
+                this.connectionsContainer.style.transformOrigin = '0 0';
 
                 // Mettre à jour toutes les connexions après zoom
                 this.updateAllConnections();
