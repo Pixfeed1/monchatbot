@@ -1,6 +1,6 @@
 /**
- * Flux de Conversation - Style simplifié et scopé
- * Design cohérent avec reponses.css et base_connaissances.css
+ * Flux de Conversation - Style FINAL corrigé
+ * Design cohérent avec architecture z-index fixée
  */
 
 /* CONTAINER */
@@ -78,7 +78,7 @@
     border-color: #0d6efd;
 }
 
-/* GRID DE FLUX - Style n8n */
+/* GRID DE FLUX */
 .flow-container .flows {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -174,36 +174,6 @@
     border-top: 1px solid #f1f5f9;
 }
 
-.flow-container .list-item {
-    padding: 14px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 2px solid transparent;
-}
-
-.flow-container .list-item:hover {
-    background: #f8fafc;
-    border-color: #e2e8f0;
-}
-
-.flow-container .list-item.active {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-    border-color: #3b82f6;
-}
-
-.flow-container .list-item-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 4px;
-}
-
-.flow-container .list-item-subtitle {
-    font-size: 12px;
-    color: #94a3b8;
-}
-
 /* ÉDITEUR DE FLUX */
 .flow-container .flow-editor {
     background: white;
@@ -276,7 +246,7 @@
     background: white;
 }
 
-/* PALETTE D'ÉLÉMENTS - Horizontale en haut */
+/* PALETTE D'ÉLÉMENTS */
 .flow-container .node-palette {
     border-bottom: 1px solid #e2e8f0;
     padding: 12px 16px;
@@ -323,6 +293,10 @@
     cursor: grabbing;
 }
 
+.flow-container .node-item.dragging {
+    opacity: 0.5;
+}
+
 .flow-container .node-item i {
     width: 16px;
     height: 16px;
@@ -334,7 +308,7 @@
     color: #1e293b;
 }
 
-/* CANVAS DE FLUX - Épuré avec zoom */
+/* CANVAS DE FLUX - Architecture z-index corrigée */
 .flow-container .flow-canvas {
     padding: 0;
     background: #f8fafc;
@@ -347,7 +321,7 @@
     min-height: 700px;
 }
 
-/* Conteneur des connexions (en dessous) */
+/* Conteneur des connexions (z-index: 1) */
 .flow-container .flow-connections {
     position: absolute;
     top: 0;
@@ -356,22 +330,20 @@
     min-width: 200%;
     padding: 50px;
     z-index: 1;
-    pointer-events: none !important;  /* Le conteneur ne capte RIEN */
+    pointer-events: none !important;
 }
 
-/* IMPORTANT: Désactiver pointer-events sur tous les SVG de connexion */
 .flow-container .flow-connections svg {
     pointer-events: none !important;
 }
 
-/* Réactiver UNIQUEMENT sur les paths interactifs */
 .flow-container .flow-connections svg path[style*="pointer-events: stroke"] {
     pointer-events: stroke !important;
 }
 
-/* Conteneur des nœuds (au-dessus) */
+/* Conteneur des nœuds (z-index: 100) */
 .flow-container .flow-nodes {
-    position: absolute;  /* DOIT être absolute pour que z-index fonctionne */
+    position: absolute;
     top: 0;
     left: 0;
     min-height: 200%;
@@ -379,11 +351,11 @@
     padding: 50px;
     transform-origin: 0 0;
     transition: transform 0.1s ease-out;
-    z-index: 100;  /* BEAUCOUP plus haut que les connexions */
-    pointer-events: none;  /* Le conteneur ne bloque pas */
+    z-index: 100;
+    pointer-events: none;
 }
 
-/* NŒUDS - Simplifié avec charte bleue */
+/* NŒUDS */
 .flow-container .flow-node {
     position: absolute;
     background: white;
@@ -394,7 +366,7 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: box-shadow 0.2s ease;
     overflow: hidden;
-    pointer-events: auto !important;  /* Les nœuds captent TOUJOURS les clics */
+    pointer-events: auto !important;
 }
 
 .flow-container .flow-node:hover {
@@ -410,9 +382,10 @@
     cursor: grabbing;
     transition: none !important;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2) !important;
+    z-index: 1000 !important;
 }
 
-/* En-tête du nœud - une seule couleur bleue */
+/* En-tête du nœud */
 .flow-container .node-header {
     padding: 12px 14px;
     display: flex;
@@ -486,6 +459,12 @@
     min-height: 50px;
 }
 
+.flow-container .condition-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 /* Ports de connexion */
 .flow-container .node-ports {
     position: absolute;
@@ -555,7 +534,7 @@
 }
 
 .flow-container .temp-connection {
-    z-index: 200;  /* Au-dessus des nœuds pendant le tracé */
+    z-index: 200;
 }
 
 .flow-container .temp-connection path {
@@ -565,7 +544,7 @@
     animation: dash 0.5s linear infinite;
 }
 
-/* Menu de connexion (poubelle + ajouter nœud) */
+/* Menu de connexion */
 .flow-container .connection-menu {
     position: absolute;
     z-index: 1000;
@@ -573,7 +552,7 @@
     gap: 8px;
     animation: connectionMenuFadeIn 0.15s ease;
     transform: translate(-50%, -50%);
-    pointer-events: auto !important;  /* DOIT capter les clics */
+    pointer-events: auto !important;
 }
 
 .flow-container .btn-connection-action {
@@ -589,7 +568,7 @@
     cursor: pointer;
     transition: all 0.15s ease;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    pointer-events: auto !important;  /* Boutons cliquables */
+    pointer-events: auto !important;
 }
 
 .flow-container .btn-connection-action.btn-delete {
@@ -635,11 +614,11 @@
     border: 3px solid #0d6efd;
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(13, 110, 253, 0.4);
-    z-index: 10000 !important;  /* AU-DESSUS de TOUT */
+    z-index: 10000 !important;
     animation: nodeSelectorFadeIn 0.2s ease;
     transform: translate(-50%, -50%);
     min-width: 220px;
-    pointer-events: auto !important;  /* DOIT capter les clics */
+    pointer-events: auto !important;
     max-height: 90vh;
     overflow-y: auto;
 }
@@ -648,7 +627,7 @@
     padding: 16px;
     border-bottom: 2px solid #0d6efd;
     font-weight: 700;
-    font-size: 16px;
+    font-size: 14px;
     color: #0d6efd;
     text-align: center;
     background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
@@ -676,7 +655,13 @@
     font-weight: 600;
     color: #1e293b;
     text-align: left;
-    pointer-events: auto !important;  /* Boutons cliquables */
+    pointer-events: auto !important;
+}
+
+.flow-container .node-type-selector-item:hover {
+    background: #f8fafc;
+    border-color: #0d6efd;
+    transform: translateX(4px);
 }
 
 .flow-container .node-type-selector-item:active {
@@ -686,10 +671,8 @@
     color: white;
 }
 
-.flow-container .node-type-selector-item:hover {
-    background: #f8fafc;
-    border-color: #0d6efd;
-    transform: translateX(4px);
+.flow-container .node-type-selector-item:active i {
+    color: white;
 }
 
 .flow-container .node-type-selector-item i {
@@ -724,7 +707,7 @@
     }
 }
 
-/* ANIMATIONS - Minimaliste */
+/* ANIMATIONS */
 .flow-container .fade-in {
     animation: fadeIn 0.2s ease;
 }
@@ -738,9 +721,35 @@
     }
 }
 
-/* PROPRIÉTÉS DU NŒUD - Caché pour interface épurée */
+/* PROPRIÉTÉS DU NŒUD */
 .flow-container .node-properties {
     display: none;
+}
+
+.flow-container .properties-content {
+    padding: 16px;
+}
+
+.flow-container .property-group {
+    margin-bottom: 16px;
+}
+
+.flow-container .property-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.flow-container .property-input {
+    width: 100%;
+}
+
+.flow-container .form-help {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
 }
 
 /* ÉTAT VIDE */
@@ -768,7 +777,7 @@
     color: #94a3b8;
 }
 
-/* BOUTONS - Charte bleue */
+/* BOUTONS */
 .flow-container .btn-primary,
 .flow-container .btn-secondary {
     display: inline-flex;
@@ -957,7 +966,7 @@
 /* RESPONSIVE */
 @media (max-width: 1024px) {
     .flow-container .editor-workspace {
-        grid-template-columns: 180px 1fr 220px;
+        grid-template-rows: auto 1fr;
     }
 }
 
@@ -974,10 +983,9 @@
         grid-template-columns: 1fr;
     }
 
-    .flow-container .node-palette,
-    .flow-container .node-properties {
+    .flow-container .node-palette {
         border: none;
-        border-top: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
     }
 
     .flow-container .flows {
