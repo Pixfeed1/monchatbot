@@ -32,6 +32,7 @@ class FlowBuilder {
     initializeElements() {
         // Éléments principaux
         this.flowCanvas = document.querySelector('.flow-canvas');
+        this.connectionsContainer = document.getElementById('flowConnections');
         this.nodesContainer = document.getElementById('flowNodes');
         this.nodePalette = document.querySelector('.node-palette');
         this.propertiesPanel = document.querySelector('.node-properties');
@@ -291,6 +292,7 @@ class FlowBuilder {
 
             // Effacer le canvas
             this.nodesContainer.innerHTML = '';
+            this.connectionsContainer.innerHTML = '';
 
             // Rendre les nœuds
             flow.nodes.forEach(node => this.renderNode(node.id, node));
@@ -640,7 +642,7 @@ class FlowBuilder {
             nodeEl.remove();
 
             // Supprimer les connexions associées
-            const connections = this.nodesContainer.querySelectorAll(`[data-source-id="${nodeId}"], [data-target-id="${nodeId}"]`);
+            const connections = this.connectionsContainer.querySelectorAll(`[data-source-id="${nodeId}"], [data-target-id="${nodeId}"]`);
             console.log('Connexions à supprimer:', connections.length);
             connections.forEach(el => el.remove());
         } catch (error) {
@@ -676,7 +678,7 @@ class FlowBuilder {
         path.setAttribute('stroke-dasharray', '5,5');
         svg.appendChild(path);
 
-        this.nodesContainer.appendChild(svg);
+        this.connectionsContainer.appendChild(svg);
         this.tempConnectionEl = svg;
 
         const handleMouseMove = (e) => this.drawTempConnection(e);
@@ -787,7 +789,7 @@ class FlowBuilder {
         svg.style.left = '0';
         svg.style.width = '100%';
         svg.style.height = '100%';
-        svg.style.pointerEvents = 'none';
+        svg.style.pointerEvents = 'auto';
         svg.style.zIndex = '0';
 
         // Chemin invisible large pour capturer les clics (20px)
@@ -813,7 +815,7 @@ class FlowBuilder {
             this.showConnectionMenu(e, id, sourceId, targetId, svg);
         });
 
-        this.nodesContainer.insertBefore(svg, this.nodesContainer.firstChild);
+        this.connectionsContainer.appendChild(svg);
         this.updateConnectionPath(svg);
     }
 
@@ -881,7 +883,7 @@ class FlowBuilder {
      * Met à jour toutes les connexions d'un nœud
      */
     updateNodeConnections(nodeId) {
-        const connections = this.nodesContainer.querySelectorAll(
+        const connections = this.connectionsContainer.querySelectorAll(
             `[data-source-id="${nodeId}"], [data-target-id="${nodeId}"]`
         );
 
@@ -892,7 +894,7 @@ class FlowBuilder {
      * Met à jour TOUTES les connexions (utile après zoom)
      */
     updateAllConnections() {
-        const connections = this.nodesContainer.querySelectorAll('.flow-connection');
+        const connections = this.connectionsContainer.querySelectorAll('.flow-connection');
         connections.forEach(conn => this.updateConnectionPath(conn));
     }
 
@@ -912,7 +914,7 @@ class FlowBuilder {
                 throw new Error('Erreur lors de la suppression');
             }
 
-            const connEl = this.nodesContainer.querySelector(`[data-connection-id="${connectionId}"]`);
+            const connEl = this.connectionsContainer.querySelector(`[data-connection-id="${connectionId}"]`);
             if (connEl) connEl.remove();
         } catch (error) {
             console.error('Erreur deleteConnection:', error);
@@ -1263,7 +1265,7 @@ class FlowBuilder {
      */
     serializeConnections() {
         const connections = [];
-        this.nodesContainer.querySelectorAll('.flow-connection').forEach(connEl => {
+        this.connectionsContainer.querySelectorAll('.flow-connection').forEach(connEl => {
             connections.push({
                 id: connEl.dataset.connectionId,
                 source_id: connEl.dataset.sourceId,
