@@ -643,8 +643,6 @@ class FlowBuilder {
             const connections = this.nodesContainer.querySelectorAll(`[data-source-id="${nodeId}"], [data-target-id="${nodeId}"]`);
             console.log('Connexions à supprimer:', connections.length);
             connections.forEach(el => el.remove());
-
-            this.showSuccess('Nœud supprimé');
         } catch (error) {
             console.error('Erreur deleteNode:', error);
             this.showError('Impossible de supprimer le nœud');
@@ -897,8 +895,6 @@ class FlowBuilder {
 
             const connEl = this.nodesContainer.querySelector(`[data-connection-id="${connectionId}"]`);
             if (connEl) connEl.remove();
-
-            this.showSuccess('Connexion supprimée');
         } catch (error) {
             console.error('Erreur deleteConnection:', error);
             this.showError('Impossible de supprimer la connexion');
