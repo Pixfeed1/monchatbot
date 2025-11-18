@@ -771,6 +771,91 @@ class UnhandledQuery(db.Model):
         self.context = json.dumps(value) if value else None
 
 
+class Widget(db.Model):
+    """Widgets pour intégrer le bot sur des sites externes"""
+    __tablename__ = 'widget'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)  # Nom du widget
+    widget_key = db.Column(db.String(64), unique=True, nullable=False)  # Clé unique pour ce widget
+
+    # Domaines autorisés (JSON array)
+    allowed_domains = db.Column(db.Text, nullable=False)  # ["monsite.com", "*.autresite.com"]
+
+    # Configuration des pages
+    page_scope = db.Column(db.String(20), default='all')  # 'all', 'specific', 'pattern'
+    allowed_pages = db.Column(db.Text, nullable=True)  # JSON array des URLs autorisées
+
+    # Personnalisation
+    primary_color = db.Column(db.String(7), default='#0d6efd')  # Couleur principale
+    position = db.Column(db.String(20), default='bottom-right')  # Position sur la page
+    welcome_message = db.Column(db.Text, nullable=True)  # Message de bienvenue
+
+    # Statut
+    is_active = db.Column(db.Boolean, default=True)
+
+    # Métadonnées
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relation avec User
+    creator = db.relationship('User', backref=db.backref('widgets', lazy=True))
+
+    @property
+    def allowed_domains_list(self):
+        """Retourne la liste des domaines autorisés"""
+        if self.allowed_domains:
+            try:
+                return json.loads(self.allowed_domains)
+            except:
+                return []
+        return []
+
+    @allowed_domains_list.setter
+    def allowed_domains_list(self, value):
+        """Définit les domaines autorisés depuis une liste"""
+        self.allowed_domains = json.dumps(value) if value else json.dumps([])
+
+    @property
+    def allowed_pages_list(self):
+        """Retourne la liste des pages autorisées"""
+        if self.allowed_pages:
+            try:
+                return json.loads(self.allowed_pages)
+            except:
+                return []
+        return []
+
+    @allowed_pages_list.setter
+    def allowed_pages_list(self, value):
+        """Définit les pages autorisées depuis une liste"""
+        self.allowed_pages = json.dumps(value) if value else json.dumps([])
+
+    def generate_widget_code(self):
+        """Génère le code JavaScript à intégrer sur le site"""
+        return f'''<!-- LeoBot Widget -->
+<script>
+  (function(w,d,s,o,f,js,fjs){{
+    w['LeoBotWidget']=o;w[o] = w[o] || function () {{ (w[o].q = w[o].q || []).push(arguments) }};
+    js = d.createElement(s), fjs = d.getElementsByTagName(s)[0];
+    js.id = o; js.src = f; js.async = 1; fjs.parentNode.insertBefore(js, fjs);
+  }}(window, document, 'script', 'leobot', '/static/js/widget.js'));
+  leobot('init', {{
+    widgetKey: '{self.widget_key}',
+    primaryColor: '{self.primary_color}',
+    position: '{self.position}'
+  }});
+</script>
+<!-- Fin LeoBot Widget -->'''
+
+    @staticmethod
+    def generate_unique_key():
+        """Génère une clé unique pour le widget"""
+        import secrets
+        return secrets.token_urlsafe(32)
+
+
 ###############################################
 # Chargeur d'utilisateur Flask-Login
 ###############################################

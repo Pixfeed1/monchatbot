@@ -24,6 +24,10 @@
             <button class="period-btn" data-period="month">30 jours</button>
             <button class="period-btn" data-period="year">1 an</button>
             <button class="period-btn" data-period="all">Tout</button>
+            <button class="period-btn" data-period="custom" id="custom-period-btn">
+                <i data-lucide="calendar"></i>
+                Personnalisé
+            </button>
         </div>
         <div class="export-dropdown">
             <button class="export-btn" id="export-btn">
@@ -44,6 +48,37 @@
         </div>
     </div>
 </section>
+
+<!-- Modal Date Picker -->
+<div class="modal" id="date-picker-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Sélectionner une période personnalisée</h3>
+            <button class="close-modal" id="close-date-picker">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="date-picker-container">
+                <div class="date-input-group">
+                    <label for="start-date">Date de début</label>
+                    <input type="date" id="start-date" class="date-input">
+                </div>
+                <div class="date-input-group">
+                    <label for="end-date">Date de fin</label>
+                    <input type="date" id="end-date" class="date-input">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancel-date-picker">Annuler</button>
+            <button class="btn btn-primary" id="apply-date-range">
+                <i data-lucide="check"></i>
+                Appliquer
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- KPIs Principaux -->
 <section class="config-section">

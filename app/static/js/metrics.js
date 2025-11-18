@@ -12,6 +12,7 @@ class MetricsManager {
 
     init() {
         this.setupPeriodFilters();
+        this.setupDatePicker();
         this.setupDragAndDrop();
         this.setupExport();
         this.restoreKpiOrder();
@@ -106,15 +107,101 @@ class MetricsManager {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
 
+                const period = button.dataset.period;
+
+                // Si c'est le bouton personnalisé, ouvrir le modal
+                if (period === 'custom') {
+                    this.openDatePicker();
+                    return;
+                }
+
                 // Mettre à jour les boutons actifs
                 periodButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
 
                 // Charger les données pour la période sélectionnée
-                this.currentPeriod = button.dataset.period;
+                this.currentPeriod = period;
+                this.customStartDate = null;
+                this.customEndDate = null;
                 this.loadMetrics();
             });
         });
+    }
+
+    setupDatePicker() {
+        const modal = document.getElementById('date-picker-modal');
+        const customBtn = document.getElementById('custom-period-btn');
+        const closeBtn = document.getElementById('close-date-picker');
+        const cancelBtn = document.getElementById('cancel-date-picker');
+        const applyBtn = document.getElementById('apply-date-range');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+
+        // Set default dates (last 30 days)
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+
+        endDateInput.valueAsDate = today;
+        startDateInput.valueAsDate = thirtyDaysAgo;
+
+        // Close modal handlers
+        [closeBtn, cancelBtn].forEach(btn => {
+            btn.addEventListener('click', () => {
+                modal.classList.remove('show');
+            });
+        });
+
+        // Close modal on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('show');
+            }
+        });
+
+        // Apply date range
+        applyBtn.addEventListener('click', () => {
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+
+            if (!startDate || !endDate) {
+                alert('Veuillez sélectionner une date de début et de fin');
+                return;
+            }
+
+            if (new Date(startDate) > new Date(endDate)) {
+                alert('La date de début doit être antérieure à la date de fin');
+                return;
+            }
+
+            // Update active button
+            document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+            customBtn.classList.add('active');
+
+            // Store custom dates
+            this.customStartDate = startDate;
+            this.customEndDate = endDate;
+            this.currentPeriod = 'custom';
+
+            // Load metrics with custom range
+            this.loadMetrics();
+
+            // Close modal
+            modal.classList.remove('show');
+
+            // Refresh icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    }
+
+    openDatePicker() {
+        const modal = document.getElementById('date-picker-modal');
+        modal.classList.add('show');
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
 
     async loadMetrics() {

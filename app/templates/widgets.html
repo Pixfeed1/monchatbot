@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Mes Widgets{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/widgets.css') }}?v=20251118a">
+{% endblock %}
+
+{% block content %}
+<!-- Bannière -->
+<div class="banner">
+    <div class="banner-content">
+        <h1>Mes Widgets</h1>
+        <p>Intégrez votre chatbot sur vos sites web en quelques clics</p>
+    </div>
+    <button class="btn btn-primary" id="create-widget-btn">
+        <i data-lucide="plus"></i>
+        Créer un Widget
+    </button>
+</div>
+
+<!-- Widgets Grid -->
+<section class="config-section">
+    <div class="widgets-header">
+        <h2 class="section-title">
+            <i data-lucide="grid"></i>
+            Mes Widgets (<span id="widget-count">0</span>/5)
+        </h2>
+        <p class="section-description">
+            Vous pouvez créer jusqu'à 5 widgets pour intégrer votre bot sur différents sites
+        </p>
+    </div>
+
+    <div class="widgets-grid" id="widgets-grid">
+        <!-- Les widgets seront affichés ici dynamiquement -->
+        <div class="empty-state">
+            <i data-lucide="layout"></i>
+            <h3>Aucun widget créé</h3>
+            <p>Créez votre premier widget pour commencer à intégrer votre chatbot sur vos sites</p>
+            <button class="btn btn-primary" onclick="document.getElementById('create-widget-btn').click()">
+                <i data-lucide="plus"></i>
+                Créer mon premier widget
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- Modal Créer/Éditer Widget -->
+<div class="modal" id="widget-modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3 id="modal-title">Créer un widget</h3>
+            <button class="close-modal" id="close-widget-modal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="widget-form">
+                <input type="hidden" id="widget-id">
+
+                <!-- Nom du widget -->
+                <div class="form-group">
+                    <label for="widget-name">Nom du widget *</label>
+                    <input type="text" id="widget-name" class="form-input" placeholder="Ex: Widget Site Principal" required>
+                    <small>Donnez un nom pour identifier facilement ce widget</small>
+                </div>
+
+                <!-- Domaines autorisés -->
+                <div class="form-group">
+                    <label for="allowed-domains">Domaines autorisés *</label>
+                    <div class="domains-list" id="domains-list">
+                        <!-- Les domaines seront ajoutés ici -->
+                    </div>
+                    <div class="domain-input-group">
+                        <input type="text" id="domain-input" class="form-input" placeholder="Ex: monsite.com ou *.monsite.com">
+                        <button type="button" class="btn btn-secondary" id="add-domain-btn">
+                            <i data-lucide="plus"></i>
+                            Ajouter
+                        </button>
+                    </div>
+                    <small>Utilisez * comme wildcard (ex: *.monsite.com pour tous les sous-domaines)</small>
+                </div>
+
+                <!-- Configuration des pages -->
+                <div class="form-group">
+                    <label>Où afficher le widget ? *</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="page-scope" value="all" checked>
+                            <span>Toutes les pages</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="page-scope" value="specific">
+                            <span>Pages spécifiques</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="page-scope" value="pattern">
+                            <span>Pattern d'URL</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Pages spécifiques -->
+                <div class="form-group" id="specific-pages-group" style="display: none;">
+                    <label for="allowed-pages">Pages autorisées</label>
+                    <div class="pages-list" id="pages-list">
+                        <!-- Les pages seront ajoutées ici -->
+                    </div>
+                    <div class="page-input-group">
+                        <input type="text" id="page-input" class="form-input" placeholder="Ex: /contact, /support, /blog/*">
+                        <button type="button" class="btn btn-secondary" id="add-page-btn">
+                            <i data-lucide="plus"></i>
+                            Ajouter
+                        </button>
+                    </div>
+                    <small>Exemples: /contact, /support, /blog/* (avec wildcard)</small>
+                </div>
+
+                <!-- Personnalisation -->
+                <div class="form-group-row">
+                    <div class="form-group">
+                        <label for="primary-color">Couleur principale</label>
+                        <div class="color-picker-group">
+                            <input type="color" id="primary-color" class="color-input" value="#0d6efd">
+                            <input type="text" id="primary-color-text" class="form-input" value="#0d6efd" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="position">Position sur la page</label>
+                        <select id="position" class="form-select">
+                            <option value="bottom-right">Bas droite</option>
+                            <option value="bottom-left">Bas gauche</option>
+                            <option value="top-right">Haut droite (non recommandé)</option>
+                            <option value="top-left">Haut gauche (non recommandé)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Message de bienvenue -->
+                <div class="form-group">
+                    <label for="welcome-message">Message de bienvenue</label>
+                    <textarea id="welcome-message" class="form-textarea" rows="3" placeholder="Ex: Bonjour! Comment puis-je vous aider aujourd'hui ?"></textarea>
+                    <small>Ce message sera affiché lorsque l'utilisateur ouvre le chatbot</small>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancel-widget-btn">Annuler</button>
+            <button class="btn btn-primary" id="save-widget-btn">
+                <i data-lucide="save"></i>
+                <span id="save-btn-text">Créer le widget</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Code Widget -->
+<div class="modal" id="code-modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>Code d'intégration</h3>
+            <button class="close-modal" id="close-code-modal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="code-instructions">
+                Copiez ce code et collez-le dans le <code>&lt;head&gt;</code> ou juste avant <code>&lt;/body&gt;</code> de votre site web:
+            </p>
+            <div class="code-container">
+                <pre><code id="widget-code"></code></pre>
+                <button class="copy-btn" id="copy-code-btn">
+                    <i data-lucide="copy"></i>
+                    Copier
+                </button>
+            </div>
+            <div class="code-info">
+                <h4><i data-lucide="info"></i> Informations importantes</h4>
+                <ul>
+                    <li>Le widget s'affichera uniquement sur les domaines que vous avez autorisés</li>
+                    <li>Le bot sera visible selon la configuration des pages que vous avez définie</li>
+                    <li>Vous pouvez personnaliser l'apparence depuis cette interface à tout moment</li>
+                    <li>Les modifications sont appliquées automatiquement sans rechanger le code</li>
+                </ul>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="close-code-btn">Fermer</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/widgets.js') }}?v=20251118a"></script>
+{% endblock %}
