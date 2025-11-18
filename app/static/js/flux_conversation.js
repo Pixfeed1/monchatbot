@@ -767,7 +767,6 @@ class FlowBuilder {
 
             const data = await response.json();
             this.renderConnection(data.id, sourceId, targetId);
-            this.showSuccess('Connexion créée');
         } catch (error) {
             console.error('Erreur createConnection:', error);
             this.showError('Impossible de créer la connexion');
@@ -788,17 +787,28 @@ class FlowBuilder {
         svg.style.left = '0';
         svg.style.width = '100%';
         svg.style.height = '100%';
-        svg.style.pointerEvents = 'auto';
+        svg.style.pointerEvents = 'none';
         svg.style.zIndex = '0';
 
+        // Chemin invisible large pour capturer les clics (20px)
+        const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        hitPath.setAttribute('stroke', 'transparent');
+        hitPath.setAttribute('stroke-width', '20');
+        hitPath.setAttribute('fill', 'none');
+        hitPath.style.pointerEvents = 'stroke';
+        hitPath.style.cursor = 'pointer';
+        svg.appendChild(hitPath);
+
+        // Chemin visible fin (2px)
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('stroke', '#9ca3af');
         path.setAttribute('stroke-width', '2');
         path.setAttribute('fill', 'none');
+        path.style.pointerEvents = 'none';
         svg.appendChild(path);
 
-        // Double-clic pour afficher menu (supprimer + ajouter nœud)
-        svg.addEventListener('dblclick', (e) => {
+        // Double-clic sur le chemin invisible large
+        hitPath.addEventListener('dblclick', (e) => {
             e.stopPropagation();
             this.showConnectionMenu(e, id, sourceId, targetId, svg);
         });
@@ -842,10 +852,12 @@ class FlowBuilder {
         const x2 = targetLeft;
         const y2 = targetTop + targetHeight / 2;
 
-        const path = connectionEl.querySelector('path');
-        if (path) {
-            path.setAttribute('d', this.createBezierPath(x1, y1, x2, y2));
-        }
+        // Mettre à jour les deux chemins (invisible + visible)
+        const paths = connectionEl.querySelectorAll('path');
+        const bezierPath = this.createBezierPath(x1, y1, x2, y2);
+        paths.forEach(path => {
+            path.setAttribute('d', bezierPath);
+        });
     }
 
     /**
@@ -975,55 +987,124 @@ class FlowBuilder {
     }
 
     /**
-     * Ajoute un nœud entre deux nœuds existants
+     * Affiche un menu pour choisir le type de nœud à ajouter entre deux nœuds
      */
     async addNodeBetween(sourceId, targetId, connectionId) {
-        try {
-            // Calculer la position au milieu entre les deux nœuds
-            const sourceNode = this.nodesContainer.querySelector(`[data-node-id="${sourceId}"]`);
-            const targetNode = this.nodesContainer.querySelector(`[data-node-id="${targetId}"]`);
+        // Calculer la position au milieu entre les deux nœuds
+        const sourceNode = this.nodesContainer.querySelector(`[data-node-id="${sourceId}"]`);
+        const targetNode = this.nodesContainer.querySelector(`[data-node-id="${targetId}"]`);
 
-            if (!sourceNode || !targetNode) {
-                this.showError('Nœuds introuvables');
-                return;
+        if (!sourceNode || !targetNode) {
+            this.showError('Nœuds introuvables');
+            return;
+        }
+
+        const sourceLeft = parseFloat(sourceNode.style.left) || 0;
+        const sourceTop = parseFloat(sourceNode.style.top) || 0;
+        const targetLeft = parseFloat(targetNode.style.left) || 0;
+        const targetTop = parseFloat(targetNode.style.top) || 0;
+
+        const midX = (sourceLeft + targetLeft) / 2;
+        const midY = (sourceTop + targetTop) / 2;
+
+        // Afficher menu de sélection du type de nœud
+        this.showNodeTypeSelector(midX, midY, async (selectedType) => {
+            try {
+                // Créer le nœud du type sélectionné
+                const response = await fetch(`/flow/${this.currentFlow.id}/nodes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken
+                    },
+                    body: JSON.stringify({
+                        type: selectedType,
+                        position: { x: midX, y: midY },
+                        config: { label: `Nouveau ${this.getNodeTypeLabel(selectedType)}` }
+                    })
+                });
+
+                if (!response.ok) throw new Error('Erreur création nœud');
+
+                const newNode = await response.json();
+
+                // Supprimer l'ancienne connexion
+                await this.deleteConnection(connectionId);
+
+                // Créer deux nouvelles connexions : source -> nouveau, nouveau -> target
+                await this.createConnection(sourceId, newNode.id);
+                await this.createConnection(newNode.id, targetId);
+
+            } catch (error) {
+                console.error('Erreur addNodeBetween:', error);
+                this.showError('Impossible d\'ajouter le nœud');
             }
+        });
+    }
 
-            const sourceLeft = parseFloat(sourceNode.style.left) || 0;
-            const sourceTop = parseFloat(sourceNode.style.top) || 0;
-            const targetLeft = parseFloat(targetNode.style.left) || 0;
-            const targetTop = parseFloat(targetNode.style.top) || 0;
+    /**
+     * Affiche un sélecteur de type de nœud
+     */
+    showNodeTypeSelector(x, y, callback) {
+        // Supprimer tout sélecteur existant
+        this.hideNodeTypeSelector();
 
-            const midX = (sourceLeft + targetLeft) / 2;
-            const midY = (sourceTop + targetTop) / 2;
+        const selector = document.createElement('div');
+        selector.className = 'node-type-selector';
+        selector.style.left = `${x}px`;
+        selector.style.top = `${y}px`;
 
-            // Créer un nouveau nœud de type "action" au milieu
-            const response = await fetch(`/flow/${this.currentFlow.id}/nodes`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': this.csrfToken
-                },
-                body: JSON.stringify({
-                    type: 'action',
-                    position: { x: midX, y: midY },
-                    config: { label: 'Nouvelle action' }
-                })
+        const nodeTypes = [
+            { type: 'message', icon: 'message-circle', label: 'Message' },
+            { type: 'condition', icon: 'git-branch', label: 'Condition' },
+            { type: 'input', icon: 'type', label: 'Saisie' },
+            { type: 'action', icon: 'zap', label: 'Action' },
+            { type: 'api', icon: 'plug', label: 'API' }
+        ];
+
+        selector.innerHTML = `
+            <div class="node-type-selector-header">Choisir un type</div>
+            <div class="node-type-selector-items">
+                ${nodeTypes.map(nt => `
+                    <button class="node-type-selector-item" data-type="${nt.type}">
+                        <i data-lucide="${nt.icon}"></i>
+                        <span>${nt.label}</span>
+                    </button>
+                `).join('')}
+            </div>
+        `;
+
+        this.nodesContainer.appendChild(selector);
+        this.currentNodeTypeSelector = selector;
+
+        // Rafraîchir les icônes
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        // Gérer les clics sur les types
+        selector.querySelectorAll('.node-type-selector-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const type = btn.dataset.type;
+                this.hideNodeTypeSelector();
+                callback(type);
             });
+        });
 
-            if (!response.ok) throw new Error('Erreur création nœud');
+        // Fermer au clic ailleurs
+        setTimeout(() => {
+            document.addEventListener('click', () => this.hideNodeTypeSelector(), { once: true });
+        }, 100);
+    }
 
-            const newNode = await response.json();
-
-            // Supprimer l'ancienne connexion
-            await this.deleteConnection(connectionId);
-
-            // Créer deux nouvelles connexions : source -> nouveau, nouveau -> target
-            await this.createConnection(sourceId, newNode.id);
-            await this.createConnection(newNode.id, targetId);
-
-        } catch (error) {
-            console.error('Erreur addNodeBetween:', error);
-            this.showError('Impossible d\'ajouter le nœud');
+    /**
+     * Cache le sélecteur de type de nœud
+     */
+    hideNodeTypeSelector() {
+        if (this.currentNodeTypeSelector) {
+            this.currentNodeTypeSelector.remove();
+            this.currentNodeTypeSelector = null;
         }
     }
 
@@ -1354,8 +1435,9 @@ class FlowBuilder {
      * Nettoyage à la destruction
      */
     destroy() {
-        // Cleanup du menu de connexion
+        // Cleanup du menu de connexion et sélecteur de type
         this.hideConnectionMenu();
+        this.hideNodeTypeSelector();
 
         // Cleanup des event listeners si nécessaire
         console.log('FlowBuilder destroyed');
