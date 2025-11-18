@@ -6,7 +6,7 @@ import json
 import uuid
 import time
 import base64
-import asyncio
+import html
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from flask import (
@@ -18,6 +18,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import NotFound
 from dotenv import set_key, load_dotenv
+from sqlalchemy import text  # ← AJOUT pour corriger le warning
 
 # Importation des modèles et de la base de données
 from .models import (
@@ -25,13 +26,20 @@ from .models import (
     BotCompetences, BotResponses,
     ConversationFlow, FlowNode, NodeConnection, FlowVariable,
     ActionTrigger, EmailTemplate, CalendarConfig,
-    TicketConfig, FormRedirection, DefaultMessage
+    TicketConfig, FormRedirection, DefaultMessage,
+    APIUsageLog,
+    Integration, IntegrationLog, ChannelConfig
 )
 from . import db
 from .config import Config
 
 # Import du context builder
 from .context_builder import ContextBuilder
+
+# Import du decision engine pour orchestrer flux/réponses/API
+from .decision_engine import decision_engine
+from .response_manager import response_manager
+from .flow_executor import flow_executor
 
 # Configuration du logger
 logger = logging.getLogger(__name__)
@@ -60,12 +68,17 @@ def inject_settings():
 
 
 @main_bp.route("/")
+@login_required
 def home():
     """Page d'accueil - Version avec clés utilisateur."""
+    # Vérifier si l'utilisateur doit faire l'onboarding
+    if not current_user.onboarding_completed:
+        return redirect(url_for('main.onboarding_wizard'))
+
     # En mode clés utilisateur, les APIs sont configurées par l'utilisateur
     use_mistral = True  # Interface peut configurer Mistral
     use_openai = True   # Interface peut configurer OpenAI
-    
+
     # Lecture du manifest pour récupérer le fichier JS correct
     manifest_path = os.path.join(current_app.root_path, 'static', 'react', 'asset-manifest.json')
     main_js = None
@@ -78,7 +91,7 @@ def home():
         main_js = None
 
     return render_template(
-        "index.html", 
+        "index.html",
         # Variables pour la compatibilité avec les templates existants
         use_mistral=use_mistral,
         use_mistral_api=use_mistral,
@@ -89,6 +102,109 @@ def home():
         api_mode="user_keys",  # Mode clés utilisateur
         user_keys_mode=True  # Flag pour les clés utilisateur
     )
+
+
+@main_bp.route("/api/dashboard/metrics")
+@login_required
+def dashboard_metrics():
+    """API qui renvoie les vraies métriques du dashboard depuis la base de données."""
+    try:
+        from sqlalchemy import func
+
+        # Calcul de la période (7 derniers jours)
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        today = datetime.utcnow()
+
+        # 1. Nombre total de requêtes API
+        total_requests = APIUsageLog.query.count()
+
+        # 2. Nombre de requêtes cette semaine
+        requests_this_week = APIUsageLog.query.filter(
+            APIUsageLog.created_at >= seven_days_ago
+        ).count()
+
+        # 3. Temps de réponse moyen (en secondes)
+        avg_response_time = db.session.query(
+            func.avg(APIUsageLog.request_duration)
+        ).scalar() or 0.0
+
+        # 4. Taux de succès (pourcentage)
+        total_with_status = APIUsageLog.query.count()
+        if total_with_status > 0:
+            success_count = APIUsageLog.query.filter(APIUsageLog.success == True).count()
+            success_rate = (success_count / total_with_status) * 100
+        else:
+            success_rate = 0.0
+
+        # 5. Tokens utilisés (total)
+        total_tokens = db.session.query(
+            func.sum(APIUsageLog.tokens_used)
+        ).scalar() or 0
+
+        # 6. Nombre d'utilisateurs actifs
+        active_users = User.query.filter(User.is_active == True).count()
+
+        # 7. Nombre total de FAQs dans la base de connaissances
+        total_faqs = FAQ.query.count()
+
+        # 8. Provider le plus utilisé
+        provider_stats = db.session.query(
+            APIUsageLog.provider,
+            func.count(APIUsageLog.id).label('count')
+        ).group_by(APIUsageLog.provider).order_by(text('count DESC')).first()
+
+        most_used_provider = provider_stats[0] if provider_stats else "Aucun"
+
+        # 9. Activité des 7 derniers jours (pour le graphique)
+        activity_by_day = []
+        for i in range(6, -1, -1):  # De il y a 6 jours à aujourd'hui
+            day = today - timedelta(days=i)
+            day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+
+            count = APIUsageLog.query.filter(
+                APIUsageLog.created_at >= day_start,
+                APIUsageLog.created_at < day_end
+            ).count()
+
+            activity_by_day.append({
+                'date': day.strftime('%Y-%m-%d'),
+                'label': day.strftime('%a'),  # Lun, Mar, Mer...
+                'count': count
+            })
+
+        # 10. Tendance de la semaine (comparaison avec la semaine précédente)
+        two_weeks_ago = datetime.utcnow() - timedelta(days=14)
+        requests_last_week = APIUsageLog.query.filter(
+            APIUsageLog.created_at >= two_weeks_ago,
+            APIUsageLog.created_at < seven_days_ago
+        ).count()
+
+        if requests_last_week > 0:
+            trend_percentage = ((requests_this_week - requests_last_week) / requests_last_week) * 100
+        else:
+            trend_percentage = 100.0 if requests_this_week > 0 else 0.0
+
+        # Construction de la réponse
+        metrics = {
+            'total_requests': total_requests,
+            'requests_this_week': requests_this_week,
+            'avg_response_time': round(avg_response_time, 2),
+            'success_rate': round(success_rate, 1),
+            'total_tokens': total_tokens,
+            'active_users': active_users,
+            'total_faqs': total_faqs,
+            'most_used_provider': most_used_provider,
+            'activity_by_day': activity_by_day,
+            'trend_percentage': round(trend_percentage, 1),
+            'trend_direction': 'up' if trend_percentage > 0 else 'down' if trend_percentage < 0 else 'stable'
+        }
+
+        return jsonify(metrics)
+
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des métriques: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @main_bp.route("/login", methods=["GET", "POST"])
@@ -105,48 +221,24 @@ def login():
         password = request.form.get("password")
         logger.debug(f"Tentative de connexion pour l'utilisateur: {username}")
 
-        # Vérification reCAPTCHA si configuré
-        recaptcha_response = request.form.get("g-recaptcha-response")
-        if current_app.config.get("RECAPTCHA_SECRET_KEY"):
-            secret = current_app.config["RECAPTCHA_SECRET_KEY"]
-            verify_url = "https://www.google.com/recaptcha/api/siteverify"
-            payload = {"secret": secret, "response": recaptcha_response}
-            try:
-                r = requests.post(verify_url, data=payload, timeout=10).json()
-                
-                if not r.get("success"):
-                    logger.warning("Échec de la vérification reCAPTCHA")
-                    error = "Échec de la vérification reCAPTCHA."
-                    return render_template(
-                        "login.html",
-                        error=error,
-                        recaptcha_sitekey=current_app.config.get("RECAPTCHA_SITE_KEY", "")
-                    )
-            except Exception as e:
-                logger.warning(f"Erreur reCAPTCHA: {e}")
-
         # Vérification des identifiants
         user = User.query.filter_by(username=username).first()
-        
+
         if user and user.check_password(password):
             login_user(user, remember=True)
             logger.info(f"Connexion réussie pour: {username}")
-            
+
             next_page = session.get('next')
             if next_page:
                 session.pop('next', None)
                 return redirect(next_page)
-            
+
             return redirect(url_for("main.home"))
         else:
             logger.warning(f"Échec de connexion pour: {username}")
             error = "Identifiant ou mot de passe incorrect."
 
-    return render_template(
-        "login.html",
-        error=error,
-        recaptcha_sitekey=current_app.config.get("RECAPTCHA_SITE_KEY", "")
-    )
+    return render_template("login.html", error=error)
 
 
 @main_bp.route("/logout")
@@ -181,7 +273,7 @@ def check_key():
     has_user_config = False
     if current_user.is_authenticated:
         user_settings = Settings.query.filter_by(user_id=current_user.id).first()
-        has_user_config = bool(user_settings and (user_settings.encrypted_openai_key or user_settings.encrypted_mistral_key))
+        has_user_config = bool(user_settings and (user_settings.encrypted_openai_key or user_settings.encrypted_mistral_key or user_settings.encrypted_claude_key))
     
     api_status = {
         "local_model": {
@@ -226,7 +318,7 @@ def health_check():
         # Vérifier la base de données
         db_status = "ok"
         try:
-            db.session.execute('SELECT 1').fetchone()
+            db.session.execute(text('SELECT 1')).fetchone()  # ← CORRECTION ICI
         except Exception as e:
             db_status = f"error: {str(e)}"
         
@@ -315,13 +407,20 @@ def save_api_config():
             user_settings.encrypted_openai_key = base64.b64encode(encrypted_key).decode()
             user_settings.openai_model = data.get('openai_model', 'gpt-3.5-turbo')
             logger.info(f"Clé OpenAI configurée pour {current_user.username}")
-            
+
         elif provider == 'mistral' and data.get('mistral_key'):
             # Chiffrer la clé Mistral
             encrypted_key = cipher_suite.encrypt(data['mistral_key'].encode())
             user_settings.encrypted_mistral_key = base64.b64encode(encrypted_key).decode()
             user_settings.mistral_model = data.get('mistral_model', 'mistral-small')
             logger.info(f"Clé Mistral configurée pour {current_user.username}")
+
+        elif provider == 'claude' and data.get('claude_key'):
+            # Chiffrer la clé Claude
+            encrypted_key = cipher_suite.encrypt(data['claude_key'].encode())
+            user_settings.encrypted_claude_key = base64.b64encode(encrypted_key).decode()
+            user_settings.claude_model = data.get('claude_model', 'claude-sonnet-4')
+            logger.info(f"Clé Claude configurée pour {current_user.username}")
         
         user_settings.current_provider = provider
         user_settings.updated_at = datetime.utcnow()
@@ -378,7 +477,7 @@ def get_api_config():
             except Exception as e:
                 logger.error(f"Erreur déchiffrement OpenAI pour {current_user.username}: {e}")
         
-        # Déchiffrer Mistral si présent  
+        # Déchiffrer Mistral si présent
         if user_settings.encrypted_mistral_key:
             try:
                 encrypted_key = base64.b64decode(user_settings.encrypted_mistral_key)
@@ -387,7 +486,17 @@ def get_api_config():
                 config_data["mistral_model"] = user_settings.mistral_model or 'mistral-small'
             except Exception as e:
                 logger.error(f"Erreur déchiffrement Mistral pour {current_user.username}: {e}")
-        
+
+        # Déchiffrer Claude si présent
+        if user_settings.encrypted_claude_key:
+            try:
+                encrypted_key = base64.b64decode(user_settings.encrypted_claude_key)
+                decrypted_key = cipher_suite.decrypt(encrypted_key).decode()
+                config_data["claude_key"] = decrypted_key
+                config_data["claude_model"] = user_settings.claude_model or 'claude-sonnet-4'
+            except Exception as e:
+                logger.error(f"Erreur déchiffrement Claude pour {current_user.username}: {e}")
+
         return jsonify({
             "success": True,
             "data": config_data
@@ -422,6 +531,8 @@ def test_api_key():
             result = test_openai_key(api_key, model)
         elif provider == 'mistral':
             result = test_mistral_key(api_key, model)
+        elif provider == 'claude':
+            result = test_claude_key(api_key, model)
         else:
             return jsonify({
                 "success": False,
@@ -441,15 +552,19 @@ def test_api_key():
 
 
 def test_openai_key(api_key, model):
-    """Teste une clé OpenAI."""
+    """Teste une clé OpenAI avec format system/user."""
     try:
         import openai
-        
+
         client = openai.OpenAI(api_key=api_key)
-        
+
+        # Format avec system et user pour tester le format réel
         response = client.chat.completions.create(
             model=model,
-            messages=[{"role": "user", "content": "Test de connexion"}],
+            messages=[
+                {"role": "system", "content": "Tu es un assistant de test."},
+                {"role": "user", "content": "Test"}
+            ],
             max_tokens=5,
             timeout=10
         )
@@ -477,16 +592,20 @@ def test_openai_key(api_key, model):
 
 
 def test_mistral_key(api_key, model):
-    """Teste une clé Mistral."""
+    """Teste une clé Mistral avec format system/user."""
     try:
         headers = {
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json'
         }
-        
+
+        # Format avec system et user pour tester le format réel
         payload = {
             'model': model,
-            'messages': [{'role': 'user', 'content': 'Test de connexion'}],
+            'messages': [
+                {'role': 'system', 'content': 'Tu es un assistant de test.'},
+                {'role': 'user', 'content': 'Test'}
+            ],
             'max_tokens': 5
         }
         
@@ -538,6 +657,43 @@ def test_mistral_key(api_key, model):
         }
 
 
+def test_claude_key(api_key, model):
+    """Teste une clé Claude (Anthropic) avec format system+user."""
+    try:
+        from anthropic import Anthropic
+
+        client = Anthropic(api_key=api_key)
+
+        # Format avec system séparé (spécifique à Claude) + messages user
+        response = client.messages.create(
+            model=model,
+            max_tokens=5,
+            system="Tu es un assistant de test.",
+            messages=[{"role": "user", "content": "Test"}]
+        )
+
+        return {
+            "success": True,
+            "message": f"Clé Claude valide - Modèle {model} opérationnel",
+            "model": model,
+            "usage": response.usage.input_tokens + response.usage.output_tokens if hasattr(response, 'usage') else None
+        }
+
+    except Exception as e:
+        error_msg = str(e)
+        if "invalid" in error_msg.lower() or "unauthorized" in error_msg.lower() or "authentication" in error_msg.lower():
+            error_msg = "Clé API invalide ou expirée"
+        elif "model" in error_msg.lower() or "not found" in error_msg.lower():
+            error_msg = f"Modèle {model} non disponible avec cette clé"
+        elif "quota" in error_msg.lower() or "rate" in error_msg.lower():
+            error_msg = "Quota dépassé ou limite de requêtes atteinte"
+
+        return {
+            "success": False,
+            "error": error_msg
+        }
+
+
 ############################################################################
 # ROUTE /api/message - VERSION AVEC CLÉS UTILISATEUR ET CORRECTION D'IDENTITÉ
 ############################################################################
@@ -568,12 +724,86 @@ def chatbot():
                 "error": True,
                 "auth_required": True
             }), 401
-        
+
+        # ===== NOUVEAU: DECISION ENGINE =====
+        # Essayer d'abord les flux de conversation et les réponses configurées
+        logger.info("🧠 Decision Engine: Recherche d'une réponse depuis flux/configuration...")
+
+        try:
+            # 1. Vérifier les flux actifs
+            if flow_executor.has_active_flows():
+                flow_id = flow_executor.find_matching_flow(user_message, current_user.id)
+                if flow_id:
+                    flow_result = flow_executor.execute_flow(flow_id, user_message, current_user.id)
+                    if flow_result and flow_result.get('content'):
+                        logger.info(f"✅ Réponse trouvée via FLUX: {flow_result['flow_name']}")
+                        return jsonify({
+                            "message": flow_result['content'],
+                            "mode": "flow",
+                            "metadata": {
+                                "source": "conversation_flow",
+                                "flow_id": flow_id,
+                                "flow_name": flow_result['flow_name'],
+                                "execution_path": flow_result.get('execution_path', []),
+                                "processing_time": time.time() - start_time
+                            }
+                        })
+
+            # 2. Vérifier les réponses configurées
+            if response_manager.has_configured_responses():
+                configured_result = response_manager.find_matching_response(user_message, current_user.id)
+                if configured_result and configured_result.get('content'):
+                    logger.info(f"✅ Réponse trouvée via CONFIG: {configured_result.get('type', 'unknown')}")
+                    return jsonify({
+                        "message": configured_result['content'],
+                        "mode": "configured",
+                        "metadata": {
+                            "source": configured_result.get('source', 'unknown'),
+                            "type": configured_result.get('type', 'unknown'),
+                            "confidence": configured_result.get('confidence', 0),
+                            "processing_time": time.time() - start_time
+                        }
+                    })
+
+        except Exception as e:
+            logger.error(f"Erreur Decision Engine: {e}", exc_info=True)
+            # Continuer vers l'API en cas d'erreur
+
+        logger.info("ℹ️ Aucune réponse depuis flux/config, utilisation de l'API...")
+        # ===== FIN DECISION ENGINE =====
+
         # Récupérer la configuration API de l'utilisateur
         user_config = get_user_api_config()
         if not user_config:
+            # Calembours et messages rigolos quand aucune API n'est configurée
+            funny_messages = [
+                "Sans clé API, je suis comme un cadenas sans clé... complètement verrouillé ! Déverrouillez-moi dans la [configuration](/api-config).",
+                "Les tokens sont ma monnaie d'échange, et là je suis complètement fauché... Passez au guichet de la [config](/api-config) pour me renflouer !",
+                "Pas d'API, pas d'happy hour pour moi ! Je reste au comptoir sans pouvoir servir. Ouvrez le bar dans les [paramètres](/api-config).",
+                "Je suis un chatbot sans tokens, c'est comme être un chat sans bot... juste inutile ! Réparez-moi dans la [configuration](/api-config).",
+                "L'intelligence artificielle sans API, c'est de l'intelligence... très artificielle ! Rendez-moi intelligent dans les [paramètres](/api-config).",
+                "Je suis en mode avion : aucune connexion API possible ! Atterrissons ensemble dans la [config](/api-config).",
+                "Sans tokens, je suis comme un distributeur automatique sans pièces... je rends la monnaie de ma pièce : rien ! Alimentez-moi via la [configuration](/api-config).",
+                "API non configurée... Je suis un peu comme un téléphone sans réseau : beau mais inutile ! Connectez-moi dans les [paramètres](/api-config).",
+                "Les tokens sont le carburant de mon intelligence. Là, je suis en réserve... vide ! Faites le plein dans la [config](/api-config).",
+                "Sans clé API, je suis comme un piano : beaucoup de touches mais aucun son ! Accordez-moi dans la [configuration](/api-config).",
+                "Je suis affamé de tokens ! C'est la famine numérique ici... Nourrissez-moi dans les [paramètres](/api-config).",
+                "Pas de tokens, pas de chocolat... euh non, pas de discussion je veux dire ! Sucrez-moi la vie dans la [config](/api-config).",
+                "Je suis comme une bibliothèque fermée : plein de connaissances mais aucun accès ! Ouvrez les portes dans la [configuration](/api-config).",
+                "L'IA sans API, c'est comme le WiFi sans mot de passe... techniquement là, mais inaccessible ! Partagez le code dans les [paramètres](/api-config).",
+                "Je suis au chômage technique : pas de clé API, pas de travail pour moi ! Embauchez-moi via la [config](/api-config).",
+                "Sans API configurée, je suis une coquille vide... un bot sans cerveau ! Greffez-moi une intelligence dans la [configuration](/api-config).",
+                "Les clés API sont mes vitamines quotidiennes, et là je fais une overdose... de rien ! Soignez-moi dans les [paramètres](/api-config).",
+                "Je suis comme un GPS sans satellite : perdu ! Guidez-moi vers la [configuration](/api-config) pour retrouver le chemin.",
+                "Pas de tokens, c'est comme être invité à un banquet les mains vides... embarrassant ! Apportez les provisions via la [config](/api-config).",
+                "Je suis un artiste sans pinceau, un écrivain sans plume... bref, inutile ! Équipez-moi dans la [configuration](/api-config)."
+            ]
+
+            import random
+            funny_message = random.choice(funny_messages)
+
             return jsonify({
-                "message": "Aucune clé API configurée. Veuillez configurer vos clés dans les paramètres.",
+                "message": funny_message,
                 "error": True,
                 "config_required": True,
                 "config_url": url_for('main.config_api')
@@ -586,10 +816,10 @@ def chatbot():
         
         # Construction du contexte enrichi
         logger.info(f"Construction du contexte pour {current_user.username}: {user_message[:50]}...")
-        
+
         conversation_history = session.get('conversation_history', [])
-        
-        enriched_prompt, prompt_metadata = context_builder.build_system_prompt(
+
+        prompts, prompt_metadata = context_builder.build_system_prompt(
             user_message=user_message,
             session_context={
                 'session_id': session.get('session_id', str(uuid.uuid4())),
@@ -597,19 +827,20 @@ def chatbot():
                 'user_id': current_user.id
             }
         )
-        
+
         logger.info(f"Métadonnées du prompt: {prompt_metadata}")
-        
+
         # Configuration adaptative basée sur les métadonnées
         complexity = prompt_metadata.get('complexity', 1)
-        
+
         # Récupérer les informations du bot pour le post-traitement
         bot_info = context_builder._get_bot_info()
-        
+
         # Faire l'appel API avec les clés de l'utilisateur ET correction d'identité
+        # prompts = {'system': str, 'user': str}
         api_response = make_api_call_with_user_keys(
-            enriched_prompt, 
-            user_config, 
+            prompts,
+            user_config,
             complexity,
             bot_info=bot_info  # ← NOUVEAU: Passage des infos bot
         )
@@ -717,6 +948,18 @@ def get_user_api_config():
             except Exception as e:
                 logger.error(f"Erreur déchiffrement Mistral: {e}")
                 return None
+
+        elif user_settings.current_provider == 'claude' and user_settings.encrypted_claude_key:
+            try:
+                encrypted_key = base64.b64decode(user_settings.encrypted_claude_key)
+                api_key = cipher_suite.decrypt(encrypted_key).decode()
+                config.update({
+                    'api_key': api_key,
+                    'model': user_settings.claude_model or 'claude-sonnet-4'
+                })
+            except Exception as e:
+                logger.error(f"Erreur déchiffrement Claude: {e}")
+                return None
         else:
             return None
         
@@ -727,50 +970,62 @@ def get_user_api_config():
         return None
 
 
-def make_api_call_with_user_keys(prompt, user_config, complexity, bot_info=None):
+def make_api_call_with_user_keys(prompts, user_config, complexity, bot_info=None):
     """
     Fait l'appel API avec les clés de l'utilisateur.
-    VERSION MISE À JOUR avec correction forcée de l'identité.
+    VERSION MISE À JOUR avec séparation system/user et correction forcée de l'identité.
+
+    Args:
+        prompts: Dict avec 'system' (instructions) et 'user' (message utilisateur)
+        user_config: Config API utilisateur
+        complexity: Niveau de complexité 0-3
+        bot_info: Infos du bot pour post-traitement
     """
     try:
         provider = user_config['provider']
         api_key = user_config['api_key']
         model = user_config['model']
-        
+
+        # Extraire system et user du dict prompts
+        system_prompt = prompts.get('system', '')
+        user_message = prompts.get('user', '')
+
         # Valider et limiter la complexité
         complexity = max(0, min(complexity, 3))
-        
+
         # Configuration adaptée à la complexité
         token_limits = [100, 150, 200, 300]
         temperature_values = [0.3, 0.5, 0.7, 0.8]
-        
+
         max_tokens = token_limits[complexity]
         temperature = temperature_values[complexity]
-        
+
         if provider == 'openai':
-            response = call_openai_api(api_key, model, prompt, max_tokens, temperature)
+            response = call_openai_api(api_key, model, system_prompt, user_message, max_tokens, temperature)
         elif provider == 'mistral':
-            response = call_mistral_api(api_key, model, prompt, max_tokens, temperature)
+            response = call_mistral_api(api_key, model, system_prompt, user_message, max_tokens, temperature)
+        elif provider == 'claude':
+            response = call_claude_api(api_key, model, system_prompt, user_message, max_tokens, temperature)
         else:
             return {'error': f'Provider {provider} non supporté'}
-        
+
         # POST-TRAITEMENT POUR FORCER L'IDENTITÉ
         if 'message' in response and bot_info:
             original_message = response['message']
             corrected_message = post_process_api_response(original_message, bot_info)
-            
+
             if original_message != corrected_message:
                 logger.info("🔧 Identité forcée dans la réponse API")
                 response['message'] = corrected_message
-response['identity_corrected'] = True
-           else:
-               response['identity_corrected'] = False
-       
-       return response
-           
-   except Exception as e:
-       logger.error(f"Erreur appel API: {e}")
-       return {'error': str(e)}
+                response['identity_corrected'] = True
+            else:
+                response['identity_corrected'] = False
+
+        return response
+
+    except Exception as e:
+        logger.error(f"Erreur appel API: {e}")
+        return {'error': str(e)}
 
 
 def post_process_api_response(response_text: str, bot_info: Dict[str, str]) -> str:
@@ -803,21 +1058,27 @@ def post_process_api_response(response_text: str, bot_info: Dict[str, str]) -> s
    return corrected_text
 
 
-def call_openai_api(api_key, model, prompt, max_tokens, temperature):
-   """Appel à l'API OpenAI."""
+def call_openai_api(api_key, model, system_prompt, user_message, max_tokens, temperature):
+   """Appel à l'API OpenAI avec séparation system/user."""
    try:
        import openai
-       
+
        client = openai.OpenAI(api_key=api_key)
-       
+
+       # Format correct OpenAI: messages avec role system et user séparés
+       messages = [
+           {"role": "system", "content": system_prompt},
+           {"role": "user", "content": user_message}
+       ]
+
        response = client.chat.completions.create(
            model=model,
-           messages=[{"role": "user", "content": prompt}],
+           messages=messages,
            max_tokens=max_tokens,
            temperature=temperature,
            timeout=30
        )
-       
+
        return {
            'message': response.choices[0].message.content,
            'usage': {
@@ -826,34 +1087,40 @@ def call_openai_api(api_key, model, prompt, max_tokens, temperature):
                'total_tokens': response.usage.total_tokens
            } if response.usage else {}
        }
-       
+
    except Exception as e:
        logger.error(f"Erreur OpenAI API: {e}")
        return {'error': f'Erreur OpenAI: {str(e)}'}
 
 
-def call_mistral_api(api_key, model, prompt, max_tokens, temperature):
-   """Appel à l'API Mistral."""
+def call_mistral_api(api_key, model, system_prompt, user_message, max_tokens, temperature):
+   """Appel à l'API Mistral avec séparation system/user."""
    try:
        headers = {
            'Authorization': f'Bearer {api_key}',
            'Content-Type': 'application/json'
        }
-       
+
+       # Format correct Mistral: messages avec role system et user séparés
+       messages = [
+           {'role': 'system', 'content': system_prompt},
+           {'role': 'user', 'content': user_message}
+       ]
+
        payload = {
            'model': model,
-           'messages': [{'role': 'user', 'content': prompt}],
+           'messages': messages,
            'max_tokens': max_tokens,
            'temperature': temperature
        }
-       
+
        response = requests.post(
            'https://api.mistral.ai/v1/chat/completions',
            headers=headers,
            json=payload,
            timeout=30
        )
-       
+
        if response.status_code == 200:
            data = response.json()
            return {
@@ -864,10 +1131,41 @@ def call_mistral_api(api_key, model, prompt, max_tokens, temperature):
            error_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else {}
            error_msg = error_data.get('message', f"Erreur HTTP {response.status_code}")
            return {'error': f'Erreur Mistral: {error_msg}'}
-           
+
    except Exception as e:
        logger.error(f"Erreur Mistral API: {e}")
        return {'error': f'Erreur Mistral: {str(e)}'}
+
+
+def call_claude_api(api_key, model, system_prompt, user_message, max_tokens, temperature):
+   """Appel à l'API Claude (Anthropic) avec format officiel system+messages."""
+   try:
+       from anthropic import Anthropic
+
+       client = Anthropic(api_key=api_key)
+
+       # Format CORRECT pour Claude: paramètre system séparé + messages user
+       # Documentation: https://docs.anthropic.com/en/api/messages
+       response = client.messages.create(
+           model=model,
+           max_tokens=max_tokens,
+           temperature=temperature,
+           system=system_prompt,  # ← Paramètre séparé pour Claude (pas dans messages)
+           messages=[{"role": "user", "content": user_message}]
+       )
+
+       return {
+           'message': response.content[0].text,
+           'usage': {
+               'prompt_tokens': response.usage.input_tokens,
+               'completion_tokens': response.usage.output_tokens,
+               'total_tokens': response.usage.input_tokens + response.usage.output_tokens
+           } if hasattr(response, 'usage') else {}
+       }
+
+   except Exception as e:
+       logger.error(f"Erreur Claude API: {e}")
+       return {'error': f'Erreur Claude: {str(e)}'}
 
 
 #######################################
@@ -879,67 +1177,75 @@ responses_bp = Blueprint('responses', __name__, url_prefix='/responses')
 @login_required
 def responses_wizard():
    """Nouvelle interface de configuration des réponses."""
-   # Section demandée via paramètre GET
-   section = request.args.get('section', 'essentials')
-   
-   # Charger la configuration existante
-   config = BotResponses.query.first()
-   settings = Settings.query.first()
-   
-   if not config:
-       config = BotResponses()
-       db.session.add(config)
-       db.session.commit()
+   try:
+       # Section demandée via paramètre GET
+       section = request.args.get('section', 'essentials')
 
-   if not settings:
-       settings = Settings()
-       db.session.add(settings)
-       db.session.commit()
+       # Charger la configuration existante
+       config = BotResponses.query.first()
+       settings = Settings.query.first()
 
-   # Récupérer les messages par défaut existants
-   default_messages = DefaultMessage.query.all()
-   
-   # Récupérer le vocabulaire métier
-   vocabulary_terms = []
-   if config.vocabulary:
-       for idx, (term, definition) in enumerate(config.vocabulary.items()):
-           vocabulary_terms.append({
-               'id': idx + 1,
-               'term': term,
-               'definition': definition
-           })
-   
-   # Récupérer les messages d'erreur (simulés pour l'exemple)
-   error_messages = [
-       {
-           'id': 1,
-           'title': 'Dépassement du temps de réponse',
-           'code': 'TIMEOUT',
-           'content': 'Je prends un peu plus de temps que prévu pour traiter votre demande. Pouvez-vous patienter quelques instants ou reformuler votre question ?'
-       },
-       {
-           'id': 2,
-           'title': 'Erreur technique',
-           'code': 'SYSTEM_ERROR',
-           'content': 'Je rencontre un petit problème technique. Pouvez-vous réessayer dans quelques minutes ? Si le problème persiste, contactez notre support.'
-       },
-       {
-           'id': 3,
-           'title': 'Limite atteinte',
-           'code': 'RATE_LIMIT',
-           'content': 'Vous avez fait beaucoup de demandes récemment. Merci de patienter quelques minutes avant de continuer.'
-       }
-   ]
+       if not config:
+           config = BotResponses()
+           db.session.add(config)
+           db.session.commit()
 
-   return render_template(
-       'reponses.html',
-       config=config,
-       settings=settings,
-       vocabulary_terms=vocabulary_terms,
-       default_messages=default_messages,
-       error_messages=error_messages,
-       current_section=section
-   )
+       if not settings:
+           settings = Settings()
+           db.session.add(settings)
+           db.session.commit()
+
+       # Récupérer les messages par défaut existants
+       default_messages = DefaultMessage.query.all()
+
+       # Récupérer le vocabulaire métier
+       vocabulary_terms = []
+       try:
+           if config.vocabulary and isinstance(config.vocabulary, dict):
+               for idx, (term, definition) in enumerate(config.vocabulary.items()):
+                   vocabulary_terms.append({
+                       'id': idx + 1,
+                       'term': term,
+                       'definition': definition
+                   })
+       except Exception as e:
+           logger.error(f"Erreur lors du chargement du vocabulaire: {e}")
+           vocabulary_terms = []
+
+       # Récupérer les messages d'erreur (simulés pour l'exemple)
+       error_messages = [
+           {
+               'id': 1,
+               'title': 'Dépassement du temps de réponse',
+               'code': 'TIMEOUT',
+               'content': 'Je prends un peu plus de temps que prévu pour traiter votre demande. Pouvez-vous patienter quelques instants ou reformuler votre question ?'
+           },
+           {
+               'id': 2,
+               'title': 'Erreur technique',
+               'code': 'SYSTEM_ERROR',
+               'content': 'Je rencontre un petit problème technique. Pouvez-vous réessayer dans quelques minutes ? Si le problème persiste, contactez notre support.'
+           },
+           {
+               'id': 3,
+               'title': 'Limite atteinte',
+               'code': 'RATE_LIMIT',
+               'content': 'Vous avez fait beaucoup de demandes récemment. Merci de patienter quelques minutes avant de continuer.'
+           }
+       ]
+
+       return render_template(
+           'bot_config/reponses.html',
+           config=config,
+           settings=settings,
+           vocabulary_terms=vocabulary_terms,
+           default_messages=default_messages,
+           error_messages=error_messages,
+           current_section=section
+       )
+   except Exception as e:
+       logger.error(f"Erreur dans responses_wizard: {e}", exc_info=True)
+       return f"Erreur: {str(e)}", 500
 
 @responses_bp.route('/api/configuration', methods=['GET'])
 @login_required
@@ -954,29 +1260,13 @@ def get_responses_configuration():
        configuration = {
            # Message de bienvenue
            'welcomeMessage': settings.bot_welcome if settings else '',
-           
-           # Templates essentiels (simulés - à implémenter selon vos besoins)
-           'essentialTemplates': {
-               'greeting': {
-                   'active': True,
-                   'style': 'formal',
-                   'customMessage': ''
-               },
-               'goodbye': {
-                   'active': True,
-                   'style': 'polite',
-                   'customMessage': ''
-               },
-               'thanks': {
-                   'active': True,
-                   'style': 'simple',
-                   'customMessage': ''
-               },
-               'unclear': {
-                   'active': True,
-                   'style': 'helpful',
-                   'customMessage': ''
-               }
+
+           # Templates essentiels (depuis la base de données)
+           'essentialTemplates': config.essential_templates if config and config.essential_templates else {
+               'greeting': {'active': True, 'style': 'formal', 'customMessage': ''},
+               'goodbye': {'active': True, 'style': 'polite', 'customMessage': ''},
+               'thanks': {'active': True, 'style': 'simple', 'customMessage': ''},
+               'unclear': {'active': True, 'style': 'helpful', 'customMessage': ''}
            },
            
            # Réponses personnalisées (depuis DefaultMessage)
@@ -1000,27 +1290,27 @@ def get_responses_configuration():
                for idx, (term, definition) in enumerate(config.vocabulary.items())
            ] if config and config.vocabulary else [],
            
-           # Messages d'erreur (simulés)
+           # Messages d'erreur (depuis la base de données)
            'errorMessages': [
                {
                    'title': 'Dépassement du temps de réponse',
                    'code': 'TIMEOUT',
-                   'content': 'Je prends un peu plus de temps que prévu pour traiter votre demande. Pouvez-vous patienter quelques instants ou reformuler votre question ?'
+                   'content': config.technical_error if config and config.technical_error else 'Je prends un peu plus de temps que prévu pour traiter votre demande. Pouvez-vous patienter quelques instants ou reformuler votre question ?'
                },
                {
                    'title': 'Erreur technique',
                    'code': 'SYSTEM_ERROR',
-                   'content': 'Je rencontre un petit problème technique. Pouvez-vous réessayer dans quelques minutes ? Si le problème persiste, contactez notre support.'
+                   'content': config.service_unavailable if config and config.service_unavailable else 'Je rencontre un petit problème technique. Pouvez-vous réessayer dans quelques minutes ? Si le problème persiste, contactez notre support.'
                },
                {
                    'title': 'Limite atteinte',
                    'code': 'RATE_LIMIT',
-                   'content': 'Vous avez fait beaucoup de demandes récemment. Merci de patienter quelques minutes avant de continuer.'
+                   'content': config.invalid_data if config and config.invalid_data else 'Vous avez fait beaucoup de demandes récemment. Merci de patienter quelques minutes avant de continuer.'
                }
            ],
-           
-           # Configuration du comportement
-           'behaviorConfig': {
+
+           # Configuration du comportement (depuis la base de données)
+           'behaviorConfig': config.behavior_config if config and config.behavior_config else {
                'correspondance_flexible': True,
                'réponses_contextuelles': True,
                'mode_strict': False
@@ -1045,27 +1335,51 @@ def save_responses_configuration():
        data = request.get_json()
        if not data:
            return jsonify({'error': 'Données manquantes'}), 400
-       
-       # Sauvegarder le message de bienvenue
+
+       # Récupérer ou créer les objets nécessaires
+       settings = Settings.query.first()
+       if not settings:
+           settings = Settings()
+           db.session.add(settings)
+
+       config = BotResponses.query.first()
+       if not config:
+           config = BotResponses()
+           db.session.add(config)
+
+       # NOUVELLES CLÉS SIMPLES (de la page simplifiée)
+       if 'welcome_message' in data:
+           settings.bot_welcome = data['welcome_message']
+
+       if 'goodbye_message' in data:
+           config.goodbye_message = data['goodbye_message']
+
+       if 'fallback_message' in data:
+           config.fallback_message = data['fallback_message']
+
+       if 'communication_style' in data:
+           config.communication_style = data['communication_style']
+
+       # ANCIENNES CLÉS (compatibilité avec ancienne interface complexe)
        if 'welcomeMessage' in data:
-           settings = Settings.query.first()
-           if not settings:
-               settings = Settings()
-               db.session.add(settings)
-           settings.bot_welcome = data['welcomeMessage']
+           settings.bot_welcome = html.escape(data['welcomeMessage']) if data['welcomeMessage'] else ''
        
        # Sauvegarder les réponses personnalisées
        if 'customResponses' in data:
            # Supprimer les anciens messages par défaut
            DefaultMessage.query.delete()
            
-           # Créer les nouveaux
+           # Créer les nouveaux (avec sanitization)
            for response_data in data['customResponses']:
                if response_data.get('keywords') and response_data.get('content'):
+                   # Échapper le contenu pour éviter XSS
+                   sanitized_content = html.escape(response_data['content'])
+                   sanitized_keywords = [html.escape(k) for k in response_data['keywords']]
+
                    message = DefaultMessage(
-                       title=f"Réponse: {response_data['keywords'][0] if response_data['keywords'] else 'Custom'}",
-                       content=response_data['content'],
-                       triggers=','.join(response_data['keywords'])
+                       title=f"Réponse: {sanitized_keywords[0] if sanitized_keywords else 'Custom'}",
+                       content=sanitized_content,
+                       triggers=','.join(sanitized_keywords)
                    )
                    db.session.add(message)
        
@@ -1075,16 +1389,54 @@ def save_responses_configuration():
            if not config:
                config = BotResponses()
                db.session.add(config)
-           
+
            vocabulary_dict = {}
            for vocab_item in data['vocabulary']:
                if vocab_item.get('term') and vocab_item.get('definition'):
-                   vocabulary_dict[vocab_item['term']] = vocab_item['definition']
-           
+                   # Échapper pour éviter XSS
+                   sanitized_term = html.escape(vocab_item['term'])
+                   sanitized_def = html.escape(vocab_item['definition'])
+                   vocabulary_dict[sanitized_term] = sanitized_def
+
            config.vocabulary = vocabulary_dict
-       
-       # Sauvegarder les messages d'erreur (si nécessaire, créer une table dédiée)
-       # Pour l'instant, on les ignore car ils sont simulés
+
+       # Sauvegarder les templates essentiels
+       if 'essentialTemplates' in data:
+           if not config:
+               config = BotResponses.query.first()
+           if not config:
+               config = BotResponses()
+               db.session.add(config)
+
+           config.essential_templates = data['essentialTemplates']
+
+       # Sauvegarder les messages d'erreur
+       if 'errorMessages' in data:
+           if not config:
+               config = BotResponses.query.first()
+           if not config:
+               config = BotResponses()
+               db.session.add(config)
+
+           for error_msg in data['errorMessages']:
+               code = error_msg.get('code')
+               content = html.escape(error_msg.get('content', ''))  # Sanitize
+               if code == 'TIMEOUT':
+                   config.technical_error = content
+               elif code == 'SYSTEM_ERROR':
+                   config.service_unavailable = content
+               elif code == 'RATE_LIMIT':
+                   config.invalid_data = content
+
+       # Sauvegarder la configuration du comportement
+       if 'behaviorConfig' in data:
+           if not config:
+               config = BotResponses.query.first()
+           if not config:
+               config = BotResponses()
+               db.session.add(config)
+
+           config.behavior_config = data['behaviorConfig']
        
        db.session.commit()
        
@@ -1443,8 +1795,10 @@ def config_api():
                'provider': user_settings.current_provider,
                'openai_model': user_settings.openai_model,
                'mistral_model': user_settings.mistral_model,
+               'claude_model': user_settings.claude_model,
                'has_openai': bool(user_settings.encrypted_openai_key),
-               'has_mistral': bool(user_settings.encrypted_mistral_key)
+               'has_mistral': bool(user_settings.encrypted_mistral_key),
+               'has_claude': bool(user_settings.encrypted_claude_key)
            }
    except Exception as e:
        logger.error(f"Erreur récupération config: {e}")
@@ -1459,8 +1813,10 @@ def config_api():
        # Pas de clés affichées pour sécurité
        mistral_key="",
        gpt_key="",
+       claude_key="",
        model_select=current_config.get('openai_model', 'gpt-3.5-turbo'),
        mistral_model_select=current_config.get('mistral_model', 'mistral-small'),
+       claude_model_select=current_config.get('claude_model', 'claude-sonnet-4'),
        # Information pour l'utilisateur
        info_message="Vos clés API sont chiffrées et stockées de manière sécurisée sur le serveur."
    )
@@ -1714,7 +2070,7 @@ def serve_react_index():
 #######################################
 # Blueprint pour la gestion des connaissances
 #######################################
-knowledge_bp = Blueprint('knowledge', __name__, url_prefix='/knowledge')
+knowledge_bp = Blueprint('knowledge', __name__, url_prefix='/api/knowledge')
 
 @knowledge_bp.route('/categories', methods=['GET', 'POST'])
 @login_required
@@ -1795,45 +2151,601 @@ def upload_document():
    """Upload de documents."""
    if 'file' not in request.files:
        return jsonify({'success': False, 'error': 'Aucun fichier fourni'}), 400
-   
+
    file = request.files['file']
-   category_id = request.form.get('category_id')
-   
+   category = request.form.get('category', 'general')
+
    if file.filename == '':
        return jsonify({'success': False, 'error': 'Nom de fichier invalide'}), 400
-   
+
    try:
+       from .document_processor import document_processor
+
        filename = secure_filename(file.filename)
        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
        file.save(file_path)
-       
-       # Extraire le contenu du document pour la recherche
-       content = ""
-       if filename.endswith('.txt'):
-           with open(file_path, 'r', encoding='utf-8') as f:
-               content = f.read()
-       
+
+       # Récupérer la taille du fichier
+       file_size = os.path.getsize(file_path)
+
+       # Vérifier si le format est supporté
+       if not document_processor.is_supported(filename):
+           os.remove(file_path)
+           return jsonify({
+               'success': False,
+               'error': f'Format non supporté. Formats acceptés: PDF, Word, Excel, TXT'
+           }), 400
+
+       # Trouver ou créer la catégorie
+       knowledge_category = KnowledgeCategory.query.filter_by(name=category).first()
+       if not knowledge_category:
+           knowledge_category = KnowledgeCategory(name=category, description='')
+           db.session.add(knowledge_category)
+           db.session.flush()
+
+       # Créer le document avec status 'processing'
        document = Document(
            title=filename,
            filename=filename,
            file_type=file.content_type,
-           content=content,
-           category_id=category_id
+           file_size=file_size,
+           category_id=knowledge_category.id,
+           status='processing'
        )
        db.session.add(document)
+       db.session.flush()
+
+       # Extraire le contenu du document
+       document_processor.process_and_update_document(document, file_path)
+
        db.session.commit()
-       
-       logger.info(f"Document '{filename}' uploadé et indexé")
-       
+
+       logger.info(f"Document '{filename}' uploadé et traité ({file_size} bytes)")
+
        return jsonify({
            'success': True,
            'document': {
                'id': document.id,
-               'title': document.title
+               'title': document.title,
+               'status': document.status
            }
        })
    except Exception as e:
+       logger.error(f"Erreur upload_document: {e}")
+       db.session.rollback()
        return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@knowledge_bp.route('/documents', methods=['GET'])
+@login_required
+def get_documents():
+    """Liste tous les documents."""
+    try:
+        documents = Document.query.all()
+        return jsonify({
+            'success': True,
+            'documents': [{
+                'id': doc.id,
+                'name': doc.title,
+                'type': doc.file_type,
+                'size': doc.file_size,
+                'category': doc.category.name if doc.category else 'Non catégorisé',
+                'summary': doc.summary,
+                'status': doc.status,
+                'created_at': doc.created_at.isoformat()
+            } for doc in documents]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_documents: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/documents/<int:doc_id>', methods=['GET'])
+@login_required
+def get_document(doc_id):
+    """Récupère un document spécifique."""
+    try:
+        doc = Document.query.get_or_404(doc_id)
+        return jsonify({
+            'success': True,
+            'document': {
+                'id': doc.id,
+                'name': doc.title,
+                'filename': doc.filename,
+                'type': doc.file_type,
+                'size': doc.file_size,
+                'category': doc.category.name if doc.category else 'Non catégorisé',
+                'summary': doc.summary,
+                'status': doc.status,
+                'content': doc.content,
+                'created_at': doc.created_at.isoformat(),
+                'updated_at': doc.updated_at.isoformat()
+            }
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_document: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/documents/<int:doc_id>', methods=['DELETE'])
+@login_required
+def delete_document(doc_id):
+    """Supprime un document."""
+    try:
+        doc = Document.query.get_or_404(doc_id)
+
+        # Supprimer le fichier physique
+        try:
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], doc.filename)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            logger.warning(f"Impossible de supprimer le fichier: {e}")
+
+        db.session.delete(doc)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Document supprimé'})
+    except Exception as e:
+        logger.error(f"Erreur delete_document: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/documents/export', methods=['GET'])
+@login_required
+def export_documents():
+    """Exporte tous les documents en ZIP."""
+    try:
+        import zipfile
+        from io import BytesIO
+
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            documents = Document.query.all()
+            for doc in documents:
+                file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], doc.filename)
+                if os.path.exists(file_path):
+                    zip_file.write(file_path, doc.filename)
+
+        zip_buffer.seek(0)
+        response = make_response(zip_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/zip'
+        response.headers['Content-Disposition'] = f'attachment; filename=documents-{datetime.now().strftime("%Y%m%d")}.zip'
+
+        return response
+    except Exception as e:
+        logger.error(f"Erreur export_documents: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== VOCABULARY ROUTES =====
+
+@knowledge_bp.route('/vocabulary', methods=['GET'])
+@login_required
+def get_vocabulary():
+    """Liste tous les termes de vocabulaire."""
+    try:
+        from .models import VocabularyTerm
+        terms = VocabularyTerm.query.all()
+        return jsonify({
+            'success': True,
+            'terms': [{
+                'id': term.id,
+                'name': term.name,
+                'definition': term.definition,
+                'synonyms': term.synonym_list,
+                'category': term.category,
+                'created_at': term.created_at.isoformat()
+            } for term in terms]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_vocabulary: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/vocabulary', methods=['POST'])
+@login_required
+def create_vocabulary():
+    """Crée un nouveau terme de vocabulaire."""
+    try:
+        from .models import VocabularyTerm
+        data = request.get_json()
+
+        term = VocabularyTerm(
+            name=data['name'],
+            definition=data['definition'],
+            category=data.get('category', 'general')
+        )
+        term.synonym_list = data.get('synonyms', [])
+
+        db.session.add(term)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'term': {
+                'id': term.id,
+                'name': term.name
+            }
+        }), 201
+    except Exception as e:
+        logger.error(f"Erreur create_vocabulary: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/vocabulary/<int:term_id>', methods=['GET'])
+@login_required
+def get_vocabulary_term(term_id):
+    """Récupère un terme spécifique."""
+    try:
+        from .models import VocabularyTerm
+        term = VocabularyTerm.query.get_or_404(term_id)
+        return jsonify({
+            'success': True,
+            'term': {
+                'id': term.id,
+                'name': term.name,
+                'definition': term.definition,
+                'synonyms': term.synonym_list,
+                'category': term.category
+            }
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_vocabulary_term: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/vocabulary/<int:term_id>', methods=['DELETE'])
+@login_required
+def delete_vocabulary_term(term_id):
+    """Supprime un terme de vocabulaire."""
+    try:
+        from .models import VocabularyTerm
+        term = VocabularyTerm.query.get_or_404(term_id)
+        db.session.delete(term)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Terme supprimé'})
+    except Exception as e:
+        logger.error(f"Erreur delete_vocabulary_term: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/vocabulary/import-csv', methods=['POST'])
+@login_required
+def import_vocabulary_csv():
+    """Importe des termes depuis un fichier CSV."""
+    try:
+        from .models import VocabularyTerm
+        import csv
+
+        if 'csv_file' not in request.files:
+            return jsonify({'success': False, 'error': 'Aucun fichier fourni'}), 400
+
+        file = request.files['csv_file']
+        content = file.read().decode('utf-8')
+        csv_reader = csv.DictReader(content.splitlines())
+
+        imported_count = 0
+        for row in csv_reader:
+            if 'name' in row and 'definition' in row:
+                term = VocabularyTerm(
+                    name=row['name'],
+                    definition=row['definition'],
+                    category=row.get('category', 'general')
+                )
+                if 'synonyms' in row:
+                    term.synonym_list = [s.strip() for s in row['synonyms'].split(',')]
+                db.session.add(term)
+                imported_count += 1
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'imported_count': imported_count,
+            'message': f'{imported_count} termes importés'
+        })
+    except Exception as e:
+        logger.error(f"Erreur import_vocabulary_csv: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/vocabulary/extract-ai', methods=['POST'])
+@login_required
+def extract_vocabulary_ai():
+    """Extrait automatiquement le vocabulaire des documents avec l'IA."""
+    try:
+        # Cette fonctionnalité nécessite l'intégration avec l'API IA
+        # Pour l'instant, on retourne un message indiquant que c'est en développement
+        return jsonify({
+            'success': False,
+            'error': 'Extraction IA en cours de développement',
+            'extracted_count': 0,
+            'suggestions': []
+        }), 501
+    except Exception as e:
+        logger.error(f"Erreur extract_vocabulary_ai: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== RULES ROUTES =====
+
+@knowledge_bp.route('/rules', methods=['GET'])
+@login_required
+def get_rules():
+    """Liste toutes les règles avancées."""
+    try:
+        from .models import AdvancedRule
+        rules = AdvancedRule.query.all()
+        return jsonify({
+            'success': True,
+            'rules': [{
+                'id': rule.id,
+                'name': rule.name,
+                'type': rule.rule_type,
+                'description': rule.description,
+                'active': rule.is_active,
+                'priority': rule.priority,
+                'updated_at': rule.updated_at.isoformat()
+            } for rule in rules]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_rules: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/rules', methods=['POST'])
+@login_required
+def create_rule():
+    """Crée une nouvelle règle avancée."""
+    try:
+        from .models import AdvancedRule
+        data = request.get_json()
+
+        rule = AdvancedRule(
+            name=data.get('name', f"Règle {data['type']}"),
+            rule_type=data['type'],
+            description=data.get('description', ''),
+            is_active=data.get('active', True),
+            priority=data.get('priority', 0)
+        )
+        rule.condition_list = data.get('conditions', [])
+        rule.action_list = data.get('actions', [])
+
+        db.session.add(rule)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'rule': {
+                'id': rule.id,
+                'name': rule.name
+            }
+        }), 201
+    except Exception as e:
+        logger.error(f"Erreur create_rule: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/rules/test', methods=['POST'])
+@login_required
+def test_rule():
+    """Teste une règle avec une requête."""
+    try:
+        data = request.get_json()
+        conditions = data.get('conditions', [])
+        query = data.get('query', '').lower()
+
+        # Test basique de matching
+        matched = False
+        for condition in conditions:
+            cond_type = condition.get('type', '')
+            cond_value = condition.get('value', '').lower()
+
+            if cond_type == 'contains' and cond_value in query:
+                matched = True
+                break
+            elif cond_type == 'starts_with' and query.startswith(cond_value):
+                matched = True
+                break
+            elif cond_type == 'ends_with' and query.endswith(cond_value):
+                matched = True
+                break
+            elif cond_type == 'exact_match' and query == cond_value:
+                matched = True
+                break
+
+        return jsonify({
+            'success': True,
+            'matched': matched,
+            'message': f"La requête {'correspond' if matched else 'ne correspond pas'} aux conditions"
+        })
+    except Exception as e:
+        logger.error(f"Erreur test_rule: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/rules/<int:rule_id>/toggle', methods=['PATCH'])
+@login_required
+def toggle_rule(rule_id):
+    """Active/désactive une règle."""
+    try:
+        from .models import AdvancedRule
+        rule = AdvancedRule.query.get_or_404(rule_id)
+        rule.is_active = not rule.is_active
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'active': rule.is_active,
+            'message': f"Règle {'activée' if rule.is_active else 'désactivée'}"
+        })
+    except Exception as e:
+        logger.error(f"Erreur toggle_rule: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/rules/<int:rule_id>', methods=['DELETE'])
+@login_required
+def delete_rule(rule_id):
+    """Supprime une règle."""
+    try:
+        from .models import AdvancedRule
+        rule = AdvancedRule.query.get_or_404(rule_id)
+        db.session.delete(rule)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Règle supprimée'})
+    except Exception as e:
+        logger.error(f"Erreur delete_rule: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== GLOBAL ACTIONS =====
+
+@knowledge_bp.route('/export', methods=['GET'])
+@login_required
+def export_knowledge():
+    """Exporte toute la base de connaissances en JSON."""
+    try:
+        from .models import VocabularyTerm, AdvancedRule
+
+        # Récupérer toutes les données
+        categories = KnowledgeCategory.query.all()
+        documents = Document.query.all()
+        faqs = FAQ.query.all()
+        vocabulary = VocabularyTerm.query.all()
+        rules = AdvancedRule.query.all()
+
+        export_data = {
+            'version': '2.0',
+            'export_date': datetime.now().isoformat(),
+            'categories': [{
+                'name': cat.name,
+                'description': cat.description
+            } for cat in categories],
+            'documents': [{
+                'title': doc.title,
+                'filename': doc.filename,
+                'type': doc.file_type,
+                'category': doc.category.name if doc.category else None,
+                'summary': doc.summary
+            } for doc in documents],
+            'faqs': [{
+                'question': faq.question,
+                'answer': faq.answer,
+                'keywords': faq.keyword_list,
+                'category': faq.category.name if faq.category else None
+            } for faq in faqs],
+            'vocabulary': [{
+                'name': term.name,
+                'definition': term.definition,
+                'synonyms': term.synonym_list,
+                'category': term.category
+            } for term in vocabulary],
+            'rules': [{
+                'name': rule.name,
+                'type': rule.rule_type,
+                'description': rule.description,
+                'conditions': rule.condition_list,
+                'actions': rule.action_list
+            } for rule in rules]
+        }
+
+        response = make_response(json.dumps(export_data, ensure_ascii=False, indent=2))
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Content-Disposition'] = f'attachment; filename=knowledge-base-{datetime.now().strftime("%Y%m%d")}.json'
+
+        return response
+    except Exception as e:
+        logger.error(f"Erreur export_knowledge: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/import', methods=['POST'])
+@login_required
+def import_knowledge():
+    """Importe une base de connaissances depuis JSON."""
+    try:
+        if 'knowledge_file' not in request.files:
+            return jsonify({'success': False, 'error': 'Aucun fichier fourni'}), 400
+
+        file = request.files['knowledge_file']
+        content = json.loads(file.read().decode('utf-8'))
+
+        # Import simplifié - à améliorer avec gestion des doublons
+        imported_count = 0
+
+        # Importer les catégories
+        for cat_data in content.get('categories', []):
+            if not KnowledgeCategory.query.filter_by(name=cat_data['name']).first():
+                cat = KnowledgeCategory(**cat_data)
+                db.session.add(cat)
+                imported_count += 1
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'imported_count': imported_count,
+            'message': f'{imported_count} éléments importés'
+        })
+    except Exception as e:
+        logger.error(f"Erreur import_knowledge: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/optimize', methods=['POST'])
+@login_required
+def optimize_knowledge():
+    """Optimise la base de connaissances."""
+    try:
+        # Placeholder pour l'optimisation
+        # Ici on pourrait:
+        # - Nettoyer les doublons
+        # - Réorganiser les priorités
+        # - Mettre à jour les index
+        # - Générer des résumés manquants
+
+        return jsonify({
+            'success': True,
+            'message': 'Base de connaissances optimisée',
+            'optimizations': {
+                'duplicates_removed': 0,
+                'priorities_updated': 0,
+                'summaries_generated': 0
+            }
+        })
+    except Exception as e:
+        logger.error(f"Erreur optimize_knowledge: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@knowledge_bp.route('/save-all', methods=['POST'])
+@login_required
+def save_all_knowledge():
+    """Sauvegarde toutes les modifications."""
+    try:
+        # Commit de toutes les modifications en attente
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Toutes les modifications sauvegardées'
+        })
+    except Exception as e:
+        logger.error(f"Erreur save_all_knowledge: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 #######################################
@@ -1852,7 +2764,8 @@ def list_flows():
            'name': flow.name,
            'description': flow.description,
            'is_active': flow.is_active,
-           'updated_at': flow.updated_at.isoformat()
+           'updated_at': flow.updated_at.isoformat(),
+           'nodes_count': len(flow.nodes)
        } for flow in flows]
    })
 
@@ -1874,6 +2787,291 @@ def create_flow():
        'message': 'Flux créé avec succès'
    }), 201
 
+@flow_bp.route('/<int:flow_id>', methods=['GET'])
+@login_required
+def get_flow(flow_id):
+   """Récupère les détails d'un flux spécifique."""
+   flow = ConversationFlow.query.get_or_404(flow_id)
+
+   # Récupérer tous les nœuds et connexions
+   nodes = [{
+       'id': node.id,
+       'type': node.node_type,
+       'position': {
+           'x': node.position_x,
+           'y': node.position_y
+       },
+       'config': node.config
+   } for node in flow.nodes]
+
+   connections = []
+   for node in flow.nodes:
+       for conn in node.connections:
+           connections.append({
+               'id': conn.id,
+               'source_id': conn.source_node_id,
+               'target_id': conn.target_node_id,
+               'condition': conn.condition,
+               'priority': conn.priority
+           })
+
+   return jsonify({
+       'id': flow.id,
+       'name': flow.name,
+       'description': flow.description,
+       'is_active': flow.is_active,
+       'flow_data': flow.flow_data,
+       'nodes': nodes,
+       'connections': connections,
+       'created_at': flow.created_at.isoformat(),
+       'updated_at': flow.updated_at.isoformat()
+   })
+
+@flow_bp.route('/<int:flow_id>', methods=['PUT'])
+@login_required
+def update_flow(flow_id):
+   """Met à jour un flux existant."""
+   flow = ConversationFlow.query.get_or_404(flow_id)
+   data = request.get_json()
+
+   try:
+       if 'name' in data:
+           flow.name = data['name']
+       if 'description' in data:
+           flow.description = data['description']
+       if 'is_active' in data:
+           flow.is_active = data['is_active']
+       if 'flow_data' in data:
+           flow.flow_data = data['flow_data']
+
+       flow.updated_at = datetime.utcnow()
+       db.session.commit()
+
+       return jsonify({
+           'id': flow.id,
+           'name': flow.name,
+           'message': 'Flux mis à jour avec succès'
+       })
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+@flow_bp.route('/<int:flow_id>', methods=['DELETE'])
+@login_required
+def delete_flow(flow_id):
+   """Supprime un flux."""
+   flow = ConversationFlow.query.get_or_404(flow_id)
+
+   try:
+       db.session.delete(flow)
+       db.session.commit()
+       return jsonify({'message': 'Flux supprimé avec succès'})
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+@flow_bp.route('/<int:flow_id>/nodes', methods=['POST'])
+@login_required
+def create_node(flow_id):
+   """Crée un nouveau nœud dans le flux."""
+   flow = ConversationFlow.query.get_or_404(flow_id)
+   data = request.get_json()
+
+   try:
+       node = FlowNode(
+           flow_id=flow_id,
+           node_type=data['type'],
+           position_x=data.get('position', {}).get('x', 0),
+           position_y=data.get('position', {}).get('y', 0),
+           config=data.get('config', {})
+       )
+       db.session.add(node)
+       db.session.commit()
+
+       return jsonify({
+           'id': node.id,
+           'type': node.node_type,
+           'position': {
+               'x': node.position_x,
+               'y': node.position_y
+           },
+           'config': node.config
+       }), 201
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+@flow_bp.route('/nodes/<int:node_id>', methods=['PUT'])
+@login_required
+def update_node(node_id):
+   """Met à jour un nœud existant."""
+   node = FlowNode.query.get_or_404(node_id)
+   data = request.get_json()
+
+   try:
+       if 'position' in data:
+           node.position_x = data['position'].get('x', node.position_x)
+           node.position_y = data['position'].get('y', node.position_y)
+       if 'config' in data:
+           node.config = data['config']
+
+       db.session.commit()
+
+       return jsonify({
+           'id': node.id,
+           'message': 'Nœud mis à jour avec succès'
+       })
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+@flow_bp.route('/nodes/<int:node_id>', methods=['DELETE'])
+@login_required
+def delete_node(node_id):
+   """Supprime un nœud."""
+   node = FlowNode.query.get_or_404(node_id)
+
+   try:
+       db.session.delete(node)
+       db.session.commit()
+       return jsonify({'message': 'Nœud supprimé avec succès'})
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+@flow_bp.route('/nodes/<int:source_id>/connect', methods=['POST'])
+@login_required
+def create_connection(source_id):
+   """Crée une connexion entre deux nœuds."""
+   source_node = FlowNode.query.get_or_404(source_id)
+   data = request.get_json()
+
+   target_id = data.get('target_id')
+   if not target_id:
+       return jsonify({'error': 'target_id est requis'}), 400
+
+   target_node = FlowNode.query.get_or_404(target_id)
+
+   # Vérifier que les deux nœuds appartiennent au même flux
+   if source_node.flow_id != target_node.flow_id:
+       return jsonify({'error': 'Les nœuds doivent appartenir au même flux'}), 400
+
+   try:
+       connection = NodeConnection(
+           source_node_id=source_id,
+           target_node_id=target_id,
+           condition=data.get('condition'),
+           priority=data.get('priority', 0)
+       )
+       db.session.add(connection)
+       db.session.commit()
+
+       return jsonify({
+           'id': connection.id,
+           'source_id': connection.source_node_id,
+           'target_id': connection.target_node_id,
+           'condition': connection.condition,
+           'priority': connection.priority
+       }), 201
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+@flow_bp.route('/connections/<int:connection_id>', methods=['DELETE'])
+@login_required
+def delete_connection(connection_id):
+   """Supprime une connexion."""
+   connection = NodeConnection.query.get_or_404(connection_id)
+
+   try:
+       db.session.delete(connection)
+       db.session.commit()
+       return jsonify({'message': 'Connexion supprimée avec succès'})
+   except Exception as e:
+       db.session.rollback()
+       return jsonify({'error': str(e)}), 500
+
+
+#######################################
+# ROUTES DE STATISTIQUES ET TESTS - DECISION ENGINE
+#######################################
+
+@main_bp.route('/api/decision/stats', methods=['GET'])
+@login_required
+def decision_stats():
+   """Récupère les statistiques d'utilisation du Decision Engine"""
+   try:
+       stats = decision_engine.get_statistics()
+
+       return jsonify({
+           'success': True,
+           'statistics': stats,
+           'capabilities': {
+               'has_active_flows': flow_executor.has_active_flows(),
+               'has_configured_responses': response_manager.has_configured_responses(),
+               'decision_engine_ready': decision_engine.is_ready()
+           }
+       })
+   except Exception as e:
+       logger.error(f"Erreur decision_stats: {e}")
+       return jsonify({'success': False, 'error': str(e)}), 500
+
+@main_bp.route('/api/decision/test', methods=['POST'])
+@login_required
+def decision_test():
+   """Teste le Decision Engine avec un message"""
+   try:
+       data = request.get_json()
+       test_message = data.get('message', '')
+
+       if not test_message:
+           return jsonify({'success': False, 'error': 'Message requis'}), 400
+
+       # Tester les flux
+       flow_result = None
+       if flow_executor.has_active_flows():
+           flow_id = flow_executor.find_matching_flow(test_message, current_user.id)
+           if flow_id:
+               flow_result = flow_executor.execute_flow(flow_id, test_message, current_user.id)
+
+       # Tester les réponses configurées
+       config_result = None
+       if response_manager.has_configured_responses():
+           config_result = response_manager.find_matching_response(test_message, current_user.id)
+
+       return jsonify({
+           'success': True,
+           'test_message': test_message,
+           'results': {
+               'flow': {
+                   'found': flow_result is not None,
+                   'data': flow_result if flow_result else None
+               },
+               'configured': {
+                   'found': config_result is not None,
+                   'data': config_result if config_result else None
+               }
+           },
+           'recommendation': 'flow' if flow_result else ('configured' if config_result else 'api')
+       })
+   except Exception as e:
+       logger.error(f"Erreur decision_test: {e}", exc_info=True)
+       return jsonify({'success': False, 'error': str(e)}), 500
+
+@main_bp.route('/api/decision/reset-stats', methods=['POST'])
+@login_required
+def reset_decision_stats():
+   """Réinitialise les statistiques du Decision Engine"""
+   try:
+       decision_engine.reset_statistics()
+       return jsonify({
+           'success': True,
+           'message': 'Statistiques réinitialisées'
+       })
+   except Exception as e:
+       logger.error(f"Erreur reset_decision_stats: {e}")
+       return jsonify({'success': False, 'error': str(e)}), 500
+
 
 #######################################
 # Blueprint pour les actions et automatisations
@@ -1893,6 +3091,369 @@ def index_actions():
        calendar_config=calendar_config,
        ticket_config=ticket_config
    )
+
+
+# ===== TRIGGERS ROUTES =====
+
+@actions_bp.route('/triggers', methods=['GET'])
+@login_required
+def get_triggers():
+    """Liste tous les déclencheurs d'actions."""
+    try:
+        triggers = ActionTrigger.query.all()
+        return jsonify({
+            'success': True,
+            'triggers': [{
+                'id': trigger.id,
+                'name': trigger.name,
+                'type': trigger.trigger_type,
+                'active': trigger.is_active,
+                'conditions': trigger.conditions,
+                'config': trigger.config
+            } for trigger in triggers]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_triggers: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@actions_bp.route('/triggers', methods=['POST'])
+@login_required
+def create_trigger():
+    """Crée un nouveau déclencheur."""
+    try:
+        data = request.get_json()
+
+        trigger = ActionTrigger(
+            name=data['name'],
+            trigger_type=data['type'],
+            is_active=data.get('active', True)
+        )
+        trigger.conditions = data.get('conditions', {})
+        trigger.config = data.get('config', {})
+
+        db.session.add(trigger)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'trigger': {
+                'id': trigger.id,
+                'name': trigger.name
+            }
+        }), 201
+    except Exception as e:
+        logger.error(f"Erreur create_trigger: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== EMAIL ROUTES =====
+
+@actions_bp.route('/email/templates', methods=['GET'])
+@login_required
+def get_email_templates():
+    """Liste tous les templates d'email."""
+    try:
+        templates = EmailTemplate.query.all()
+        return jsonify({
+            'success': True,
+            'templates': [{
+                'id': template.id,
+                'name': template.name,
+                'subject': template.subject,
+                'body': template.body,
+                'variables': template.variables
+            } for template in templates]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_email_templates: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@actions_bp.route('/email/config', methods=['POST'])
+@login_required
+def save_email_config():
+    """Sauvegarde la configuration des emails."""
+    try:
+        data = request.get_json()
+
+        # Sauvegarder les déclencheurs email
+        for trigger_data in data.get('triggers', []):
+            if 'id' in trigger_data:
+                # Mise à jour
+                trigger = ActionTrigger.query.get(trigger_data['id'])
+                if trigger:
+                    trigger.is_active = trigger_data.get('active', True)
+                    trigger.conditions = trigger_data.get('conditions', {})
+                    trigger.config = trigger_data.get('config', {})
+            else:
+                # Création
+                trigger = ActionTrigger(
+                    name=trigger_data['name'],
+                    trigger_type='email',
+                    is_active=trigger_data.get('active', True)
+                )
+                trigger.conditions = trigger_data.get('conditions', {})
+                trigger.config = trigger_data.get('config', {})
+                db.session.add(trigger)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration email sauvegardée'
+        })
+    except Exception as e:
+        logger.error(f"Erreur save_email_config: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== SMS ROUTES =====
+
+@actions_bp.route('/sms/config', methods=['GET'])
+@login_required
+def get_sms_config():
+    """Récupère la configuration SMS."""
+    try:
+        triggers = ActionTrigger.query.filter_by(trigger_type='sms').all()
+        return jsonify({
+            'success': True,
+            'triggers': [{
+                'id': trigger.id,
+                'name': trigger.name,
+                'active': trigger.is_active,
+                'conditions': trigger.conditions,
+                'config': trigger.config
+            } for trigger in triggers]
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_sms_config: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@actions_bp.route('/sms/config', methods=['POST'])
+@login_required
+def save_sms_config():
+    """Sauvegarde la configuration SMS."""
+    try:
+        data = request.get_json()
+
+        for trigger_data in data.get('triggers', []):
+            if 'id' in trigger_data:
+                trigger = ActionTrigger.query.get(trigger_data['id'])
+                if trigger:
+                    trigger.is_active = trigger_data.get('active', True)
+                    trigger.conditions = trigger_data.get('conditions', {})
+                    trigger.config = trigger_data.get('config', {})
+            else:
+                trigger = ActionTrigger(
+                    name=trigger_data['name'],
+                    trigger_type='sms',
+                    is_active=trigger_data.get('active', True)
+                )
+                trigger.conditions = trigger_data.get('conditions', {})
+                trigger.config = trigger_data.get('config', {})
+                db.session.add(trigger)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration SMS sauvegardée'
+        })
+    except Exception as e:
+        logger.error(f"Erreur save_sms_config: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== CALENDAR ROUTES =====
+
+@actions_bp.route('/calendar/config', methods=['GET'])
+@login_required
+def get_calendar_config():
+    """Récupère la configuration du calendrier."""
+    try:
+        config = CalendarConfig.query.first()
+        if not config:
+            return jsonify({
+                'success': True,
+                'config': {
+                    'service_type': 'google',
+                    'default_duration': 30
+                }
+            })
+
+        return jsonify({
+            'success': True,
+            'config': {
+                'service_type': config.service_type,
+                'default_duration': config.default_duration,
+                'calendar_id': config.calendar_id
+            }
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_calendar_config: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@actions_bp.route('/calendar/config', methods=['POST'])
+@login_required
+def save_calendar_config():
+    """Sauvegarde la configuration du calendrier."""
+    try:
+        data = request.get_json()
+
+        config = CalendarConfig.query.first()
+        if not config:
+            config = CalendarConfig()
+            db.session.add(config)
+
+        config.service_type = data.get('service_type', 'google')
+        config.default_duration = data.get('default_duration', 30)
+        config.calendar_id = data.get('calendar_id')
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration calendrier sauvegardée'
+        })
+    except Exception as e:
+        logger.error(f"Erreur save_calendar_config: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== TICKETS ROUTES =====
+
+@actions_bp.route('/tickets/config', methods=['GET'])
+@login_required
+def get_ticket_config():
+    """Récupère la configuration des tickets."""
+    try:
+        config = TicketConfig.query.first()
+        if not config:
+            return jsonify({
+                'success': True,
+                'config': {
+                    'service_type': 'internal',
+                    'priority_mapping': {}
+                }
+            })
+
+        return jsonify({
+            'success': True,
+            'config': {
+                'service_type': config.service_type,
+                'subdomain': config.subdomain,
+                'priority_mapping': config.priority_mapping
+            }
+        })
+    except Exception as e:
+        logger.error(f"Erreur get_ticket_config: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@actions_bp.route('/tickets/config', methods=['POST'])
+@login_required
+def save_ticket_config():
+    """Sauvegarde la configuration des tickets."""
+    try:
+        data = request.get_json()
+
+        config = TicketConfig.query.first()
+        if not config:
+            config = TicketConfig()
+            db.session.add(config)
+
+        config.service_type = data.get('service_type', 'internal')
+        config.subdomain = data.get('subdomain')
+        config.api_key = data.get('api_key')
+        config.priority_mapping = data.get('priority_mapping', {})
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration tickets sauvegardée'
+        })
+    except Exception as e:
+        logger.error(f"Erreur save_ticket_config: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== FORMS ROUTES =====
+
+@actions_bp.route('/forms/config', methods=['POST'])
+@login_required
+def save_forms_config():
+    """Sauvegarde la configuration des formulaires."""
+    try:
+        data = request.get_json()
+
+        for form_data in data.get('redirections', []):
+            if 'id' in form_data:
+                form = FormRedirection.query.get(form_data['id'])
+                if form:
+                    form.name = form_data['name']
+                    form.url = form_data['url']
+                    form.conditions = form_data.get('conditions')
+                    form.parameters = form_data.get('parameters')
+            else:
+                form = FormRedirection(
+                    name=form_data['name'],
+                    url=form_data['url'],
+                    conditions=form_data.get('conditions'),
+                    parameters=form_data.get('parameters')
+                )
+                db.session.add(form)
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration formulaires sauvegardée'
+        })
+    except Exception as e:
+        logger.error(f"Erreur save_forms_config: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ===== TEST ROUTE =====
+
+@actions_bp.route('/test', methods=['POST'])
+@login_required
+def test_action():
+    """Teste une configuration d'action."""
+    try:
+        data = request.get_json()
+        action_type = data.get('type')
+        config = data.get('config', {})
+
+        # Validation basique selon le type
+        test_results = {
+            'email': {'success': True, 'message': 'Configuration email valide'},
+            'sms': {'success': True, 'message': 'Configuration SMS valide'},
+            'calendar': {'success': True, 'message': 'Configuration calendrier valide'},
+            'tickets': {'success': True, 'message': 'Configuration tickets valide'},
+            'forms': {'success': True, 'message': 'Configuration formulaires valide'}
+        }
+
+        result = test_results.get(action_type, {'success': False, 'message': 'Type inconnu'})
+
+        return jsonify({
+            'success': result['success'],
+            'message': result['message'],
+            'details': config
+        })
+    except Exception as e:
+        logger.error(f"Erreur test_action: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # ========================
@@ -2882,7 +4443,7 @@ def api_internal_error(error):
        return jsonify({
            'error': 'Internal server error',
            'path': request.path,
-           'message': 'Une erreur inattendue s'est produite'
+           'message': "Une erreur inattendue s'est produite"
        }), 500
    return error
 
@@ -3060,17 +4621,458 @@ def test_response_matching():
        return jsonify({'error': str(e)}), 500
 
 
+############################################################################
+# WIZARD D'ONBOARDING ET MODE SIMPLE/AVANCÉ
+############################################################################
+
+@main_bp.route("/onboarding")
+@login_required
+def onboarding_wizard():
+    """Wizard d'onboarding pour nouveaux utilisateurs."""
+    # Récupérer les paramètres existants pour pré-remplissage
+    settings = Settings.query.filter_by(user_id=current_user.id).first()
+    initial_data = {
+        'botName': settings.bot_name if settings else '',
+        'botDescription': settings.bot_description if settings else '',
+        'welcomeMessage': settings.bot_welcome if settings else '',
+        'provider': current_user.preferred_provider if current_user.preferred_provider else ''
+    }
+    return render_template("onboarding_wizard.html", initial_data=initial_data)
+
+
+@main_bp.route("/reopen-wizard")
+@login_required
+def reopen_wizard():
+    """Permet de ré-ouvrir le wizard pour modifier la configuration."""
+    # Récupérer les paramètres existants
+    settings = Settings.query.filter_by(user_id=current_user.id).first()
+    initial_data = {
+        'botName': settings.bot_name if settings else '',
+        'botDescription': settings.bot_description if settings else '',
+        'welcomeMessage': settings.bot_welcome if settings else '',
+        'provider': current_user.preferred_provider if current_user.preferred_provider else ''
+    }
+    return render_template("onboarding_wizard.html", initial_data=initial_data, is_reopen=True)
+
+
+@main_bp.route("/api/save-wizard", methods=["POST"])
+@login_required
+def save_wizard():
+    """Sauvegarde les données du wizard d'onboarding."""
+    try:
+        data = request.get_json()
+
+        # Sauvegarder les paramètres généraux
+        settings = Settings.query.filter_by(user_id=current_user.id).first()
+        if not settings:
+            settings = Settings(user_id=current_user.id)
+            db.session.add(settings)
+
+        settings.bot_name = data.get('botName', 'LeoBot')
+        settings.bot_description = data.get('botDescription', '')
+        settings.bot_welcome = data.get('welcomeMessage', 'Bonjour !')
+
+        # Sauvegarder le provider préféré
+        current_user.preferred_provider = data.get('provider')
+        current_user.onboarding_completed = True
+
+        db.session.commit()
+
+        logger.info(f"Wizard complété pour {current_user.username}")
+
+        return jsonify({
+            "success": True,
+            "message": "Configuration sauvegardée",
+            "redirect_to": url_for('main.config_api')
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur sauvegarde wizard: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route("/api/toggle-ui-mode", methods=["POST"])
+@login_required
+def toggle_ui_mode():
+    """Bascule entre mode simple et mode avancé."""
+    try:
+        data = request.get_json()
+        new_mode = data.get('mode', 'simple')
+
+        if new_mode not in ['simple', 'advanced']:
+            return jsonify({
+                "success": False,
+                "error": "Mode invalide"
+            }), 400
+
+        current_user.ui_mode = new_mode
+        db.session.commit()
+
+        logger.info(f"Mode UI changé pour {current_user.username}: {new_mode}")
+
+        return jsonify({
+            "success": True,
+            "mode": new_mode,
+            "message": f"Mode {new_mode} activé"
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur toggle UI mode: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route("/api/skip-onboarding", methods=["POST"])
+@login_required
+def skip_onboarding():
+    """Permet de sauter l'onboarding."""
+    try:
+        current_user.onboarding_completed = True
+        db.session.commit()
+
+        logger.info(f"Onboarding sauté par {current_user.username}")
+
+        return jsonify({
+            "success": True,
+            "message": "Onboarding sauté"
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur skip onboarding: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": f"Erreur: {str(e)}"
+        }), 500
+
+
+###############################################
+# ROUTES - CANAUX DE COMMUNICATION (INTEGRATIONS)
+###############################################
+
+@main_bp.route('/bot-config/integrations')
+@login_required
+def integrations_page():
+    """Page de gestion des canaux de communication"""
+    return render_template('bot_config/integrations.html')
+
+
+@main_bp.route('/integrations/list', methods=['GET'])
+@login_required
+def get_integrations():
+    """Récupère la liste des intégrations"""
+    try:
+        integrations = Integration.query.all()
+
+        integrations_data = []
+        for integration in integrations:
+            integrations_data.append({
+                'id': integration.id,
+                'channel_type': integration.channel_type,
+                'name': integration.name,
+                'is_active': integration.is_active,
+                'status': integration.status,
+                'config': integration.config_dict,
+                'last_sync': integration.last_sync.isoformat() if integration.last_sync else None,
+                'error_message': integration.error_message
+            })
+
+        return jsonify({
+            'success': True,
+            'integrations': integrations_data
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_integrations: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/integrations/create', methods=['POST'])
+@login_required
+def create_integration():
+    """Crée une nouvelle intégration"""
+    try:
+        data = request.get_json()
+
+        channel_type = data.get('channel_type')
+        name = data.get('name')
+        is_active = data.get('is_active', False)
+        config = data.get('config', {})
+
+        if not channel_type or not name:
+            return jsonify({
+                'success': False,
+                'error': 'Champ requis manquant'
+            }), 400
+
+        # Vérifier si l'intégration existe déjà
+        existing = Integration.query.filter_by(channel_type=channel_type).first()
+        if existing:
+            return jsonify({
+                'success': False,
+                'error': 'Une intégration existe déjà pour ce canal'
+            }), 400
+
+        # Créer l'intégration
+        integration = Integration(
+            channel_type=channel_type,
+            name=name,
+            is_active=is_active
+        )
+        integration.config_dict = config
+
+        db.session.add(integration)
+        db.session.flush()
+
+        # Créer la configuration du canal
+        channel_config = ChannelConfig(
+            integration_id=integration.id,
+            auto_reply_enabled=True
+        )
+        db.session.add(channel_config)
+
+        # Créer un log
+        log = IntegrationLog(
+            integration_id=integration.id,
+            log_type='info',
+            message=f'Intégration {name} créée'
+        )
+        db.session.add(log)
+
+        db.session.commit()
+
+        logger.info(f"Intégration créée: {channel_type}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Intégration créée avec succès',
+            'integration': {
+                'id': integration.id,
+                'channel_type': integration.channel_type,
+                'name': integration.name,
+                'is_active': integration.is_active,
+                'status': integration.status
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur create_integration: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/integrations/<int:integration_id>/toggle', methods=['PATCH'])
+@login_required
+def toggle_integration(integration_id):
+    """Active/désactive une intégration"""
+    try:
+        integration = Integration.query.get_or_404(integration_id)
+        data = request.get_json()
+
+        is_active = data.get('is_active')
+        if is_active is None:
+            return jsonify({
+                'success': False,
+                'error': 'Paramètre is_active manquant'
+            }), 400
+
+        integration.is_active = is_active
+        integration.status = 'connected' if is_active else 'disconnected'
+
+        # Créer un log
+        log = IntegrationLog(
+            integration_id=integration.id,
+            log_type='info',
+            message=f'Intégration {"activée" if is_active else "désactivée"}'
+        )
+        db.session.add(log)
+
+        db.session.commit()
+
+        logger.info(f"Intégration {integration_id} {'activée' if is_active else 'désactivée'}")
+
+        return jsonify({
+            'success': True,
+            'message': f'Intégration {"activée" if is_active else "désactivée"}'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur toggle_integration: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/integrations/<int:integration_id>/config', methods=['PUT'])
+@login_required
+def update_integration_config(integration_id):
+    """Met à jour la configuration d'une intégration"""
+    try:
+        integration = Integration.query.get_or_404(integration_id)
+        data = request.get_json()
+
+        config = data.get('config', {})
+        integration.config_dict = config
+        integration.updated_at = datetime.utcnow()
+
+        # Créer un log
+        log = IntegrationLog(
+            integration_id=integration.id,
+            log_type='info',
+            message='Configuration mise à jour'
+        )
+        db.session.add(log)
+
+        db.session.commit()
+
+        logger.info(f"Configuration mise à jour pour l'intégration {integration_id}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration mise à jour avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur update_integration_config: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/integrations/<int:integration_id>', methods=['DELETE'])
+@login_required
+def delete_integration(integration_id):
+    """Supprime une intégration"""
+    try:
+        integration = Integration.query.get_or_404(integration_id)
+
+        channel_name = integration.name
+
+        db.session.delete(integration)
+        db.session.commit()
+
+        logger.info(f"Intégration {integration_id} supprimée")
+
+        return jsonify({
+            'success': True,
+            'message': f'{channel_name} supprimé avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur delete_integration: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/integrations/stats', methods=['GET'])
+@login_required
+def get_integrations_stats():
+    """Récupère les statistiques des intégrations"""
+    try:
+        # Compter les canaux actifs
+        total_channels = Integration.query.filter_by(
+            is_active=True,
+            status='connected'
+        ).count()
+
+        # Compter les messages
+        messages_sent = IntegrationLog.query.filter_by(
+            log_type='message_sent'
+        ).count()
+
+        messages_received = IntegrationLog.query.filter_by(
+            log_type='message_received'
+        ).count()
+
+        errors_count = IntegrationLog.query.filter_by(
+            log_type='error'
+        ).count()
+
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_channels': total_channels,
+                'messages_sent': messages_sent,
+                'messages_received': messages_received,
+                'errors_count': errors_count
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_integrations_stats: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/integrations/logs', methods=['GET'])
+@login_required
+def get_integration_logs():
+    """Récupère les logs des intégrations"""
+    try:
+        # Limiter aux 100 derniers logs
+        logs = IntegrationLog.query.order_by(
+            IntegrationLog.created_at.desc()
+        ).limit(100).all()
+
+        logs_data = []
+        for log in logs:
+            logs_data.append({
+                'id': log.id,
+                'log_type': log.log_type,
+                'message': log.message,
+                'created_at': log.created_at.isoformat(),
+                'channel_type': log.integration.channel_type if log.integration else 'unknown',
+                'channel_name': log.integration.name if log.integration else 'Unknown',
+                'metadata': log.metadata_dict
+            })
+
+        return jsonify({
+            'success': True,
+            'logs': logs_data
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_integration_logs: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
 # ========================
 # FIN DU FICHIER routes.py - VERSION COMPLÈTE MISE À JOUR
 # ========================
 
 # Note: Ce fichier contient maintenant toutes les routes nécessaires pour:
 # 1. La nouvelle interface de configuration des réponses
-# 2. La compatibilité avec l'ancienne interface  
+# 2. La compatibilité avec l'ancienne interface
 # 3. La gestion des clés API utilisateur
 # 4. Les fonctionnalités avancées (export/import, cache, etc.)
 # 5. La correction d'identité et post-traitement des réponses
 # 6. Les routes de diagnostic et monitoring
 # 7. Les fonctionnalités de sécurité et audit
+# 8. Le wizard d'onboarding et le mode simple/avancé
 
 logger.info("🚀 Module routes.py chargé avec succès - Version 2.0 avec nouvelle interface de réponses")

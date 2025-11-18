@@ -30,6 +30,7 @@
         <option value="">-- Sélectionnez un provider --</option>
         <option value="openai" {% if current_config.provider == 'openai' %}selected{% endif %}>OpenAI (GPT)</option>
         <option value="mistral" {% if current_config.provider == 'mistral' %}selected{% endif %}>Mistral AI</option>
+        <option value="claude" {% if current_config.provider == 'claude' %}selected{% endif %}>Claude (Anthropic)</option>
     </select>
     
     <!-- Section OpenAI (cachée par défaut) -->
@@ -74,7 +75,29 @@
         
         <button type="button" id="test_mistral" class="test-btn" disabled>Tester la connexion Mistral</button>
     </div>
-    
+
+    <!-- Section Claude (cachée par défaut) -->
+    <div id="claude_section" class="api-section hidden">
+        <h3>Configuration Claude (Anthropic)</h3>
+
+        <label for="claude_key">Clé API Claude :</label>
+        <input type="password" id="claude_key" name="claude_key"
+               placeholder="sk-ant-xxxxxxxxxxxxxxxxx"
+               autocomplete="off">
+        <small style="color: #666;">Votre clé API commence par "sk-ant-"</small>
+
+        <label for="claude_model">Modèle Claude :</label>
+        <select id="claude_model" name="claude_model">
+            <option value="claude-sonnet-4" {% if current_config.claude_model == 'claude-sonnet-4' %}selected{% endif %}>Claude Sonnet 4 (Recommandé)</option>
+            <option value="claude-sonnet-4-5" {% if current_config.claude_model == 'claude-sonnet-4-5' %}selected{% endif %}>Claude Sonnet 4.5 (Meilleur pour le code)</option>
+            <option value="claude-opus-4-1" {% if current_config.claude_model == 'claude-opus-4-1' %}selected{% endif %}>Claude Opus 4.1 (Le plus puissant)</option>
+            <option value="claude-haiku-4-5" {% if current_config.claude_model == 'claude-haiku-4-5' %}selected{% endif %}>Claude Haiku 4.5 (Rapide et économique)</option>
+            <option value="claude-3-7-sonnet" {% if current_config.claude_model == 'claude-3-7-sonnet' %}selected{% endif %}>Claude 3.7 Sonnet (Raisonnement hybride)</option>
+        </select>
+
+        <button type="button" id="test_claude" class="test-btn" disabled>Tester la connexion Claude</button>
+    </div>
+
     <!-- Zone de résultats de test (cachée par défaut) -->
     <div id="test_results" class="test-zone hidden"></div>
     
@@ -83,12 +106,13 @@
 </form>
 
 <!-- Informations d'aide -->
-<div style="max-width: 600px; margin: 2rem auto; padding: 1rem; background-color: #e3f2fd; border-radius: 6px;">
-    <h4 style="color: #1976d2; margin-bottom: 0.5rem;">💡 Informations importantes</h4>
-    <ul style="margin: 0; padding-left: 1.5rem; color: #555;">
+<div class="help-info">
+    <h4>💡 Informations importantes</h4>
+    <ul>
         <li>Vos clés API sont chiffrées et stockées de manière sécurisée</li>
         <li>OpenAI : Créez votre clé sur <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></li>
         <li>Mistral : Créez votre clé sur <a href="https://console.mistral.ai/" target="_blank">console.mistral.ai</a></li>
+        <li>Claude : Créez votre clé sur <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></li>
         <li>Testez toujours votre clé avant de sauvegarder</li>
     </ul>
 </div>

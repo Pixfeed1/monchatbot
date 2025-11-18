@@ -1,9 +1,6 @@
 import os
 from pathlib import Path
 
-# Configuration pour compilation PyTorch - désactivé car plus besoin
-os.environ["TORCH_COMPILE_DEBUG"] = "0"
-
 # Chargement des variables d'environnement
 basedir = Path(__file__).parent
 
@@ -17,12 +14,70 @@ class Config:
     # Désactivation du reloader de Flask
     USE_RELOADER = False
 
-    # Configuration de la base de données
-    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
+    # Configuration de la base de données - PostgreSQL par défaut
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL') or os.getenv('SQLALCHEMY_DATABASE_URI')
+
+    if SQLALCHEMY_DATABASE_URI:
+        # Masquer le mot de passe dans les logs mais montrer les détails
+        if '@' in SQLALCHEMY_DATABASE_URI and '//' in SQLALCHEMY_DATABASE_URI:
+            user_part = SQLALCHEMY_DATABASE_URI.split('//')[1].split('@')[0]
+            host_part = SQLALCHEMY_DATABASE_URI.split('@')[1]
+            if ':' in user_part:
+                user, pwd = user_part.split(':', 1)
+                # Montrer les 3 premiers et 3 derniers caractères du mot de passe
+                masked_pwd = f"{pwd[:3]}...{pwd[-3:]}" if len(pwd) > 6 else "***"
+                print(f"[DEBUG] DATABASE_URL trouvé depuis .env")
+                print(f"[DEBUG]   User: {user}")
+                print(f"[DEBUG]   Password: {masked_pwd} (longueur: {len(pwd)})")
+                print(f"[DEBUG]   Host: {host_part}")
+        else:
+            print(f"[DEBUG] DATABASE_URL trouvé mais format inattendu: {SQLALCHEMY_DATABASE_URI[:20]}...")
+
     if not SQLALCHEMY_DATABASE_URI:
-        db_path = basedir / 'instance' / 'site.db'
-        SQLALCHEMY_DATABASE_URI = f'sqlite:///{db_path}'
+        # Configuration PostgreSQL par défaut
+        POSTGRES_USER = os.getenv('POSTGRES_USER', 'jurojinn_mvaertan')
+        POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'changez_ce_mot_de_passe')
+        POSTGRES_HOST = os.getenv('POSTGRES_HOST', '127.0.0.1')  # Utilisez 127.0.0.1 au lieu de localhost pour éviter IPv6
+        POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+        POSTGRES_DB = os.getenv('POSTGRES_DB', 'jurojinn_leo')
+
+        # Debug: afficher les valeurs lues
+        print(f"[DEBUG] DATABASE_URL non trouvé, construction depuis variables séparées:")
+        print(f"[DEBUG]   POSTGRES_USER: {POSTGRES_USER}")
+        print(f"[DEBUG]   POSTGRES_HOST: {POSTGRES_HOST}")
+        print(f"[DEBUG]   POSTGRES_PORT: {POSTGRES_PORT}")
+        print(f"[DEBUG]   POSTGRES_DB: {POSTGRES_DB}")
+        if POSTGRES_PASSWORD:
+            masked = f"{POSTGRES_PASSWORD[:3]}...{POSTGRES_PASSWORD[-3:]}" if len(POSTGRES_PASSWORD) > 6 else "***"
+            print(f"[DEBUG]   POSTGRES_PASSWORD: {masked} (longueur: {len(POSTGRES_PASSWORD)})")
+        else:
+            print(f"[DEBUG]   POSTGRES_PASSWORD: NON DÉFINI")
+
+        SQLALCHEMY_DATABASE_URI = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
+
+    # Support Heroku DATABASE_URL (commence par postgres:// au lieu de postgresql://)
+    if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
+        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgres://', 'postgresql://', 1)
+        print(f"[DEBUG] URI Heroku corrigée: postgres:// -> postgresql://")
+
+    # Log final: afficher l'URI qui sera utilisée par SQLAlchemy
+    if SQLALCHEMY_DATABASE_URI:
+        if '@' in SQLALCHEMY_DATABASE_URI and '//' in SQLALCHEMY_DATABASE_URI:
+            try:
+                user_part = SQLALCHEMY_DATABASE_URI.split('//')[1].split('@')[0]
+                host_part = SQLALCHEMY_DATABASE_URI.split('@')[1]
+                if ':' in user_part:
+                    user, pwd = user_part.split(':', 1)
+                    masked_pwd = f"{pwd[:3]}...{pwd[-3:]}" if len(pwd) > 6 else "***"
+                    print(f"[DEBUG] URI finale SQLAlchemy: postgresql://{user}:{masked_pwd}@{host_part}")
+            except Exception as e:
+                print(f"[DEBUG] Erreur lors de l'affichage de l'URI: {e}")
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,  # Vérifie les connexions avant utilisation
+        'pool_recycle': 300,    # Recycle les connexions après 5 minutes
+    }
 
     # ===== CONFIGURATION MODE CLÉS UTILISATEUR =====
     
@@ -38,11 +93,13 @@ class Config:
     # Les APIs sont disponibles mais les clés sont fournies par l'utilisateur
     USE_GPT = True  # Interface disponible pour OpenAI
     USE_MISTRAL_API = True  # Interface disponible pour Mistral
+    USE_CLAUDE = True  # Interface disponible pour Claude (Anthropic)
     
     # Clés API serveur (SUPPRIMÉES - maintenant gérées par utilisateur)
     # Les clés sont maintenant stockées chiffrées en base pour chaque utilisateur
     OPENAI_API_KEY = ""  # Vide - géré par utilisateur
     MISTRAL_API_KEY = ""  # Vide - géré par utilisateur
+    CLAUDE_API_KEY = ""  # Vide - géré par utilisateur
     
     # ===== CHIFFREMENT DES CLÉS UTILISATEUR =====
     
@@ -55,10 +112,10 @@ class Config:
         try:
             from cryptography.fernet import Fernet
             ENCRYPTION_KEY = Fernet.generate_key()
-            print("⚠️  ATTENTION : Clé de chiffrement temporaire générée!")
-            print("   Définissez ENCRYPTION_KEY dans vos variables d'environnement pour la production")
+            print("[WARN] ATTENTION : Clé de chiffrement temporaire générée!")
+            print("       Définissez ENCRYPTION_KEY dans vos variables d'environnement pour la production")
         except ImportError:
-            print("❌ Module cryptography manquant. Installez-le : pip install cryptography")
+            print("[ERROR] Module cryptography manquant. Installez-le : pip install cryptography")
             ENCRYPTION_KEY = None
     
     # ===== MODÈLES SUPPORTÉS =====
@@ -78,13 +135,21 @@ class Config:
             'mistral-large': 'Mistral Large (Plus intelligent)',
             'open-mistral-7b': 'Open Mistral 7B',
             'open-mixtral-8x7b': 'Open Mixtral 8x7B'
+        },
+        'claude': {
+            'claude-sonnet-4-5': 'Claude Sonnet 4.5 (Meilleur pour le code)',
+            'claude-opus-4-1': 'Claude Opus 4.1 (Le plus puissant)',
+            'claude-sonnet-4': 'Claude Sonnet 4 (Équilibré)',
+            'claude-haiku-4-5': 'Claude Haiku 4.5 (Rapide et économique)',
+            'claude-3-7-sonnet': 'Claude 3.7 Sonnet (Raisonnement hybride)'
         }
     }
     
     # Modèles par défaut recommandés
     DEFAULT_MODELS = {
         'openai': 'gpt-3.5-turbo',
-        'mistral': 'mistral-small'
+        'mistral': 'mistral-small',
+        'claude': 'claude-sonnet-4'
     }
     
     # Provider par défaut (pour suggestions)
@@ -205,8 +270,8 @@ class Config:
     def init_app(cls, app):
         """Initialisation pour version clés utilisateur"""
         
-        print("🔧 Initialisation de l'application - Mode Clés Utilisateur")
-        
+        print("[INIT] Initialisation de l'application - Mode Clés Utilisateur")
+
         # Création des dossiers essentiels
         paths = [
             app.instance_path,
@@ -214,10 +279,10 @@ class Config:
             Path(app.root_path) / 'static' / 'uploads',
             Path(app.root_path) / 'logs'
         ]
-        
+
         for path in paths:
             Path(path).mkdir(parents=True, exist_ok=True)
-            print(f"✅ Dossier créé/vérifié: {path}")
+            print(f"[OK] Dossier créé/vérifié: {path}")
         
         # Validation de la configuration
         cls._validate_config()
@@ -247,10 +312,10 @@ class Config:
             "MAX_API_REQUESTS_PER_MINUTE": cls.MAX_API_REQUESTS_PER_MINUTE
         })
         
-        print("🚀 Application configurée en mode Clés Utilisateur")
-        print(f"   📊 Providers disponibles: OpenAI, Mistral")
-        print(f"   🔐 Chiffrement activé: {bool(cls.ENCRYPTION_KEY)}")
-        print(f"   🎯 Provider par défaut: {cls.DEFAULT_PROVIDER}")
+        print("[START] Application configurée en mode Clés Utilisateur")
+        print(f"        [*] Providers disponibles: OpenAI, Mistral, Claude")
+        print(f"        [*] Chiffrement activé: {bool(cls.ENCRYPTION_KEY)}")
+        print(f"        [*] Provider par défaut: {cls.DEFAULT_PROVIDER}")
     
     @classmethod
     def _validate_config(cls):
@@ -277,17 +342,17 @@ class Config:
         
         # Affichage des résultats
         if errors:
-            print("❌ ERREURS DE CONFIGURATION:")
+            print("[ERROR] ERREURS DE CONFIGURATION:")
             for error in errors:
-                print(f"   - {error}")
-        
+                print(f"        - {error}")
+
         if warnings:
-            print("⚠️  AVERTISSEMENTS:")
+            print("[WARN] AVERTISSEMENTS:")
             for warning in warnings:
-                print(f"   - {warning}")
-        
+                print(f"       - {warning}")
+
         if not errors and not warnings:
-            print("✅ Configuration validée sans problème")
+            print("[OK] Configuration validée sans problème")
     
     @classmethod
     def get_model_info(cls, provider: str, model: str) -> dict:
@@ -346,10 +411,10 @@ class Config:
     def is_api_available(cls, provider: str) -> bool:
         """
         Vérifie si un provider API est disponible.
-        
+
         Args:
             provider (str): Nom du provider
-            
+
         Returns:
             bool: True si disponible
         """
@@ -357,6 +422,8 @@ class Config:
             return cls.USE_GPT
         elif provider == 'mistral':
             return cls.USE_MISTRAL_API
+        elif provider == 'claude':
+            return cls.USE_CLAUDE
         else:
             return False
 

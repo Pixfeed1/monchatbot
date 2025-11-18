@@ -12,7 +12,8 @@ class ResponsesWizard {
         this.customResponses = [];
         this.vocabularyTerms = [];
         this.errorMessages = [];
-        
+        this.eventListeners = [];  // Pour suivre les event listeners
+
         this.init();
     }
 
@@ -30,6 +31,9 @@ class ResponsesWizard {
         this.initializeTemplates();
         this.setupAutoSave();
         this.updateSaveStatus('saved');
+
+        // Afficher le modal d'onboarding si première visite
+        this.checkAndShowOnboarding();
     }
 
     /**
@@ -77,6 +81,9 @@ class ResponsesWizard {
 
         // Actions globales
         this.setupGlobalActions();
+
+        // Exemples rapides
+        this.setupQuickExamples();
 
         // Prévention de la perte de données
         this.setupUnloadProtection();
@@ -256,7 +263,7 @@ class ResponsesWizard {
             
         } catch (error) {
             responseElement.textContent = 'Erreur lors du test';
-            console.error('Erreur test rapide:', error);
+            this.showNotification('Erreur lors du test rapide', 'error');
         }
     }
 
@@ -807,11 +814,10 @@ class ResponsesWizard {
                 this.showNotification('Configuration sauvegardée avec succès !', 'success');
             }
         } catch (error) {
-            console.error('Erreur lors de la sauvegarde:', error);
             this.updateSaveStatus('error');
-            
+
             if (!silent) {
-                this.showNotification('Erreur lors de la sauvegarde', 'error');
+                this.showNotification(`Erreur lors de la sauvegarde: ${error.message}`, 'error');
             }
         }
     }
@@ -927,8 +933,8 @@ class ResponsesWizard {
      */
     async sendConfigurationToServer(configuration) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        
-        const response = await fetch('/api/responses/configuration', {
+
+        const response = await fetch('/responses/api/configuration', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -968,8 +974,7 @@ class ResponsesWizard {
             
             this.showNotification('Configuration réinitialisée', 'info');
         } catch (error) {
-            console.error('Erreur lors de la réinitialisation:', error);
-            this.showNotification('Erreur lors de la réinitialisation', 'error');
+            this.showNotification(`Erreur lors de la réinitialisation: ${error.message}`, 'error');
         }
     }
 
@@ -1028,17 +1033,195 @@ class ResponsesWizard {
     }
 
     /**
+     * Configuration des exemples rapides
+     */
+    setupQuickExamples() {
+        document.querySelectorAll('.example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const exampleType = btn.dataset.example;
+                this.loadExample(exampleType);
+            });
+        });
+    }
+
+    /**
+     * Vérification et affichage du modal d'onboarding (première visite)
+     */
+    checkAndShowOnboarding() {
+        // Vérifier si c'est la première visite
+        const hasSeenOnboarding = localStorage.getItem('responses_onboarding_seen');
+
+        if (!hasSeenOnboarding) {
+            // Attendre un petit délai pour que la page soit bien chargée
+            setTimeout(() => {
+                this.showOnboardingModal();
+            }, 500);
+        }
+    }
+
+    /**
+     * Affichage du modal d'onboarding
+     */
+    showOnboardingModal() {
+        const modal = document.getElementById('onboardingModal');
+        if (!modal) return;
+
+        modal.style.display = 'flex';
+
+        // Écouteurs pour fermer le modal
+        const closeBtn = document.getElementById('onboardingClose');
+        const startBtn = document.getElementById('startButton');
+        const dontShowAgain = document.getElementById('dontShowAgain');
+
+        const closeModal = () => {
+            // Vérifier si l'utilisateur ne veut plus voir le message
+            if (dontShowAgain && dontShowAgain.checked) {
+                localStorage.setItem('responses_onboarding_seen', 'true');
+            }
+
+            modal.style.display = 'none';
+        };
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeModal);
+        }
+
+        if (startBtn) {
+            startBtn.addEventListener('click', () => {
+                // Marquer comme vu
+                localStorage.setItem('responses_onboarding_seen', 'true');
+                closeModal();
+                // Optionnel : faire défiler jusqu'aux exemples
+                const examples = document.querySelector('.quick-examples');
+                if (examples) {
+                    examples.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        }
+
+        // Fermer en cliquant en dehors du modal
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    }
+
+    /**
+     * Chargement d'un exemple pré-configuré
+     */
+    async loadExample(exampleType) {
+        const examples = {
+            professional: {
+                welcomeMessage: 'Bonjour, bienvenue sur notre plateforme. Comment puis-je vous assister aujourd\'hui ?',
+                essentialTemplates: {
+                    greeting: { active: true, style: 'formal' },
+                    goodbye: { active: true, style: 'polite' },
+                    thanks: { active: true, style: 'professional' },
+                    unclear: { active: true, style: 'helpful' }
+                },
+                customResponses: [
+                    {
+                        keywords: ['horaires', 'heures', 'ouverture'],
+                        content: 'Nous sommes ouverts du lundi au vendredi de 9h à 18h. Nos équipes restent à votre disposition pendant ces horaires.'
+                    },
+                    {
+                        keywords: ['contact', 'joindre', 'téléphone'],
+                        content: 'Vous pouvez nous joindre au 01 23 45 67 89 ou par email à contact@entreprise.fr'
+                    }
+                ],
+                vocabulary: [
+                    { term: 'Devis', definition: 'Estimation détaillée de nos services' },
+                    { term: 'Consultation', definition: 'Rendez-vous pour étudier votre projet' }
+                ]
+            },
+            friendly: {
+                welcomeMessage: 'Salut ! 😊 Super content de te voir ici ! Comment puis-je t\'aider ?',
+                essentialTemplates: {
+                    greeting: { active: true, style: 'friendly' },
+                    goodbye: { active: true, style: 'casual' },
+                    thanks: { active: true, style: 'warm' },
+                    unclear: { active: true, style: 'guiding' }
+                },
+                customResponses: [
+                    {
+                        keywords: ['horaires', 'heures', 'quand'],
+                        content: 'On est là tous les jours de 10h à 20h ! N\'hésite pas à passer nous voir 😉'
+                    },
+                    {
+                        keywords: ['prix', 'tarif', 'coût'],
+                        content: 'Les prix varient selon tes besoins. Je peux t\'en dire plus si tu veux ! 🎯'
+                    }
+                ],
+                vocabulary: [
+                    { term: 'RDV', definition: 'Rendez-vous pour discuter tranquillement' },
+                    { term: 'Conseil', definition: 'On t\'aide à trouver ce qui te convient le mieux' }
+                ]
+            },
+            support: {
+                welcomeMessage: 'Bonjour ! Je suis votre assistant virtuel. Je suis là pour répondre à toutes vos questions. Comment puis-je vous aider ?',
+                essentialTemplates: {
+                    greeting: { active: true, style: 'helpful' },
+                    goodbye: { active: true, style: 'supportive' },
+                    thanks: { active: true, style: 'professional' },
+                    unclear: { active: true, style: 'patient' }
+                },
+                customResponses: [
+                    {
+                        keywords: ['problème', 'bug', 'erreur', 'ne fonctionne pas'],
+                        content: 'Je comprends votre problème. Pouvez-vous me donner plus de détails pour que je puisse vous aider efficacement ?'
+                    },
+                    {
+                        keywords: ['mot de passe', 'connexion', 'login'],
+                        content: 'Pour réinitialiser votre mot de passe, cliquez sur "Mot de passe oublié" sur la page de connexion. Vous recevrez un email avec les instructions.'
+                    },
+                    {
+                        keywords: ['urgent', 'rapide', 'vite'],
+                        content: 'Je comprends l\'urgence. Je fais mon maximum pour vous aider rapidement. Pouvez-vous me préciser votre demande ?'
+                    }
+                ],
+                vocabulary: [
+                    { term: 'Ticket', definition: 'Demande d\'assistance enregistrée dans notre système' },
+                    { term: 'Délai', definition: 'Temps de réponse habituel: 24h en semaine' }
+                ]
+            }
+        };
+
+        const example = examples[exampleType];
+        if (!example) return;
+
+        const confirmed = await this.showConfirmDialog(
+            `Charger l'exemple "${exampleType === 'professional' ? 'Professionnel' : exampleType === 'friendly' ? 'Amical' : 'Service Client'}" ?`,
+            'Ceci va remplacer votre configuration actuelle. Assurez-vous de l\'avoir sauvegardée si nécessaire.'
+        );
+
+        if (!confirmed) return;
+
+        // Appliquer l'exemple
+        this.applyConfiguration(example);
+        this.customResponses = example.customResponses || [];
+        this.vocabularyTerms = example.vocabulary || [];
+
+        // Rafraîchir l'affichage
+        this.renderCustomResponses();
+        this.renderVocabulary();
+
+        this.markAsChanged();
+        this.showNotification(`Exemple "${exampleType === 'professional' ? 'Professionnel' : exampleType === 'friendly' ? 'Amical' : 'Service Client'}" chargé !`, 'success');
+    }
+
+    /**
      * Chargement des données existantes
      */
     async loadExistingData() {
         try {
-            const response = await fetch('/api/responses/configuration');
+            const response = await fetch('/responses/api/configuration');
             if (response.ok) {
                 const data = await response.json();
                 this.applyConfiguration(data);
             }
         } catch (error) {
-            console.error('Erreur lors du chargement des données:', error);
+            this.showNotification('Erreur lors du chargement des données', 'error');
         }
     }
 
@@ -1229,6 +1412,29 @@ class ResponsesWizard {
             closeBtn.addEventListener('click', handleCancel);
         });
     }
+
+    /**
+     * Nettoyage des ressources et event listeners
+     * Appelé avant de quitter la page pour éviter les fuites mémoire
+     */
+    destroy() {
+        // Arrêter l'auto-save
+        if (this.autoSaveTimeout) {
+            clearTimeout(this.autoSaveTimeout);
+            this.autoSaveTimeout = null;
+        }
+
+        // Nettoyer les données
+        this.templates.clear();
+        this.customResponses = [];
+        this.vocabularyTerms = [];
+        this.errorMessages = [];
+
+        // Note: Nettoyage complet des event listeners nécessiterait une refonte
+        // de tous les addEventListener pour stocker les références.
+        // Pour l'instant, les listeners seront nettoyés par le navigateur
+        // lors du rechargement de la page.
+    }
 }
 
 /**
@@ -1377,6 +1583,18 @@ if (!document.getElementById('notification-styles')) {
 document.addEventListener('DOMContentLoaded', () => {
     if (document.querySelector('.responses-container')) {
         window.responsesWizard = new ResponsesWizard();
+    }
+});
+
+// Nettoyage avant de quitter la page
+window.addEventListener('beforeunload', (e) => {
+    if (window.responsesWizard) {
+        // Sauvegarder silencieusement si des changements sont en attente
+        if (window.responsesWizard.unsavedChanges) {
+            window.responsesWizard.saveAllConfiguration(true);
+        }
+        // Nettoyer les ressources
+        window.responsesWizard.destroy();
     }
 });
 

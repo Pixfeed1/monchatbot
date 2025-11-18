@@ -3,10 +3,10 @@
 .settings {
   max-width: 600px;
   margin: 0 auto;
-  padding: 2rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
 }
 
 .settings label {
@@ -69,7 +69,7 @@
   padding: 1.5rem;
   border: 1px solid #e0e0e0;
   border-radius: 6px;
-  background-color: #fff;
+  background-color: transparent;
 }
 
 .api-section h3 {
@@ -139,17 +139,38 @@
   border: 2px solid #1976d2;
 }
 
+/* Section d'aide */
+.help-info {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
+}
+
+.help-info h4 {
+  color: #1976d2;
+  margin-bottom: 0.5rem;
+}
+
+.help-info ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #555;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .settings {
     margin: 0 10px;
     padding: 1rem;
   }
-  
+
   .api-section {
     padding: 1rem;
   }
-  
+
   .settings button {
     width: 100%;
     margin-right: 0;

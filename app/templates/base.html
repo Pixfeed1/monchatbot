@@ -2,13 +2,10 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}MonChatbot{% endblock %}</title>
+    <title>{% block title %}LeoBot{% endblock %}</title>
 
     <!-- Lien vers le favicon dans app/static/images -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-
-    <!-- Lien vers Font Awesome pour les icônes (chevrons, etc.) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <!-- Feuilles de style (ex. base.css) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
@@ -31,15 +28,46 @@
         <!-- Titre cliquable renvoyant sur index -->
         <h1 class="header-title">
             <a href="{{ url_for('main.home') }}" class="header-link">
-                MonChatbot
+                LeoBot
             </a>
         </h1>
 
         <!-- Icônes à droite (ex. notifications, profil, paramètres) -->
         <div class="icons">
-            <i class="fas fa-bell"></i>
-            <i class="fas fa-user-circle"></i>
-            <i class="fas fa-cog"></i>
+            <div class="notification-wrapper">
+                <i data-lucide="bell" id="notificationBell" title="Notifications"></i>
+                {% if current_user.is_authenticated and current_user.onboarding_completed == False %}
+                <span class="notification-badge" id="notificationBadge">1</span>
+                {% else %}
+                <span class="notification-badge" id="notificationBadge" style="display: none;"></span>
+                {% endif %}
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <span>Notifications</span>
+                    </div>
+                    <div class="notification-list">
+                        {% if current_user.is_authenticated and current_user.onboarding_completed == False %}
+                        <a href="{{ url_for('main.onboarding_wizard') }}" class="notification-item">
+                            <i data-lucide="wand-2" class="notification-icon"></i>
+                            <div class="notification-content">
+                                <div class="notification-title">Complétez votre configuration</div>
+                                <div class="notification-text">Terminez l'assistant de configuration pour profiter pleinement de votre bot</div>
+                            </div>
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('main.reopen_wizard') }}" class="notification-item">
+                            <i data-lucide="wand-2" class="notification-icon"></i>
+                            <div class="notification-content">
+                                <div class="notification-title">Assistant de configuration</div>
+                                <div class="notification-text">Relancez l'assistant pour reconfigurer votre bot</div>
+                            </div>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <i data-lucide="user-circle" title="Profil"></i>
+            <i data-lucide="settings" title="Paramètres"></i>
         </div>
     </header>
 
@@ -48,14 +76,14 @@
         <div class="sidebar" id="sidebar">
             <div class="menu-container">
                 <ul class="menu">
-                    <!-- Exemple : sous-menu MonChatbot -->
-                    <li class="has-submenu" id="monChatbotMenu">
+                    <!-- Exemple : sous-menu LeoBot -->
+                    <li class="has-submenu" id="leoBotMenu">
                         <a href="#" aria-expanded="false">
                             <!-- Icône robot -->
-                            <i class="fas fa-robot"></i>
-                            <span class="menu-text">MonChatbot</span>
+                            <i data-lucide="bot"></i>
+                            <span class="menu-text">LeoBot</span>
                             <!-- Chevron droit par défaut -->
-                            <i class="fas fa-chevron-right submenu-icon"></i>
+                            <i data-lucide="chevron-right" class="submenu-icon"></i>
                         </a>
                         <div class="submenu-container">
                             <ul class="submenu">
@@ -68,7 +96,7 @@
                                 <li class="has-submenu">
                                     <a href="#" aria-expanded="false">
                                         Contenu
-                                        <i class="fas fa-chevron-right submenu-icon"></i>
+                                        <i data-lucide="chevron-right" class="submenu-icon"></i>
                                     </a>
                                     <div class="submenu-container">
                                         <ul class="submenu">
@@ -92,13 +120,18 @@
                                                     Actions et Automatisations
                                                 </a>
                                             </li>
+                                            <li>
+                                                <a href="{{ url_for('main.integrations_page') }}">
+                                                    Canaux de Communication
+                                                </a>
+                                            </li>
                                         </ul>
                                     </div>
                                 </li>
                                 <li class="has-submenu">
                                     <a href="#" aria-expanded="false">
                                         Suivi et analyses
-                                        <i class="fas fa-chevron-right submenu-icon"></i>
+                                        <i data-lucide="chevron-right" class="submenu-icon"></i>
                                     </a>
                                     <div class="submenu-container">
                                         <ul class="submenu">
@@ -111,12 +144,25 @@
                         </div>
                     </li>
 
+                    <!-- Toggle Mode Simple/Avancé -->
+                    <li class="mode-toggle-item">
+                        <div class="mode-toggle-container">
+                            <div class="mode-status">
+                                <span class="mode-label">Mode Simple</span>
+                                <small class="mode-hint">Fonctions essentielles</small>
+                            </div>
+                            <button class="mode-toggle-btn" onclick="toggleUIMode()" title="Passer en mode avancé">
+                                <i data-lucide="rocket"></i>
+                            </button>
+                        </div>
+                    </li>
+
                     <!-- Exemple : Configuration -->
-                    <li class="has-submenu" id="configurationMenu">
+                    <li class="has-submenu advanced-only" id="configurationMenu" style="display: none;">
                         <a href="#" aria-expanded="false">
-                            <i class="fas fa-cogs"></i>
+                            <i data-lucide="settings"></i>
                             <span class="menu-text">Configuration</span>
-                            <i class="fas fa-chevron-right submenu-icon"></i>
+                            <i data-lucide="chevron-right" class="submenu-icon"></i>
                         </a>
                         <div class="submenu-container">
                             <ul class="submenu">
@@ -124,14 +170,14 @@
                                 <li class="has-submenu">
                                     <a href="#" aria-expanded="false">
                                         Intégration
-                                        <i class="fas fa-chevron-right submenu-icon"></i>
+                                        <i data-lucide="chevron-right" class="submenu-icon"></i>
                                     </a>
                                     <div class="submenu-container">
                                         <ul class="submenu">
                                             <li class="has-submenu">
                                                 <a href="#" aria-expanded="false">
                                                     Email
-                                                    <i class="fas fa-chevron-right submenu-icon"></i>
+                                                    <i data-lucide="chevron-right" class="submenu-icon"></i>
                                                 </a>
                                                 <div class="submenu-container">
                                                     <ul class="submenu">
@@ -143,7 +189,7 @@
                                             <li class="has-submenu">
                                                 <a href="#" aria-expanded="false">
                                                     SMS
-                                                    <i class="fas fa-chevron-right submenu-icon"></i>
+                                                    <i data-lucide="chevron-right" class="submenu-icon"></i>
                                                 </a>
                                                 <div class="submenu-container">
                                                     <ul class="submenu">
@@ -158,7 +204,7 @@
                                 <li class="has-submenu">
                                     <a href="#" aria-expanded="false">
                                         Gestion des comptes
-                                        <i class="fas fa-chevron-right submenu-icon"></i>
+                                        <i data-lucide="chevron-right" class="submenu-icon"></i>
                                     </a>
                                     <div class="submenu-container">
                                         <ul class="submenu">
@@ -173,11 +219,11 @@
                     </li>
 
                     <!-- Exemple : Canaux de Communication -->
-                    <li class="has-submenu" id="communicationMenu">
+                    <li class="has-submenu advanced-only" id="communicationMenu" style="display: none;">
                         <a href="#" aria-expanded="false">
-                            <i class="fas fa-comments"></i>
+                            <i data-lucide="messages-square"></i>
                             <span class="menu-text">Canaux de Communication</span>
-                            <i class="fas fa-chevron-right submenu-icon"></i>
+                            <i data-lucide="chevron-right" class="submenu-icon"></i>
                         </a>
                         <div class="submenu-container">
                             <ul class="submenu">
@@ -189,11 +235,11 @@
                     </li>
 
                     <!-- Exemple : Recommandations -->
-                    <li class="has-submenu" id="recommendationMenu">
+                    <li class="has-submenu advanced-only" id="recommendationMenu" style="display: none;">
                         <a href="#" aria-expanded="false">
-                            <i class="fas fa-star"></i>
+                            <i data-lucide="star"></i>
                             <span class="menu-text">Recommandations</span>
-                            <i class="fas fa-chevron-right submenu-icon"></i>
+                            <i data-lucide="chevron-right" class="submenu-icon"></i>
                         </a>
                         <div class="submenu-container">
                             <ul class="submenu">
@@ -207,7 +253,7 @@
 
             <!-- Lien de déconnexion mis à jour -->
             <a href="{{ url_for('main.logout') }}" class="logout-link">
-                <i class="fas fa-sign-out-alt"></i>
+                <i data-lucide="log-out"></i>
                 <span class="menu-text">Déconnexion</span>
             </a>
         </div>
@@ -232,11 +278,18 @@
     <!-- Footer commun -->
     <footer class="footer">
         <p>
-            MonChatbot @ 2025. Tous droits réservés. 
-            Propulsé par 
+            LeoBot @ 2025. Tous droits réservés.
+            Propulsé par
             <a href="https://pixfeed.net/" target="_blank">Pixfeed</a>
         </p>
     </footer>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // Initialiser les icônes Lucide
+        lucide.createIcons();
+    </script>
 
     <!-- Script JS commun (pour le hamburger, la sidebar, etc.) -->
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>

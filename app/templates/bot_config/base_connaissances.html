@@ -3,65 +3,37 @@
 {% block title %}Base de Connaissances{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/base_connaissances.css') }}">
 {% endblock %}
 
 {% block content %}
 <div class="knowledge-container">
-    <!-- En-tête avec assistant -->
-    <div class="knowledge-header">
-        <h1><i class="fas fa-brain"></i> Base de Connaissances</h1>
-        <p class="subtitle">Importez des documents et configurez des règles avancées pour enrichir votre bot</p>
-        
-        <!-- Indicateur de progression -->
-        <div class="progress-indicator">
-            <div class="progress-step active" data-step="1">
-                <span class="step-number">1</span>
-                <span class="step-label">Documents</span>
-            </div>
-            <div class="progress-step" data-step="2">
-                <span class="step-number">2</span>
-                <span class="step-label">Règles avancées</span>
-            </div>
+    <!-- Bannière -->
+    <div class="banner">
+        <div class="banner-content">
+            <h1>Base de Connaissances</h1>
+            <p>Enrichissez votre bot avec vos documents et règles métier</p>
         </div>
     </div>
 
     <!-- État de traitement -->
     <div class="save-status" id="processingStatus">
         <div class="status-indicator">
-            <i class="fas fa-check-circle"></i>
+            <i data-lucide="check-circle"></i>
             <span>Tous les documents sont traités</span>
         </div>
     </div>
 
-    <!-- Navigation simplifiée -->
-    <div class="wizard-navigation">
-        <button class="nav-btn active" data-section="documents">
-            <i class="fas fa-file-alt"></i>
-            <span>Documents</span>
-            <small>Importez vos fichiers</small>
-        </button>
-        <button class="nav-btn" data-section="rules">
-            <i class="fas fa-cogs"></i>
-            <span>Règles Avancées</span>
-            <small>Logique complexe</small>
-        </button>
-    </div>
+    <!-- Upload de Documents -->
+    <section class="config-section">
+        <h2 class="section-title">
+            <i data-lucide="upload"></i>
+            Importer des Documents
+        </h2>
 
-    <!-- Section Documents -->
-    <div class="wizard-section active" id="documents">
-        <div class="section-header">
-            <h2>Gestion des Documents</h2>
-            <p>Importez des fichiers PDF, Word, Excel pour enrichir les connaissances de votre bot</p>
-        </div>
-
-        <!-- Zone d'upload moderne -->
-        <div class="upload-section">
+        <div class="upload-card">
             <div class="upload-zone" id="uploadZone">
-                <div class="upload-icon">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                </div>
+                <i data-lucide="cloud-upload"></i>
                 <h3>Glissez-déposez vos fichiers ici</h3>
                 <p>ou cliquez pour sélectionner</p>
                 <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt,.xlsx,.xls">
@@ -72,186 +44,156 @@
                     <span class="format-tag">Text</span>
                 </div>
             </div>
-            
-            <!-- Progression d'upload -->
+
             <div class="upload-progress" id="uploadProgress" style="display: none;">
                 <div class="progress-bar">
                     <div class="progress-fill"></div>
                 </div>
                 <span class="progress-text">Téléchargement en cours...</span>
             </div>
-        </div>
 
-        <!-- Assistant de catégorisation -->
-        <div class="creation-assistant">
-            <div class="assistant-header">
-                <i class="fas fa-magic"></i>
-                <h3>Assistant de Catégorisation</h3>
-            </div>
-            <div class="assistant-content">
-                <p>Organisez vos documents par catégories pour une meilleure recherche</p>
-                <div class="scenarios-grid">
-                    <button class="scenario-btn" data-category="general">
-                        <i class="fas fa-folder"></i>
+            <!-- Catégorisation rapide -->
+            <div class="categories-section">
+                <label>Catégorie :</label>
+                <div class="category-buttons">
+                    <button class="category-btn selected" data-category="general">
+                        <i data-lucide="folder"></i>
                         <span>Général</span>
                     </button>
-                    <button class="scenario-btn" data-category="produits">
-                        <i class="fas fa-box"></i>
-                        <span>Produits/Services</span>
+                    <button class="category-btn" data-category="produits">
+                        <i data-lucide="package"></i>
+                        <span>Produits</span>
                     </button>
-                    <button class="scenario-btn" data-category="procedures">
-                        <i class="fas fa-list-ol"></i>
+                    <button class="category-btn" data-category="procedures">
+                        <i data-lucide="list-ordered"></i>
                         <span>Procédures</span>
                     </button>
-                    <button class="scenario-btn" data-category="support">
-                        <i class="fas fa-life-ring"></i>
+                    <button class="category-btn" data-category="support">
+                        <i data-lucide="life-buoy"></i>
                         <span>Support</span>
                     </button>
-                    <button class="scenario-btn" data-category="legal">
-                        <i class="fas fa-gavel"></i>
-                        <span>Légal</span>
-                    </button>
-                    <button class="scenario-btn" data-category="custom">
-                        <i class="fas fa-plus"></i>
-                        <span>Personnalisé</span>
-                    </button>
-                </div>
-                
-                <!-- Formulaire de nouvelle catégorie -->
-                <div class="guided-form" id="newCategoryForm" style="display: none;">
-                    <div class="form-step">
-                        <label>Nom de la catégorie</label>
-                        <input type="text" id="categoryName" placeholder="Ex: Documentation technique">
-                    </div>
-                    <div class="form-step">
-                        <label>Description (optionnel)</label>
-                        <input type="text" id="categoryDescription" placeholder="Description de la catégorie">
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn-secondary" id="cancelCategory">Annuler</button>
-                        <button class="btn-primary" id="saveCategory">Créer</button>
-                    </div>
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- Liste des documents -->
-        <div class="custom-responses">
-            <h3>Documents Importés</h3>
-            <div class="list-actions" style="margin-bottom: 1rem;">
+    <!-- Documents Importés -->
+    <section class="config-section">
+        <div class="section-header-with-actions">
+            <h2 class="section-title">
+                <i data-lucide="file-text"></i>
+                Documents Importés
+            </h2>
+            <div class="header-actions">
                 <button class="btn-secondary" id="refreshDocs">
-                    <i class="fas fa-sync-alt"></i>
+                    <i data-lucide="refresh-cw"></i>
                     Actualiser
                 </button>
                 <button class="btn-secondary" id="exportDocs">
-                    <i class="fas fa-download"></i>
+                    <i data-lucide="download"></i>
                     Exporter
                 </button>
             </div>
-            
-            <div class="responses-list" id="documentsGrid">
-                <!-- Les documents seront chargés dynamiquement -->
-                <div class="empty-state">
-                    <i class="fas fa-file-plus"></i>
-                    <p>Aucun document importé</p>
-                    <small>Commencez par importer vos premiers fichiers ci-dessus</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Section Règles Avancées -->
-    <div class="wizard-section" id="rules">
-        <div class="section-header">
-            <h2>Règles Avancées</h2>
-            <p>Configurez la logique complexe de traitement des questions</p>
         </div>
 
-        <!-- Types de règles -->
-        <div class="templates-grid">
-            <div class="template-card" data-type="conditional">
-                <div class="template-header">
-                    <i class="fas fa-code-branch template-icon"></i>
-                    <h3>Règles Conditionnelles</h3>
-                    <button class="toggle-template active">
-                        <i class="fas fa-toggle-on"></i>
-                    </button>
+        <div class="documents-grid" id="documentsGrid">
+            <div class="empty-state">
+                <i data-lucide="file-plus"></i>
+                <p>Aucun document importé</p>
+                <small>Commencez par importer vos premiers fichiers ci-dessus</small>
+            </div>
+        </div>
+    </section>
+
+    <!-- Règles Avancées -->
+    <section class="config-section">
+        <h2 class="section-title">
+            <i data-lucide="settings"></i>
+            Règles Avancées
+        </h2>
+
+        <!-- Formulaire simple création règle -->
+        <div class="quick-rule-form">
+            <h3>Créer une règle simple</h3>
+            <div class="quick-form-row">
+                <div class="form-group">
+                    <label>Nom de la règle</label>
+                    <input type="text" id="quickRuleName" placeholder="Ex: Redirection support technique">
                 </div>
-                <div class="template-content">
-                    <div class="quick-setup">
-                        <p><strong>Utilisation:</strong> Si... alors... sinon...</p>
-                        <button class="btn-primary" onclick="knowledgeManager.showRuleEditor('conditional')">
-                            Créer une règle
-                        </button>
-                    </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="quickRuleType">
+                        <option value="conditional">Conditionnelle</option>
+                        <option value="context">Contextuelle</option>
+                        <option value="priority">Priorité</option>
+                    </select>
                 </div>
             </div>
-            
-            <div class="template-card" data-type="context">
-                <div class="template-header">
-                    <i class="fas fa-comments template-icon"></i>
-                    <h3>Règles Contextuelles</h3>
-                    <button class="toggle-template active">
-                        <i class="fas fa-toggle-on"></i>
-                    </button>
+            <div class="quick-form-row">
+                <div class="form-group">
+                    <label>Si le message contient</label>
+                    <input type="text" id="quickRuleCondition" placeholder="Ex: bug, erreur, problème">
                 </div>
-                <div class="template-content">
-                    <div class="quick-setup">
-                        <p><strong>Utilisation:</strong> Basées sur l'historique de conversation</p>
-                        <button class="btn-primary" onclick="knowledgeManager.showRuleEditor('context')">
-                            Créer une règle
-                        </button>
-                    </div>
+                <div class="form-group">
+                    <label>Alors répondre</label>
+                    <input type="text" id="quickRuleAction" placeholder="Ex: Je vous transfère au support">
                 </div>
             </div>
-            
-            <div class="template-card" data-type="priority">
-                <div class="template-header">
-                    <i class="fas fa-sort-numeric-up template-icon"></i>
-                    <h3>Règles de Priorité</h3>
-                    <button class="toggle-template active">
-                        <i class="fas fa-toggle-on"></i>
-                    </button>
-                </div>
-                <div class="template-content">
-                    <div class="quick-setup">
-                        <p><strong>Utilisation:</strong> Ordre de traitement des réponses</p>
-                        <button class="btn-primary" onclick="knowledgeManager.showRuleEditor('priority')">
-                            Créer une règle
-                        </button>
-                    </div>
-                </div>
+            <div class="quick-form-actions">
+                <button class="btn-secondary" id="quickRuleReset">Réinitialiser</button>
+                <button class="btn-primary" id="quickRuleSave">Créer la règle</button>
+            </div>
+        </div>
+
+        <div class="or-divider">
+            <span>ou utilisez l'éditeur avancé</span>
+        </div>
+
+        <div class="rules-grid">
+            <div class="rule-card" onclick="knowledgeManager.showRuleEditor('conditional')">
+                <i data-lucide="git-branch"></i>
+                <h3>Règles Conditionnelles</h3>
+                <p>Si... alors... sinon...</p>
+            </div>
+
+            <div class="rule-card" onclick="knowledgeManager.showRuleEditor('context')">
+                <i data-lucide="message-circle"></i>
+                <h3>Règles Contextuelles</h3>
+                <p>Basées sur l'historique</p>
+            </div>
+
+            <div class="rule-card" onclick="knowledgeManager.showRuleEditor('priority')">
+                <i data-lucide="arrow-up"></i>
+                <h3>Règles de Priorité</h3>
+                <p>Ordre de traitement</p>
             </div>
         </div>
 
         <!-- Éditeur de règles -->
-        <div class="creation-assistant" id="ruleEditor" style="display: none;">
-            <div class="assistant-header">
-                <i class="fas fa-cogs"></i>
+        <div class="rule-editor" id="ruleEditor" style="display: none;">
+            <div class="editor-header">
                 <h3>Éditeur de Règles</h3>
                 <button class="close-editor" id="closeRuleEditor">
-                    <i class="fas fa-times"></i>
+                    <i data-lucide="x"></i>
                 </button>
             </div>
-            
-            <div class="assistant-content">
-                <div class="scenarios-grid" style="grid-template-columns: 1fr 1fr;">
+
+            <div class="editor-content">
+                <div class="editor-row">
                     <div class="condition-builder">
                         <h4>Conditions</h4>
-                        <div id="conditionsList">
-                            <!-- Les conditions seront ajoutées dynamiquement -->
-                        </div>
-                        <button class="scenario-btn" onclick="knowledgeManager.addCondition()">
-                            <i class="fas fa-plus"></i>
+                        <div id="conditionsList"></div>
+                        <button class="scenario-btn add-condition" onclick="knowledgeManager.addCondition()">
+                            <i data-lucide="plus"></i>
                             <span>Ajouter une condition</span>
                         </button>
                     </div>
-                    
+
                     <div class="action-builder">
                         <h4>Actions</h4>
                         <div class="form-step">
                             <label>Type d'action</label>
-                            <select id="actionType">
+                            <select class="action-type" id="actionType">
                                 <option value="respond">Répondre avec</option>
                                 <option value="redirect">Rediriger vers</option>
                                 <option value="escalate">Escalader vers humain</option>
@@ -259,18 +201,18 @@
                         </div>
                         <div class="form-step">
                             <label>Contenu de l'action</label>
-                            <textarea id="actionContent" rows="4" placeholder="Contenu de l'action..."></textarea>
+                            <textarea class="action-content" id="actionContent" rows="4" placeholder="Contenu de l'action..."></textarea>
                         </div>
                     </div>
                 </div>
-                
-                <div class="form-actions">
+
+                <div class="editor-actions">
                     <button class="btn-secondary" id="testRule">
-                        <i class="fas fa-play"></i>
-                        Tester la règle
+                        <i data-lucide="play"></i>
+                        Tester
                     </button>
                     <button class="btn-primary" id="saveRule">
-                        <i class="fas fa-save"></i>
+                        <i data-lucide="save"></i>
                         Enregistrer
                     </button>
                 </div>
@@ -278,53 +220,46 @@
         </div>
 
         <!-- Liste des règles actives -->
-        <div class="custom-responses">
-            <div class="responses-section-header">
-                <h3>Règles Actives</h3>
-                <div class="responses-count">
-                    <span class="stat-item">
-                        <strong id="totalRules">0</strong>
-                        <small>règles totales</small>
-                    </span>
-                    <span class="stat-item" style="margin-left: 1rem;">
-                        <strong id="activeRules">0</strong>
-                        <small>actives</small>
-                    </span>
-                </div>
+        <div class="rules-list-section">
+            <div class="rules-stats">
+                <span class="stat-item">
+                    <strong id="totalRules">0</strong>
+                    <small>règles totales</small>
+                </span>
+                <span class="stat-item">
+                    <strong id="activeRules">0</strong>
+                    <small>actives</small>
+                </span>
             </div>
-            
-            <div class="responses-list" id="rulesList">
+
+            <div class="rules-list" id="rulesList">
                 <div class="empty-state">
-                    <i class="fas fa-cogs"></i>
+                    <i data-lucide="settings"></i>
                     <p>Aucune règle configurée</p>
                     <small>Créez vos premières règles avancées ci-dessus</small>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Actions globales -->
+    <!-- Actions Globales -->
     <div class="global-actions">
-        <div class="actions-left">
-            <button class="btn-secondary" id="exportKnowledge">
-                <i class="fas fa-download"></i>
-                Exporter tout
-            </button>
-            <button class="btn-secondary" id="importKnowledge">
-                <i class="fas fa-upload"></i>
-                Importer configuration
-            </button>
-        </div>
-        <div class="actions-right">
-            <button class="btn-primary" id="optimizeKnowledge">
-                <i class="fas fa-magic"></i>
-                Optimiser la base
-            </button>
-            <button class="btn-primary" id="saveAllKnowledge">
-                <i class="fas fa-save"></i>
-                Tout Sauvegarder
-            </button>
-        </div>
+        <button class="btn-secondary" id="exportKnowledge">
+            <i data-lucide="download"></i>
+            Exporter tout
+        </button>
+        <button class="btn-secondary" id="importKnowledge">
+            <i data-lucide="upload"></i>
+            Importer
+        </button>
+        <button class="btn-primary" id="optimizeKnowledge">
+            <i data-lucide="zap"></i>
+            Optimiser
+        </button>
+        <button class="btn-primary" id="saveAllKnowledge">
+            <i data-lucide="save"></i>
+            Tout Sauvegarder
+        </button>
     </div>
 </div>
 
@@ -336,9 +271,7 @@
             <button class="modal-close">&times;</button>
         </div>
         <div class="modal-body">
-            <div id="documentDetails">
-                <!-- Contenu dynamique -->
-            </div>
+            <div id="documentDetails"></div>
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" id="reprocessDoc">Retraiter</button>
@@ -361,6 +294,14 @@
             <button class="btn-primary" id="confirmOk">Confirmer</button>
         </div>
     </div>
+</div>
+
+<!-- Formulaire catégorie personnalisée (caché) -->
+<div id="newCategoryForm" style="display: none;">
+    <input type="text" id="categoryName" placeholder="Nom de la catégorie">
+    <input type="text" id="categoryDescription" placeholder="Description">
+    <button id="saveCategory">Créer</button>
+    <button id="cancelCategory">Annuler</button>
 </div>
 {% endblock %}
 

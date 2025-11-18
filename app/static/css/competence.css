@@ -6,16 +6,17 @@
 
 /* Style des cartes de configuration */
 .config-card {
-    background-color: white;
+    background-color: transparent;
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
     transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
 }
 
 .config-card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* En-tête de carte */
@@ -58,13 +59,14 @@
     gap: 8px;
     padding: 8px;
     border-radius: 4px;
-    background-color: #f8fafc;
+    background-color: transparent;
     cursor: pointer;
     transition: background-color 0.2s ease;
+    border: 1px solid #e2e8f0;
 }
 
 .checkbox-group label:hover {
-    background-color: #e2e8f0;
+    background-color: rgba(226, 232, 240, 0.5);
 }
 
 /* Style des select */

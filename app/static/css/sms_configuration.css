@@ -18,7 +18,7 @@
 /* Style des sections Twilio et Vonage */
 #twilio_settings,
 #vonage_settings {
-    background-color: #f8f9fa;
+    background-color: transparent;
     border: 1px solid #e9ecef;
     border-radius: 5px;
     padding: 20px;

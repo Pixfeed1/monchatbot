@@ -1,87 +1,151 @@
-/* Container principal */
+/**
+ * Actions et Automatisations - Design cohérent avec la charte
+ */
+
+/* CONTAINER */
 .actions-container {
+    padding: 24px;
+}
+
+/* BANNIÈRE */
+.actions-container .banner {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 32px;
+}
+
+.actions-container .banner-content h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e40af;
+    margin: 0 0 8px 0;
+}
+
+.actions-container .banner-content p {
+    font-size: 15px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* ACTIONS RAPIDES */
+.actions-container .quick-actions {
     display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 20px;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+/* SECTIONS */
+.actions-container .config-section {
+    margin-bottom: 32px;
+}
+
+.actions-container .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.actions-container .section-title i {
+    color: #3b82f6;
 }
 
 /* Sélecteur de type d'action */
 .action-type-selector {
     display: flex;
-    gap: 15px;
-    padding: 15px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow-x: auto;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .type-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    background: #f8fafc;
+    gap: 10px;
+    padding: 14px 20px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
     color: #64748b;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s;
     white-space: nowrap;
+    font-weight: 500;
+    font-size: 15px;
 }
 
 .type-btn i {
-    font-size: 1.2em;
+    font-size: 18px;
 }
 
 .type-btn:hover {
-    background: #e2e8f0;
-    color: #334155;
+    border-color: #3b82f6;
+    color: #1e40af;
+    background: #eff6ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
 .type-btn.active {
-    background: #0d6efd;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.type-btn.active:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
 /* Zone de configuration */
 .config-area {
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 24px;
 }
 
-.config-section {
+.config-area .config-section {
     display: none;
 }
 
-.config-section.active {
+.config-area .config-section.active {
     display: block;
     animation: fadeIn 0.3s ease-in-out;
 }
 
 /* Cartes de déclencheur */
 .trigger-card {
-    background: #f8fafc;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
     border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+
+.trigger-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
 
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .card-header h4 {
     margin: 0;
-    color: #334155;
-    font-size: 1.1em;
+    color: #1e293b;
+    font-size: 16px;
+    font-weight: 600;
 }
 
 /* Switch toggle */
@@ -89,7 +153,7 @@
     position: relative;
     display: inline-block;
     width: 50px;
-    height: 24px;
+    height: 26px;
 }
 
 .switch input {
@@ -105,55 +169,66 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: 24px;
+    background-color: #cbd5e1;
+    transition: 0.3s;
+    border-radius: 26px;
 }
 
 .slider:before {
     position: absolute;
     content: "";
-    height: 16px;
-    width: 16px;
-    left: 4px;
-    bottom: 4px;
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
     background-color: white;
-    transition: .4s;
+    transition: 0.3s;
     border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 input:checked + .slider {
-    background-color: #0d6efd;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
 input:checked + .slider:before {
-    transform: translateX(26px);
+    transform: translateX(24px);
 }
 
 /* Boutons d'ajout */
 .add-trigger-btn,
 .add-redirection-btn {
     width: 100%;
-    padding: 15px;
+    padding: 16px;
     background: #f8fafc;
-    border: 2px dashed #e2e8f0;
+    border: 2px dashed #cbd5e1;
     border-radius: 8px;
     color: #64748b;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s;
+    font-size: 15px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .add-trigger-btn:hover,
 .add-redirection-btn:hover {
-    background: #e2e8f0;
-    border-color: #cbd5e1;
-    color: #334155;
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #1e40af;
+}
+
+.add-trigger-btn i,
+.add-redirection-btn i {
+    font-size: 18px;
 }
 
 /* Formulaires */
 .settings-form {
     max-width: 600px;
-    margin: 0 auto;
 }
 
 .form-group {
@@ -163,40 +238,30 @@ input:checked + .slider:before {
 .form-group label {
     display: block;
     margin-bottom: 8px;
-    color: #334155;
+    color: #475569;
     font-weight: 500;
+    font-size: 14px;
 }
 
-/* Modals */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
+.form-control {
     width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.2s;
 }
 
-.modal-content {
-    position: relative;
-    background: white;
-    max-width: 500px;
-    margin: 50px auto;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Actions globales */
-.global-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #e2e8f0;
+textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
 }
 
 /* Animations */
@@ -211,29 +276,104 @@ input:checked + .slider:before {
     }
 }
 
+/* Triggers section */
+.trigger-list,
+.redirection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Styles spécifiques pour chaque type d'action */
+#email-config .trigger-card {
+    border-left: 4px solid #3b82f6;
+}
+
+#sms-config .trigger-card {
+    border-left: 4px solid #10b981;
+}
+
+#calendar-config .trigger-card {
+    border-left: 4px solid #f59e0b;
+}
+
+#tickets-config .trigger-card {
+    border-left: 4px solid #ef4444;
+}
+
+#forms-config .trigger-card {
+    border-left: 4px solid #8b5cf6;
+}
+
+/* Priority mapping */
+.priority-mapping {
+    margin-top: 24px;
+}
+
+.priority-mapping h4 {
+    color: #1e293b;
+    margin-bottom: 16px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 32px;
+    border-radius: 12px;
+    max-width: 600px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+    color: #1e293b;
+    margin-bottom: 24px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .action-type-selector {
-        flex-wrap: wrap;
-        justify-content: center;
+        gap: 8px;
     }
 
     .type-btn {
-        flex: 1 1 calc(50% - 15px);
+        flex: 1 1 calc(50% - 4px);
         justify-content: center;
+        padding: 12px 16px;
     }
 
     .card-header {
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
         text-align: center;
     }
 
-    .global-actions {
+    .actions-container .quick-actions {
         flex-direction: column;
     }
 
-    .global-actions button {
+    .actions-container .quick-actions button {
         width: 100%;
     }
 }
@@ -243,15 +383,15 @@ input:checked + .slider:before {
         flex: 1 1 100%;
     }
 
-    .modal-content {
-        margin: 20px;
-        width: auto;
+    .actions-container {
+        padding: 16px;
+    }
+
+    .actions-container .banner {
+        padding: 24px;
+    }
+
+    .actions-container .banner-content h1 {
+        font-size: 24px;
     }
 }
-
-/* Styles spécifiques pour chaque type d'action */
-#email-config .trigger-card { border-left: 4px solid #0d6efd; }
-#sms-config .trigger-card { border-left: 4px solid #10b981; }
-#calendar-config .trigger-card { border-left: 4px solid #f59e0b; }
-#tickets-config .trigger-card { border-left: 4px solid #ef4444; }
-#forms-config .trigger-card { border-left: 4px solid #8b5cf6; }

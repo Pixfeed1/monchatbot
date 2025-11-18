@@ -87,6 +87,133 @@ class FormRedirection(db.Model):
 
 
 ###############################################
+# Modèles Canaux de Communication (Integrations)
+###############################################
+
+class Integration(db.Model):
+    """Intégrations des canaux de communication"""
+    id = db.Column(db.Integer, primary_key=True)
+    channel_type = db.Column(db.String(50), nullable=False)  # whatsapp, messenger, instagram, telegram, sms, email, slack, teams, web
+    name = db.Column(db.String(100), nullable=False)
+    is_active = db.Column(db.Boolean, default=False)
+    credentials = db.Column(db.Text)  # JSON - API keys, tokens
+    config = db.Column(db.Text)  # JSON - Configuration spécifique
+    status = db.Column(db.String(20), default='disconnected')  # connected, disconnected, error, pending
+    last_sync = db.Column(db.DateTime, nullable=True)
+    error_message = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relations
+    logs = db.relationship('IntegrationLog', backref='integration', lazy='dynamic', cascade='all, delete-orphan')
+    channel_config = db.relationship('ChannelConfig', backref='integration', uselist=False, cascade='all, delete-orphan')
+
+    @property
+    def credentials_dict(self):
+        """Retourne les credentials sous forme de dict"""
+        import json
+        return json.loads(self.credentials) if self.credentials else {}
+
+    @credentials_dict.setter
+    def credentials_dict(self, value):
+        """Définit les credentials depuis un dict"""
+        import json
+        self.credentials = json.dumps(value) if value else None
+
+    @property
+    def config_dict(self):
+        """Retourne la config sous forme de dict"""
+        import json
+        return json.loads(self.config) if self.config else {}
+
+    @config_dict.setter
+    def config_dict(self, value):
+        """Définit la config depuis un dict"""
+        import json
+        self.config = json.dumps(value) if value else None
+
+    def __repr__(self):
+        return f'<Integration {self.channel_type}: {self.name}>'
+
+
+class IntegrationLog(db.Model):
+    """Journal des événements pour les intégrations"""
+    id = db.Column(db.Integer, primary_key=True)
+    integration_id = db.Column(db.Integer, db.ForeignKey('integration.id'), nullable=False)
+    log_type = db.Column(db.String(50), nullable=False)  # info, warning, error, sync, message_sent, message_received
+    message = db.Column(db.Text, nullable=False)
+    integration_metadata = db.Column(db.Text)  # JSON - Données supplémentaires
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def metadata_dict(self):
+        """Retourne les metadata sous forme de dict"""
+        import json
+        return json.loads(self.integration_metadata) if self.integration_metadata else {}
+
+    @metadata_dict.setter
+    def metadata_dict(self, value):
+        """Définit les metadata depuis un dict"""
+        import json
+        self.integration_metadata = json.dumps(value) if value else None
+
+    def __repr__(self):
+        return f'<IntegrationLog {self.log_type}: {self.message[:50]}>'
+
+
+class ChannelConfig(db.Model):
+    """Configuration avancée par canal"""
+    id = db.Column(db.Integer, primary_key=True)
+    integration_id = db.Column(db.Integer, db.ForeignKey('integration.id'), nullable=False, unique=True)
+    settings = db.Column(db.Text)  # JSON - Paramètres spécifiques au canal
+    webhooks = db.Column(db.Text)  # JSON - URLs de webhooks
+    auto_reply_enabled = db.Column(db.Boolean, default=True)
+    business_hours = db.Column(db.Text)  # JSON - Horaires d'ouverture
+    rate_limit = db.Column(db.Integer, default=100)  # Messages par heure
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @property
+    def settings_dict(self):
+        """Retourne les settings sous forme de dict"""
+        import json
+        return json.loads(self.settings) if self.settings else {}
+
+    @settings_dict.setter
+    def settings_dict(self, value):
+        """Définit les settings depuis un dict"""
+        import json
+        self.settings = json.dumps(value) if value else None
+
+    @property
+    def webhooks_dict(self):
+        """Retourne les webhooks sous forme de dict"""
+        import json
+        return json.loads(self.webhooks) if self.webhooks else {}
+
+    @webhooks_dict.setter
+    def webhooks_dict(self, value):
+        """Définit les webhooks depuis un dict"""
+        import json
+        self.webhooks = json.dumps(value) if value else None
+
+    @property
+    def business_hours_dict(self):
+        """Retourne les business hours sous forme de dict"""
+        import json
+        return json.loads(self.business_hours) if self.business_hours else {}
+
+    @business_hours_dict.setter
+    def business_hours_dict(self, value):
+        """Définit les business hours depuis un dict"""
+        import json
+        self.business_hours = json.dumps(value) if value else None
+
+    def __repr__(self):
+        return f'<ChannelConfig for Integration {self.integration_id}>'
+
+
+###############################################
 # Modèles généraux avec support API utilisateur
 ###############################################
 
@@ -95,18 +222,20 @@ class Settings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     # Paramètres généraux du bot
-    bot_name = db.Column(db.String(100), nullable=False, default="MonChatbot")
-    bot_description = db.Column(db.String(500), nullable=True)
-    bot_welcome = db.Column(db.String(500), nullable=False, default="Bienvenue!")
+    bot_name = db.Column(db.String(100), nullable=False, default="Léo")
+    bot_description = db.Column(db.String(500), nullable=True, default="Je suis Léo, votre assistant intelligent et sympathique. Je suis là pour vous aider et répondre à vos questions.")
+    bot_welcome = db.Column(db.String(500), nullable=False, default="Bonjour ! Je suis Léo, ravi de vous rencontrer !")
     bot_avatar = db.Column(db.String(200), nullable=True)
     
     # Configuration API par utilisateur
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     encrypted_openai_key = db.Column(db.Text, nullable=True)
     encrypted_mistral_key = db.Column(db.Text, nullable=True)
-    current_provider = db.Column(db.String(20), nullable=True)  # openai, mistral
+    encrypted_claude_key = db.Column(db.Text, nullable=True)
+    current_provider = db.Column(db.String(20), nullable=True)  # openai, mistral, claude
     openai_model = db.Column(db.String(50), nullable=True, default='gpt-3.5-turbo')
     mistral_model = db.Column(db.String(50), nullable=True, default='mistral-small')
+    claude_model = db.Column(db.String(50), nullable=True, default='claude-sonnet-4')
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -159,8 +288,11 @@ class Document(db.Model):
     title = db.Column(db.String(200), nullable=False)
     filename = db.Column(db.String(255), nullable=False)
     file_type = db.Column(db.String(50))
+    file_size = db.Column(db.Integer, default=0)  # Taille en bytes
     category_id = db.Column(db.Integer, db.ForeignKey('knowledge_category.id'), nullable=False)
     content = db.Column(db.Text)  # Contenu extrait du document
+    summary = db.Column(db.Text)  # Résumé du document
+    status = db.Column(db.String(20), default='processing')  # processing, processed, error
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -184,6 +316,55 @@ class ResponseRule(db.Model):
     @condition_rules.setter
     def condition_rules(self, value):
         self.conditions = json.dumps(value)
+
+
+class VocabularyTerm(db.Model):
+    """Termes de vocabulaire métier"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    definition = db.Column(db.Text, nullable=False)
+    synonyms = db.Column(db.Text)  # Stocké au format JSON
+    category = db.Column(db.String(100), default='general')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @property
+    def synonym_list(self):
+        return json.loads(self.synonyms) if self.synonyms else []
+
+    @synonym_list.setter
+    def synonym_list(self, value):
+        self.synonyms = json.dumps(value)
+
+
+class AdvancedRule(db.Model):
+    """Règles avancées pour la base de connaissances"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    rule_type = db.Column(db.String(50), nullable=False)  # conditional, context, priority
+    description = db.Column(db.Text)
+    conditions = db.Column(db.Text)  # Stocké au format JSON
+    actions = db.Column(db.Text)  # Stocké au format JSON
+    is_active = db.Column(db.Boolean, default=True)
+    priority = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @property
+    def condition_list(self):
+        return json.loads(self.conditions) if self.conditions else []
+
+    @condition_list.setter
+    def condition_list(self, value):
+        self.conditions = json.dumps(value)
+
+    @property
+    def action_list(self):
+        return json.loads(self.actions) if self.actions else []
+
+    @action_list.setter
+    def action_list(self, value):
+        self.actions = json.dumps(value)
 
 
 class BotCompetences(db.Model):
@@ -242,7 +423,13 @@ class BotResponses(db.Model):
     
     # Vocabulaire personnalisé
     _vocabulary = db.Column('vocabulary', db.Text, default='{}')
-    
+
+    # Templates essentiels (stockés en JSON)
+    _essential_templates = db.Column('essential_templates', db.Text, default='{}')
+
+    # Configuration du comportement (stockée en JSON)
+    _behavior_config = db.Column('behavior_config', db.Text, default='{}')
+
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     @property
@@ -275,6 +462,34 @@ class BotResponses(db.Model):
                     self._vocabulary = json.dumps(value)
         except (TypeError, json.JSONDecodeError) as e:
             self._vocabulary = '{}'
+
+    @property
+    def essential_templates(self):
+        try:
+            return json.loads(self._essential_templates) if self._essential_templates else {}
+        except (TypeError, json.JSONDecodeError):
+            return {}
+
+    @essential_templates.setter
+    def essential_templates(self, value):
+        try:
+            self._essential_templates = json.dumps(value) if value else '{}'
+        except (TypeError, json.JSONDecodeError):
+            self._essential_templates = '{}'
+
+    @property
+    def behavior_config(self):
+        try:
+            return json.loads(self._behavior_config) if self._behavior_config else {}
+        except (TypeError, json.JSONDecodeError):
+            return {}
+
+    @behavior_config.setter
+    def behavior_config(self, value):
+        try:
+            self._behavior_config = json.dumps(value) if value else '{}'
+        except (TypeError, json.JSONDecodeError):
+            self._behavior_config = '{}'
 
 
 ###############################################
@@ -395,10 +610,14 @@ class User(UserMixin, db.Model):
     login_count = db.Column(db.Integer, default=0)
     
     # Préférences utilisateur pour l'API
-    preferred_provider = db.Column(db.String(20), nullable=True)  # openai, mistral
+    preferred_provider = db.Column(db.String(20), nullable=True)  # openai, mistral, claude
     api_usage_limit = db.Column(db.Integer, nullable=True)  # Limite mensuelle
     api_usage_current = db.Column(db.Integer, default=0)  # Usage actuel du mois
     api_usage_reset_date = db.Column(db.DateTime, nullable=True)  # Date de reset du compteur
+
+    # Préférences UX - Mode Simple/Avancé
+    onboarding_completed = db.Column(db.Boolean, default=False)  # A terminé le wizard
+    ui_mode = db.Column(db.String(20), default='simple')  # 'simple' ou 'advanced'
 
     def set_password(self, password):
         """Hash et stocke le mot de passe"""
@@ -511,9 +730,9 @@ def init_default_data():
         # Créer les paramètres par défaut s'ils n'existent pas
         if not Settings.query.first():
             default_settings = Settings(
-                bot_name="MonChatbot",
-                bot_description="Assistant IA intelligent",
-                bot_welcome="Bonjour ! Comment puis-je vous aider aujourd'hui ?"
+                bot_name="Léo",
+                bot_description="Je suis Léo, votre assistant intelligent et sympathique. Je suis là pour vous aider et répondre à vos questions.",
+                bot_welcome="Bonjour ! Je suis Léo, ravi de vous rencontrer !"
             )
             db.session.add(default_settings)
         
