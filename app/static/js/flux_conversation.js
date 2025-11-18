@@ -190,11 +190,11 @@ class FlowBuilder {
                 this.flowCanvas.scrollLeft = x + (this.flowCanvas.scrollLeft - x) * ratio;
                 this.flowCanvas.scrollTop = y + (this.flowCanvas.scrollTop - y) * ratio;
                 
-                // Appliquer le nouveau scale
+                // Appliquer le nouveau scale UNIQUEMENT aux nœuds
                 this.scale = newScale;
                 this.nodesContainer.style.transform = `scale(${this.scale})`;
-                this.connectionsContainer.style.transform = `scale(${this.scale})`;
-                
+                // PAS de scale sur connectionsContainer - on ajuste dans updateConnectionPath
+
                 // Mettre à jour les connexions
                 this.updateAllConnections();
             }
@@ -918,12 +918,13 @@ class FlowBuilder {
         const targetTop = parseFloat(targetNode.style.top) || 0;
         const targetHeight = targetNode.offsetHeight;
 
-        // Position EXACTE des ports (port = 16px, centré sur le bord)
-        const x1 = sourceLeft + sourceWidth; // Bord droit du nœud source
-        const y1 = sourceTop + sourceHeight / 2; // Milieu vertical
+        // Multiplier par le scale car les nœuds sont scalés mais pas les connexions
+        const scale = this.scale;
+        const x1 = (sourceLeft + sourceWidth) * scale; // Bord droit du nœud source
+        const y1 = (sourceTop + sourceHeight / 2) * scale; // Milieu vertical
 
-        const x2 = targetLeft; // Bord gauche du nœud cible
-        const y2 = targetTop + targetHeight / 2; // Milieu vertical
+        const x2 = targetLeft * scale; // Bord gauche du nœud cible
+        const y2 = (targetTop + targetHeight / 2) * scale; // Milieu vertical
 
         // Créer le chemin
         const paths = connectionEl.querySelectorAll('path');
