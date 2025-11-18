@@ -612,7 +612,7 @@ class FlowBuilder {
     async deleteNode(nodeId) {
         console.log('deleteNode appelé avec nodeId:', nodeId);
 
-        // Vérifier que le nœud existe avant de demander confirmation
+        // Vérifier que le nœud existe
         const nodeEl = this.nodesContainer.querySelector(`[data-node-id="${nodeId}"]`);
         if (!nodeEl) {
             console.error('Nœud introuvable dans le DOM:', nodeId);
@@ -621,11 +621,6 @@ class FlowBuilder {
         }
 
         console.log('Nœud trouvé:', nodeEl.dataset.nodeType, nodeEl.dataset.nodeId);
-
-        if (!confirm(`Supprimer ce nœud ${nodeEl.dataset.nodeType} ?`)) {
-            console.log('Suppression annulée par l\'utilisateur');
-            return;
-        }
 
         try {
             const response = await fetch(`/flow/nodes/${nodeId}`, {
