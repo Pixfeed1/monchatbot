@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Métriques et Analyses{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/metrics.css') }}?v=20251118">
+{% endblock %}
+
+{% block content %}
+<!-- Bannière -->
+<div class="banner">
+    <div class="banner-content">
+        <h1>Métriques et Analyses</h1>
+        <p>Suivez les performances et l'utilisation de votre chatbot en temps réel</p>
+    </div>
+</div>
+
+<!-- Filtres de période -->
+<section class="config-section">
+    <div class="period-filters">
+        <button class="period-btn active" data-period="today">Aujourd'hui</button>
+        <button class="period-btn" data-period="week">7 jours</button>
+        <button class="period-btn" data-period="month">30 jours</button>
+        <button class="period-btn" data-period="year">1 an</button>
+        <button class="period-btn" data-period="all">Tout</button>
+    </div>
+</section>
+
+<!-- KPIs Principaux -->
+<section class="config-section">
+    <h2 class="section-title">
+        <i data-lucide="trending-up"></i>
+        Indicateurs Clés
+    </h2>
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon conversations">
+                <i data-lucide="message-circle"></i>
+            </div>
+            <div class="kpi-content">
+                <h3 id="total-conversations">0</h3>
+                <p>Conversations totales</p>
+                <span class="kpi-trend positive" id="conversations-trend">+0%</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon messages">
+                <i data-lucide="messages-square"></i>
+            </div>
+            <div class="kpi-content">
+                <h3 id="total-messages">0</h3>
+                <p>Messages échangés</p>
+                <span class="kpi-trend positive" id="messages-trend">+0%</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon users">
+                <i data-lucide="users"></i>
+            </div>
+            <div class="kpi-content">
+                <h3 id="active-users">0</h3>
+                <p>Utilisateurs actifs</p>
+                <span class="kpi-trend positive" id="users-trend">+0%</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon resolution">
+                <i data-lucide="check-circle"></i>
+            </div>
+            <div class="kpi-content">
+                <h3 id="resolution-rate">0%</h3>
+                <p>Taux de résolution</p>
+                <span class="kpi-trend positive" id="resolution-trend">+0%</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon response-time">
+                <i data-lucide="clock"></i>
+            </div>
+            <div class="kpi-content">
+                <h3 id="avg-response-time">0s</h3>
+                <p>Temps de réponse moyen</p>
+                <span class="kpi-trend negative" id="response-time-trend">+0%</span>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon satisfaction">
+                <i data-lucide="smile"></i>
+            </div>
+            <div class="kpi-content">
+                <h3 id="satisfaction-score">0%</h3>
+                <p>Satisfaction client</p>
+                <span class="kpi-trend positive" id="satisfaction-trend">+0%</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Graphiques -->
+<div class="charts-row">
+    <!-- Graphique des conversations -->
+    <section class="config-section chart-section">
+        <h2 class="section-title">
+            <i data-lucide="activity"></i>
+            Évolution des conversations
+        </h2>
+        <div class="chart-container">
+            <canvas id="conversationsChart"></canvas>
+        </div>
+    </section>
+
+    <!-- Répartition par canal -->
+    <section class="config-section chart-section">
+        <h2 class="section-title">
+            <i data-lucide="pie-chart"></i>
+            Répartition par canal
+        </h2>
+        <div class="chart-container">
+            <canvas id="channelsChart"></canvas>
+        </div>
+    </section>
+</div>
+
+<!-- Métriques par canal -->
+<section class="config-section">
+    <h2 class="section-title">
+        <i data-lucide="zap"></i>
+        Performance par canal
+    </h2>
+    <div class="channels-table-container">
+        <table class="metrics-table">
+            <thead>
+                <tr>
+                    <th>Canal</th>
+                    <th>Messages envoyés</th>
+                    <th>Messages reçus</th>
+                    <th>Taux de réussite</th>
+                    <th>Erreurs</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody id="channels-metrics-tbody">
+                <tr class="empty-row">
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i data-lucide="inbox"></i>
+                            <p>Aucune donnée disponible</p>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- Utilisation de l'API / LLM -->
+<section class="config-section">
+    <h2 class="section-title">
+        <i data-lucide="cpu"></i>
+        Utilisation de l'IA
+    </h2>
+    <div class="api-usage-grid">
+        <div class="usage-card">
+            <div class="usage-header">
+                <h3>Tokens utilisés</h3>
+                <i data-lucide="hash"></i>
+            </div>
+            <div class="usage-content">
+                <h2 id="total-tokens">0</h2>
+                <p class="usage-detail">
+                    <span>OpenAI: <strong id="openai-tokens">0</strong></span>
+                    <span>Mistral: <strong id="mistral-tokens">0</strong></span>
+                </p>
+            </div>
+        </div>
+        <div class="usage-card">
+            <div class="usage-header">
+                <h3>Coût estimé</h3>
+                <i data-lucide="dollar-sign"></i>
+            </div>
+            <div class="usage-content">
+                <h2 id="total-cost">0€</h2>
+                <p class="usage-detail">
+                    <span>OpenAI: <strong id="openai-cost">0€</strong></span>
+                    <span>Mistral: <strong id="mistral-cost">0€</strong></span>
+                </p>
+            </div>
+        </div>
+        <div class="usage-card">
+            <div class="usage-header">
+                <h3>Requêtes</h3>
+                <i data-lucide="send"></i>
+            </div>
+            <div class="usage-content">
+                <h2 id="total-requests">0</h2>
+                <p class="usage-detail">
+                    <span>Succès: <strong id="successful-requests">0</strong></span>
+                    <span>Erreurs: <strong id="failed-requests">0</strong></span>
+                </p>
+            </div>
+        </div>
+        <div class="usage-card">
+            <div class="usage-header">
+                <h3>Temps de réponse IA</h3>
+                <i data-lucide="zap"></i>
+            </div>
+            <div class="usage-content">
+                <h2 id="avg-ai-response-time">0s</h2>
+                <p class="usage-detail">
+                    <span>Min: <strong id="min-response-time">0s</strong></span>
+                    <span>Max: <strong id="max-response-time">0s</strong></span>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Base de connaissances -->
+<section class="config-section">
+    <h2 class="section-title">
+        <i data-lucide="book-open"></i>
+        Performance de la base de connaissances
+    </h2>
+    <div class="knowledge-stats-grid">
+        <div class="stat-box">
+            <i data-lucide="file-text"></i>
+            <h3 id="total-documents">0</h3>
+            <p>Documents</p>
+        </div>
+        <div class="stat-box">
+            <i data-lucide="help-circle"></i>
+            <h3 id="total-faqs">0</h3>
+            <p>FAQs</p>
+        </div>
+        <div class="stat-box">
+            <i data-lucide="folder"></i>
+            <h3 id="total-categories">0</h3>
+            <p>Catégories</p>
+        </div>
+        <div class="stat-box">
+            <i data-lucide="percent"></i>
+            <h3 id="kb-usage-rate">0%</h3>
+            <p>Taux d'utilisation</p>
+        </div>
+    </div>
+</section>
+
+<!-- Actions et Automatisations -->
+<section class="config-section">
+    <h2 class="section-title">
+        <i data-lucide="settings"></i>
+        Actions et automatisations
+    </h2>
+    <div class="actions-stats-grid">
+        <div class="stat-box">
+            <i data-lucide="zap"></i>
+            <h3 id="active-triggers">0</h3>
+            <p>Déclencheurs actifs</p>
+        </div>
+        <div class="stat-box">
+            <i data-lucide="check"></i>
+            <h3 id="executed-actions">0</h3>
+            <p>Actions exécutées</p>
+        </div>
+        <div class="stat-box">
+            <i data-lucide="mail"></i>
+            <h3 id="emails-sent">0</h3>
+            <p>Emails envoyés</p>
+        </div>
+        <div class="stat-box">
+            <i data-lucide="external-link"></i>
+            <h3 id="form-redirects">0</h3>
+            <p>Redirections formulaire</p>
+        </div>
+    </div>
+</section>
+
+<!-- Top contenus -->
+<div class="charts-row">
+    <section class="config-section chart-section">
+        <h2 class="section-title">
+            <i data-lucide="trending-up"></i>
+            FAQs les plus demandées
+        </h2>
+        <div class="top-content-list" id="top-faqs-list">
+            <div class="empty-state">
+                <i data-lucide="help-circle"></i>
+                <p>Aucune donnée disponible</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="config-section chart-section">
+        <h2 class="section-title">
+            <i data-lucide="file-text"></i>
+            Documents les plus consultés
+        </h2>
+        <div class="top-content-list" id="top-docs-list">
+            <div class="empty-state">
+                <i data-lucide="file"></i>
+                <p>Aucune donnée disponible</p>
+            </div>
+        </div>
+    </section>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/metrics.js') }}?v=20251118"></script>
+{% endblock %}

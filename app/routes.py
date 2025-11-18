@@ -5530,6 +5530,476 @@ def get_integration_logs():
         }), 500
 
 
+###############################################
+# ROUTES - MÉTRIQUES ET ANALYSES
+###############################################
+
+@main_bp.route('/metriques')
+@login_required
+def metrics_page():
+    """Page de métriques et analyses"""
+    return render_template('metrics.html')
+
+
+@main_bp.route('/api/metrics/kpi', methods=['GET'])
+@login_required
+def get_kpi_metrics():
+    """Récupère les indicateurs clés de performance"""
+    try:
+        period = request.args.get('period', 'today')
+
+        # Calculer les dates de début selon la période
+        now = datetime.utcnow()
+        if period == 'today':
+            start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            previous_start = start_date - timedelta(days=1)
+            previous_end = start_date
+        elif period == 'week':
+            start_date = now - timedelta(days=7)
+            previous_start = start_date - timedelta(days=7)
+            previous_end = start_date
+        elif period == 'month':
+            start_date = now - timedelta(days=30)
+            previous_start = start_date - timedelta(days=30)
+            previous_end = start_date
+        elif period == 'year':
+            start_date = now - timedelta(days=365)
+            previous_start = start_date - timedelta(days=365)
+            previous_end = start_date
+        else:  # all
+            start_date = datetime(2020, 1, 1)
+            previous_start = start_date
+            previous_end = start_date
+
+        # Conversations totales
+        total_conversations = ConversationFlow.query.filter(
+            ConversationFlow.created_at >= start_date
+        ).count()
+
+        previous_conversations = ConversationFlow.query.filter(
+            ConversationFlow.created_at >= previous_start,
+            ConversationFlow.created_at < previous_end
+        ).count()
+
+        conversations_trend = calculate_trend(total_conversations, previous_conversations)
+
+        # Messages échangés (approximation via logs)
+        total_messages = IntegrationLog.query.filter(
+            IntegrationLog.created_at >= start_date,
+            IntegrationLog.log_type.in_(['message_sent', 'message_received'])
+        ).count()
+
+        previous_messages = IntegrationLog.query.filter(
+            IntegrationLog.created_at >= previous_start,
+            IntegrationLog.created_at < previous_end,
+            IntegrationLog.log_type.in_(['message_sent', 'message_received'])
+        ).count()
+
+        messages_trend = calculate_trend(total_messages, previous_messages)
+
+        # Utilisateurs actifs (approximation)
+        active_users = db.session.query(db.func.count(db.distinct(ConversationFlow.user_id))).filter(
+            ConversationFlow.created_at >= start_date
+        ).scalar() or 0
+
+        previous_users = db.session.query(db.func.count(db.distinct(ConversationFlow.user_id))).filter(
+            ConversationFlow.created_at >= previous_start,
+            ConversationFlow.created_at < previous_end
+        ).scalar() or 0
+
+        users_trend = calculate_trend(active_users, previous_users)
+
+        # Taux de résolution (approximation basée sur les conversations complètes)
+        completed_flows = ConversationFlow.query.filter(
+            ConversationFlow.created_at >= start_date,
+            ConversationFlow.status == 'completed'
+        ).count()
+
+        resolution_rate = round((completed_flows / total_conversations * 100) if total_conversations > 0 else 0, 1)
+
+        previous_completed = ConversationFlow.query.filter(
+            ConversationFlow.created_at >= previous_start,
+            ConversationFlow.created_at < previous_end,
+            ConversationFlow.status == 'completed'
+        ).count()
+
+        previous_resolution = round((previous_completed / previous_conversations * 100) if previous_conversations > 0 else 0, 1)
+        resolution_trend = round(resolution_rate - previous_resolution, 1) if previous_resolution > 0 else 0
+
+        # Temps de réponse moyen (via API usage logs)
+        avg_response = db.session.query(db.func.avg(APIUsageLog.response_time)).filter(
+            APIUsageLog.created_at >= start_date
+        ).scalar() or 0
+
+        previous_response = db.session.query(db.func.avg(APIUsageLog.response_time)).filter(
+            APIUsageLog.created_at >= previous_start,
+            APIUsageLog.created_at < previous_end
+        ).scalar() or 0
+
+        response_time_trend = calculate_trend(avg_response, previous_response)
+
+        # Satisfaction client (placeholder - à implémenter avec système de feedback)
+        satisfaction_score = 85  # Valeur par défaut
+        satisfaction_trend = 0
+
+        # Timeline pour le graphique
+        conversations_timeline = []
+        if period == 'today':
+            # Par heure
+            for i in range(24):
+                hour_start = start_date + timedelta(hours=i)
+                hour_end = hour_start + timedelta(hours=1)
+                count = ConversationFlow.query.filter(
+                    ConversationFlow.created_at >= hour_start,
+                    ConversationFlow.created_at < hour_end
+                ).count()
+                conversations_timeline.append({
+                    'date': f"{i:02d}h",
+                    'count': count
+                })
+        elif period in ['week', 'month']:
+            # Par jour
+            days = 7 if period == 'week' else 30
+            for i in range(days):
+                day_start = start_date + timedelta(days=i)
+                day_end = day_start + timedelta(days=1)
+                count = ConversationFlow.query.filter(
+                    ConversationFlow.created_at >= day_start,
+                    ConversationFlow.created_at < day_end
+                ).count()
+                conversations_timeline.append({
+                    'date': day_start.strftime('%d/%m'),
+                    'count': count
+                })
+        else:
+            # Par mois
+            for i in range(12):
+                month_start = now - timedelta(days=30*i)
+                month_start = month_start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                next_month = month_start.replace(day=28) + timedelta(days=4)
+                month_end = next_month - timedelta(days=next_month.day)
+
+                count = ConversationFlow.query.filter(
+                    ConversationFlow.created_at >= month_start,
+                    ConversationFlow.created_at <= month_end
+                ).count()
+                conversations_timeline.append({
+                    'date': month_start.strftime('%b'),
+                    'count': count
+                })
+
+        conversations_timeline.reverse()
+
+        return jsonify({
+            'success': True,
+            'total_conversations': total_conversations,
+            'conversations_trend': conversations_trend,
+            'total_messages': total_messages,
+            'messages_trend': messages_trend,
+            'active_users': active_users,
+            'users_trend': users_trend,
+            'resolution_rate': resolution_rate,
+            'resolution_trend': resolution_trend,
+            'avg_response_time': round(avg_response, 2),
+            'response_time_trend': response_time_trend,
+            'satisfaction_score': satisfaction_score,
+            'satisfaction_trend': satisfaction_trend,
+            'conversations_timeline': conversations_timeline
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_kpi_metrics: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/api/metrics/channels', methods=['GET'])
+@login_required
+def get_channel_metrics():
+    """Récupère les métriques par canal"""
+    try:
+        period = request.args.get('period', 'today')
+        start_date = get_start_date_from_period(period)
+
+        # Récupérer toutes les intégrations
+        integrations = Integration.query.all()
+
+        channels_data = []
+        distribution_data = []
+
+        for integration in integrations:
+            # Messages envoyés
+            messages_sent = IntegrationLog.query.filter(
+                IntegrationLog.integration_id == integration.id,
+                IntegrationLog.log_type == 'message_sent',
+                IntegrationLog.created_at >= start_date
+            ).count()
+
+            # Messages reçus
+            messages_received = IntegrationLog.query.filter(
+                IntegrationLog.integration_id == integration.id,
+                IntegrationLog.log_type == 'message_received',
+                IntegrationLog.created_at >= start_date
+            ).count()
+
+            # Erreurs
+            errors = IntegrationLog.query.filter(
+                IntegrationLog.integration_id == integration.id,
+                IntegrationLog.log_type == 'error',
+                IntegrationLog.created_at >= start_date
+            ).count()
+
+            channels_data.append({
+                'name': integration.name,
+                'channel_type': integration.channel_type,
+                'messages_sent': messages_sent,
+                'messages_received': messages_received,
+                'errors': errors,
+                'status': integration.status
+            })
+
+            # Pour le graphique de distribution
+            total_messages = messages_sent + messages_received
+            if total_messages > 0:
+                distribution_data.append({
+                    'channel': integration.name,
+                    'count': total_messages
+                })
+
+        return jsonify({
+            'success': True,
+            'channels': channels_data,
+            'distribution': distribution_data
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_channel_metrics: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/api/metrics/ai', methods=['GET'])
+@login_required
+def get_ai_metrics():
+    """Récupère les métriques d'utilisation de l'IA"""
+    try:
+        period = request.args.get('period', 'today')
+        start_date = get_start_date_from_period(period)
+
+        # Tokens utilisés par provider
+        openai_logs = APIUsageLog.query.filter(
+            APIUsageLog.created_at >= start_date,
+            APIUsageLog.provider == 'openai'
+        ).all()
+
+        mistral_logs = APIUsageLog.query.filter(
+            APIUsageLog.created_at >= start_date,
+            APIUsageLog.provider == 'mistral'
+        ).all()
+
+        openai_tokens = sum(log.tokens_used or 0 for log in openai_logs)
+        mistral_tokens = sum(log.tokens_used or 0 for log in mistral_logs)
+        total_tokens = openai_tokens + mistral_tokens
+
+        # Coût estimé (approximation)
+        # OpenAI: ~$0.002 / 1K tokens, Mistral: ~$0.001 / 1K tokens
+        openai_cost = (openai_tokens / 1000) * 0.002
+        mistral_cost = (mistral_tokens / 1000) * 0.001
+        total_cost = openai_cost + mistral_cost
+
+        # Requêtes
+        total_requests = APIUsageLog.query.filter(
+            APIUsageLog.created_at >= start_date
+        ).count()
+
+        successful_requests = APIUsageLog.query.filter(
+            APIUsageLog.created_at >= start_date,
+            APIUsageLog.status == 'success'
+        ).count()
+
+        failed_requests = total_requests - successful_requests
+
+        # Temps de réponse
+        response_times = [log.response_time for log in openai_logs + mistral_logs if log.response_time]
+
+        avg_response_time = sum(response_times) / len(response_times) if response_times else 0
+        min_response_time = min(response_times) if response_times else 0
+        max_response_time = max(response_times) if response_times else 0
+
+        return jsonify({
+            'success': True,
+            'total_tokens': total_tokens,
+            'openai_tokens': openai_tokens,
+            'mistral_tokens': mistral_tokens,
+            'total_cost': round(total_cost, 2),
+            'openai_cost': round(openai_cost, 2),
+            'mistral_cost': round(mistral_cost, 2),
+            'total_requests': total_requests,
+            'successful_requests': successful_requests,
+            'failed_requests': failed_requests,
+            'avg_response_time': round(avg_response_time, 2),
+            'min_response_time': round(min_response_time, 2),
+            'max_response_time': round(max_response_time, 2)
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_ai_metrics: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/api/metrics/knowledge', methods=['GET'])
+@login_required
+def get_knowledge_metrics():
+    """Récupère les métriques de la base de connaissances"""
+    try:
+        # Nombre total de documents
+        total_documents = Document.query.count()
+
+        # Nombre total de FAQs
+        total_faqs = FAQ.query.count()
+
+        # Nombre de catégories
+        total_categories = KnowledgeCategory.query.count()
+
+        # Taux d'utilisation (approximation basée sur les vues)
+        total_views = db.session.query(db.func.sum(FAQ.views)).scalar() or 0
+        total_views += db.session.query(db.func.sum(Document.views)).scalar() or 0
+
+        total_content = total_faqs + total_documents
+        usage_rate = round((total_views / (total_content * 10)) if total_content > 0 else 0, 1)
+        usage_rate = min(usage_rate, 100)  # Cap à 100%
+
+        return jsonify({
+            'success': True,
+            'total_documents': total_documents,
+            'total_faqs': total_faqs,
+            'total_categories': total_categories,
+            'usage_rate': usage_rate
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_knowledge_metrics: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/api/metrics/actions', methods=['GET'])
+@login_required
+def get_actions_metrics():
+    """Récupère les métriques d'actions et automatisations"""
+    try:
+        period = request.args.get('period', 'today')
+        start_date = get_start_date_from_period(period)
+
+        # Déclencheurs actifs
+        active_triggers = ActionTrigger.query.filter_by(active=True).count()
+
+        # Actions exécutées (approximation via logs)
+        # Pour l'instant, on utilise les intégrations logs comme proxy
+        executed_actions = IntegrationLog.query.filter(
+            IntegrationLog.created_at >= start_date,
+            IntegrationLog.log_type.in_(['action_executed', 'info'])
+        ).count()
+
+        # Emails envoyés
+        emails_sent = IntegrationLog.query.filter(
+            IntegrationLog.created_at >= start_date,
+            IntegrationLog.log_type == 'message_sent',
+            IntegrationLog.message.like('%email%')
+        ).count()
+
+        # Redirections formulaire
+        form_redirects = FormRedirection.query.count()
+
+        return jsonify({
+            'success': True,
+            'active_triggers': active_triggers,
+            'executed_actions': executed_actions,
+            'emails_sent': emails_sent,
+            'form_redirects': form_redirects
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_actions_metrics: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/api/metrics/top-content', methods=['GET'])
+@login_required
+def get_top_content():
+    """Récupère le top des contenus les plus consultés"""
+    try:
+        # Top 10 FAQs les plus vues
+        top_faqs = FAQ.query.order_by(FAQ.views.desc()).limit(10).all()
+
+        top_faqs_data = [{
+            'id': faq.id,
+            'question': faq.question,
+            'views': faq.views or 0
+        } for faq in top_faqs]
+
+        # Top 10 documents les plus consultés
+        top_documents = Document.query.order_by(Document.views.desc()).limit(10).all()
+
+        top_docs_data = [{
+            'id': doc.id,
+            'title': doc.title,
+            'views': doc.views or 0
+        } for doc in top_documents]
+
+        return jsonify({
+            'success': True,
+            'top_faqs': top_faqs_data,
+            'top_documents': top_docs_data
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_top_content: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+# ========================
+# HELPER FUNCTIONS FOR METRICS
+# ========================
+
+def get_start_date_from_period(period):
+    """Calcule la date de début selon la période"""
+    now = datetime.utcnow()
+    if period == 'today':
+        return now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == 'week':
+        return now - timedelta(days=7)
+    elif period == 'month':
+        return now - timedelta(days=30)
+    elif period == 'year':
+        return now - timedelta(days=365)
+    else:  # all
+        return datetime(2020, 1, 1)
+
+
+def calculate_trend(current, previous):
+    """Calcule la tendance en pourcentage"""
+    if previous == 0:
+        return 100 if current > 0 else 0
+    trend = ((current - previous) / previous) * 100
+    return round(trend, 1)
+
+
 # ========================
 # FIN DU FICHIER routes.py - VERSION COMPLÈTE MISE À JOUR
 # ========================
