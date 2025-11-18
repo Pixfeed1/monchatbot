@@ -176,14 +176,14 @@ class MetricsManager {
                 datasets: [{
                     label: 'Conversations',
                     data: data,
-                    borderColor: '#667eea',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
                     borderWidth: 3,
                     fill: true,
                     tension: 0.4,
                     pointRadius: 4,
                     pointHoverRadius: 6,
-                    pointBackgroundColor: '#667eea',
+                    pointBackgroundColor: '#0d6efd',
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2
                 }]
@@ -200,7 +200,7 @@ class MetricsManager {
                         padding: 12,
                         titleColor: '#fff',
                         bodyColor: '#fff',
-                        borderColor: '#667eea',
+                        borderColor: '#0d6efd',
                         borderWidth: 1
                     }
                 },
@@ -237,9 +237,9 @@ class MetricsManager {
         const labels = distributionData.map(item => item.channel);
         const data = distributionData.map(item => item.count);
         const colors = [
-            '#667eea', '#f093fb', '#4facfe', '#43e97b',
-            '#fa709a', '#30cfd0', '#ff6b6b', '#4ecdc4',
-            '#45b7d1', '#96ceb4', '#ffeaa7', '#dfe6e9'
+            '#0d6efd', '#6366f1', '#3b82f6', '#10b981',
+            '#f59e0b', '#8b5cf6', '#14b8a6', '#06b6d4',
+            '#ef4444', '#ec4899', '#f97316', '#84cc16'
         ];
 
         this.channelsChart = new Chart(ctx, {

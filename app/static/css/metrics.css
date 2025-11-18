@@ -1,41 +1,48 @@
 /**
- * Métriques et Analyses - Design cohérent avec la charte
+ * Métriques et Analyses - Harmonisé avec la charte graphique
+ * Suit les mêmes patterns que integrations.css et base_connaissances.css
  */
 
-/* Bannière */
+/* ==========================================
+   BANNIÈRE
+   ========================================== */
 .banner {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 48px;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #bfdbfe;
     border-radius: 12px;
+    padding: 32px;
     margin-bottom: 32px;
 }
 
 .banner-content h1 {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
+    color: #1e40af;
     margin: 0 0 8px 0;
 }
 
 .banner-content p {
-    font-size: 16px;
-    opacity: 0.95;
+    font-size: 15px;
+    color: #64748b;
     margin: 0;
 }
 
-/* Sections */
+/* ==========================================
+   SECTIONS
+   ========================================== */
 .config-section {
     background: white;
     border-radius: 12px;
     padding: 32px;
     margin-bottom: 24px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #f1f5f9;
 }
 
 .section-title {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     font-size: 20px;
     font-weight: 600;
     color: #1e293b;
@@ -43,68 +50,76 @@
 }
 
 .section-title i {
-    width: 24px;
-    height: 24px;
-    color: #667eea;
+    width: 20px;
+    height: 20px;
+    color: #0d6efd;
 }
 
-/* Filtres de période */
+/* ==========================================
+   FILTRES DE PÉRIODE
+   ========================================== */
 .period-filters {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     flex-wrap: wrap;
+    margin-bottom: 24px;
 }
 
 .period-btn {
-    padding: 10px 20px;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
+    padding: 8px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
     background: white;
     color: #64748b;
     font-weight: 500;
+    font-size: 14px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
 }
 
 .period-btn:hover {
-    border-color: #667eea;
-    color: #667eea;
-    background: #f5f7ff;
+    border-color: #0d6efd;
+    color: #0d6efd;
+    background: #eff6ff;
 }
 
 .period-btn.active {
-    border-color: #667eea;
-    background: #667eea;
+    border-color: #0d6efd;
+    background: #0d6efd;
     color: white;
 }
 
-/* KPIs Grid */
+/* ==========================================
+   GRILLE DE KPIs
+   ========================================== */
 .kpi-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
+    gap: 16px;
+    margin-bottom: 24px;
 }
 
 .kpi-card {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
     padding: 24px;
-    background: #f8fafc;
+    background: white;
     border-radius: 12px;
-    border: 2px solid #e5e7eb;
-    transition: all 0.3s;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
 }
 
 .kpi-card:hover {
-    border-color: #667eea;
+    border-color: #0d6efd;
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .kpi-icon {
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -113,40 +128,58 @@
 }
 
 .kpi-icon i {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     color: white;
 }
 
-.kpi-icon.conversations { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-.kpi-icon.messages { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-.kpi-icon.users { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-.kpi-icon.resolution { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
-.kpi-icon.response-time { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-.kpi-icon.satisfaction { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+/* Couleurs d'icônes harmonisées avec la charte */
+.kpi-icon.conversations {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+}
+
+.kpi-icon.messages {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+}
+
+.kpi-icon.users {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.kpi-icon.resolution {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.kpi-icon.response-time {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.kpi-icon.satisfaction {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
 
 .kpi-content {
     flex: 1;
 }
 
 .kpi-content h3 {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
     color: #1e293b;
     margin: 0 0 4px 0;
 }
 
 .kpi-content p {
-    font-size: 14px;
+    font-size: 13px;
     color: #64748b;
-    margin: 0 0 8px 0;
+    margin: 0 0 6px 0;
 }
 
 .kpi-trend {
     display: inline-block;
-    padding: 4px 8px;
+    padding: 3px 8px;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
 }
 
@@ -165,7 +198,9 @@
     color: #6b7280;
 }
 
-/* Graphiques */
+/* ==========================================
+   GRAPHIQUES
+   ========================================== */
 .charts-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -180,6 +215,9 @@
 .chart-container {
     position: relative;
     height: 300px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
 }
 
 .chart-container canvas {
@@ -187,7 +225,9 @@
     height: 100%;
 }
 
-/* Table des métriques */
+/* ==========================================
+   TABLE DES MÉTRIQUES
+   ========================================== */
 .channels-table-container {
     overflow-x: auto;
 }
@@ -206,16 +246,21 @@
     text-align: left;
     font-weight: 600;
     color: #475569;
-    font-size: 13px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-bottom: 2px solid #e5e7eb;
 }
 
 .metrics-table td {
-    padding: 16px;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
     color: #1e293b;
+    font-size: 14px;
+}
+
+.metrics-table tbody tr {
+    transition: background 0.2s ease;
 }
 
 .metrics-table tbody tr:hover {
@@ -225,17 +270,17 @@
 .channel-name {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     font-weight: 500;
 }
 
 .channel-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
+    gap: 4px;
+    padding: 4px 10px;
     border-radius: 12px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
 }
 
@@ -254,18 +299,28 @@
     color: #d97706;
 }
 
-/* API Usage Cards */
+/* ==========================================
+   CARTES D'UTILISATION API
+   ========================================== */
 .api-usage-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    gap: 16px;
 }
 
 .usage-card {
     padding: 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: white;
     border-radius: 12px;
-    color: white;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.usage-card:hover {
+    border-color: #0d6efd;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .usage-header {
@@ -276,101 +331,114 @@
 }
 
 .usage-header h3 {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     margin: 0;
-    opacity: 0.9;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .usage-header i {
     width: 20px;
     height: 20px;
-    opacity: 0.8;
+    color: #0d6efd;
 }
 
 .usage-content h2 {
-    font-size: 36px;
+    font-size: 32px;
     font-weight: 700;
     margin: 0 0 12px 0;
+    color: #1e293b;
 }
 
 .usage-detail {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     font-size: 13px;
-    opacity: 0.9;
+    color: #64748b;
 }
 
 .usage-detail span {
     display: flex;
     justify-content: space-between;
+    padding: 4px 0;
 }
 
-/* Stats Boxes */
+.usage-detail span strong {
+    color: #1e293b;
+}
+
+/* ==========================================
+   BOÎTES DE STATISTIQUES
+   ========================================== */
 .knowledge-stats-grid,
 .actions-stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
+    gap: 16px;
 }
 
 .stat-box {
     text-align: center;
-    padding: 32px 24px;
-    background: #f8fafc;
+    padding: 28px 20px;
+    background: white;
     border-radius: 12px;
-    border: 2px solid #e5e7eb;
-    transition: all 0.3s;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
 }
 
 .stat-box:hover {
-    border-color: #667eea;
+    border-color: #0d6efd;
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .stat-box i {
-    width: 32px;
-    height: 32px;
-    color: #667eea;
-    margin-bottom: 16px;
+    width: 28px;
+    height: 28px;
+    color: #0d6efd;
+    margin-bottom: 12px;
 }
 
 .stat-box h3 {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
     color: #1e293b;
-    margin: 0 0 8px 0;
+    margin: 0 0 6px 0;
 }
 
 .stat-box p {
-    font-size: 14px;
+    font-size: 13px;
     color: #64748b;
     margin: 0;
 }
 
-/* Top Content Lists */
+/* ==========================================
+   LISTES DE CONTENU TOP
+   ========================================== */
 .top-content-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .content-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px;
+    padding: 14px 16px;
     background: #f8fafc;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
 }
 
 .content-item:hover {
-    border-color: #667eea;
-    background: #f5f7ff;
+    border-color: #0d6efd;
+    background: #eff6ff;
 }
 
 .content-item-left {
@@ -381,16 +449,16 @@
 }
 
 .content-rank {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    background: #667eea;
+    background: #0d6efd;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 13px;
     flex-shrink: 0;
 }
 
@@ -398,15 +466,18 @@
     font-weight: 500;
     color: #1e293b;
     flex: 1;
+    font-size: 14px;
 }
 
 .content-count {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
-    color: #667eea;
+    color: #0d6efd;
 }
 
-/* Empty State */
+/* ==========================================
+   ÉTAT VIDE
+   ========================================== */
 .empty-state {
     text-align: center;
     padding: 48px 24px;
@@ -416,7 +487,7 @@
 .empty-state i {
     width: 48px;
     height: 48px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     opacity: 0.5;
 }
 
@@ -430,18 +501,20 @@
     border: none !important;
 }
 
-/* Responsive */
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
 @media (max-width: 768px) {
     .banner {
-        padding: 32px 24px;
+        padding: 24px;
     }
 
     .banner-content h1 {
-        font-size: 24px;
+        font-size: 22px;
     }
 
     .config-section {
-        padding: 24px;
+        padding: 20px;
     }
 
     .kpi-grid {
@@ -459,15 +532,32 @@
     }
 
     .period-filters {
-        justify-content: center;
+        justify-content: flex-start;
+    }
+
+    .period-btn {
+        font-size: 13px;
+        padding: 6px 12px;
     }
 
     .metrics-table {
-        font-size: 13px;
+        font-size: 12px;
     }
 
     .metrics-table th,
     .metrics-table td {
-        padding: 8px 12px;
+        padding: 10px 12px;
+    }
+
+    .kpi-content h3 {
+        font-size: 24px;
+    }
+
+    .stat-box h3 {
+        font-size: 24px;
+    }
+
+    .usage-content h2 {
+        font-size: 28px;
     }
 }
