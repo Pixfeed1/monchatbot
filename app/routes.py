@@ -4754,6 +4754,332 @@ def skip_onboarding():
 
 
 ###############################################
+# ROUTES - ACTIONS ET AUTOMATISATIONS
+###############################################
+
+@main_bp.route('/actions/triggers', methods=['GET'])
+@login_required
+def get_action_triggers():
+    """Récupère la liste des déclencheurs d'actions"""
+    try:
+        triggers = ActionTrigger.query.all()
+
+        triggers_data = []
+        for trigger in triggers:
+            triggers_data.append({
+                'id': trigger.id,
+                'name': trigger.name,
+                'type': trigger.trigger_type,
+                'active': trigger.active,
+                'conditions': trigger.conditions_dict,
+                'email_template_id': trigger.email_template_id
+            })
+
+        return jsonify({
+            'success': True,
+            'triggers': triggers_data
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_action_triggers: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/actions/triggers', methods=['POST'])
+@login_required
+def create_action_trigger():
+    """Crée un nouveau déclencheur"""
+    try:
+        data = request.get_json()
+
+        name = data.get('name')
+        trigger_type = data.get('type')
+        conditions = data.get('conditions', {})
+        email_template_id = data.get('email_template_id')
+
+        if not name or not trigger_type:
+            return jsonify({
+                'success': False,
+                'error': 'Nom et type requis'
+            }), 400
+
+        trigger = ActionTrigger(
+            name=name,
+            trigger_type=trigger_type,
+            active=True
+        )
+        trigger.conditions_dict = conditions
+
+        if email_template_id:
+            trigger.email_template_id = email_template_id
+
+        db.session.add(trigger)
+        db.session.commit()
+
+        logger.info(f"Déclencheur créé: {name}")
+
+        return jsonify({
+            'success': True,
+            'message': 'Déclencheur créé avec succès',
+            'trigger': {
+                'id': trigger.id,
+                'name': trigger.name,
+                'type': trigger.trigger_type,
+                'active': trigger.active
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur create_action_trigger: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/actions/triggers/<int:trigger_id>/toggle', methods=['PATCH'])
+@login_required
+def toggle_action_trigger(trigger_id):
+    """Active/désactive un déclencheur"""
+    try:
+        trigger = ActionTrigger.query.get_or_404(trigger_id)
+        data = request.get_json()
+
+        active = data.get('active')
+        if active is None:
+            return jsonify({
+                'success': False,
+                'error': 'Paramètre active manquant'
+            }), 400
+
+        trigger.active = active
+        db.session.commit()
+
+        logger.info(f"Déclencheur {trigger_id} {'activé' if active else 'désactivé'}")
+
+        return jsonify({
+            'success': True,
+            'message': f'Déclencheur {"activé" if active else "désactivé"}'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur toggle_action_trigger: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/actions/triggers/<int:trigger_id>', methods=['DELETE'])
+@login_required
+def delete_action_trigger(trigger_id):
+    """Supprime un déclencheur"""
+    try:
+        trigger = ActionTrigger.query.get_or_404(trigger_id)
+        name = trigger.name
+
+        db.session.delete(trigger)
+        db.session.commit()
+
+        logger.info(f"Déclencheur {trigger_id} supprimé")
+
+        return jsonify({
+            'success': True,
+            'message': f'{name} supprimé avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur delete_action_trigger: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/actions/email/templates', methods=['GET'])
+@login_required
+def get_email_templates():
+    """Récupère la liste des templates d'email"""
+    try:
+        templates = EmailTemplate.query.all()
+
+        templates_data = []
+        for template in templates:
+            templates_data.append({
+                'id': template.id,
+                'name': template.name,
+                'subject': template.subject,
+                'html_template': template.html_template,
+                'text_template': template.text_template
+            })
+
+        return jsonify({
+            'success': True,
+            'templates': templates_data
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_email_templates: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/actions/calendar/config', methods=['GET'])
+@login_required
+def get_calendar_config():
+    """Récupère la configuration du calendrier"""
+    try:
+        config = CalendarConfig.query.first()
+
+        if not config:
+            # Créer une configuration par défaut
+            config = CalendarConfig(
+                service='google',
+                default_duration=60
+            )
+            db.session.add(config)
+            db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'config': {
+                'id': config.id,
+                'service': config.service,
+                'api_key': config.api_key,
+                'default_duration': config.default_duration,
+                'settings': config.settings_dict
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_calendar_config: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/actions/calendar/config', methods=['PUT'])
+@login_required
+def update_calendar_config():
+    """Met à jour la configuration du calendrier"""
+    try:
+        data = request.get_json()
+        config = CalendarConfig.query.first()
+
+        if not config:
+            config = CalendarConfig()
+            db.session.add(config)
+
+        if 'service' in data:
+            config.service = data['service']
+        if 'api_key' in data:
+            config.api_key = data['api_key']
+        if 'default_duration' in data:
+            config.default_duration = data['default_duration']
+        if 'settings' in data:
+            config.settings_dict = data['settings']
+
+        db.session.commit()
+
+        logger.info("Configuration calendrier mise à jour")
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration mise à jour avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur update_calendar_config: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/actions/tickets/config', methods=['GET'])
+@login_required
+def get_ticket_config():
+    """Récupère la configuration des tickets"""
+    try:
+        config = TicketConfig.query.first()
+
+        if not config:
+            # Créer une configuration par défaut
+            config = TicketConfig(
+                service='internal'
+            )
+            db.session.add(config)
+            db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'config': {
+                'id': config.id,
+                'service': config.service,
+                'api_key': config.api_key,
+                'priority_mapping': config.priority_mapping_dict,
+                'settings': config.settings_dict
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Erreur get_ticket_config: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+@main_bp.route('/actions/tickets/config', methods=['PUT'])
+@login_required
+def update_ticket_config():
+    """Met à jour la configuration des tickets"""
+    try:
+        data = request.get_json()
+        config = TicketConfig.query.first()
+
+        if not config:
+            config = TicketConfig()
+            db.session.add(config)
+
+        if 'service' in data:
+            config.service = data['service']
+        if 'api_key' in data:
+            config.api_key = data['api_key']
+        if 'priority_mapping' in data:
+            config.priority_mapping_dict = data['priority_mapping']
+        if 'settings' in data:
+            config.settings_dict = data['settings']
+
+        db.session.commit()
+
+        logger.info("Configuration tickets mise à jour")
+
+        return jsonify({
+            'success': True,
+            'message': 'Configuration mise à jour avec succès'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erreur update_ticket_config: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f"Erreur: {str(e)}"
+        }), 500
+
+
+###############################################
 # ROUTES - CANAUX DE COMMUNICATION (INTEGRATIONS)
 ###############################################
 
